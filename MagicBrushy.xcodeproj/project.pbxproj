@@ -1,0 +1,549 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A1B200000000000000000001 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B200000000000000001 /* AppDelegate.swift */; };
+		A1B200000000000000000002 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B200000000000000002 /* SceneDelegate.swift */; };
+		A1B200000000000000000003 /* ColoringViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B200000000000000003 /* ColoringViewController.swift */; };
+		A1B200000000000000000004 /* ColoringStrokeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B200000000000000004 /* ColoringStrokeView.swift */; };
+		A1B200000000000000000005 /* BuiltInColoringPages.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B200000000000000005 /* BuiltInColoringPages.swift */; };
+		A1B200000000000000000006 /* LeapVLMModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B200000000000000007 /* LeapVLMModel.swift */; };
+		A1B200000000000000000008 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A1B200000000000000009 /* Main.storyboard */; };
+		A1B200000000000000000010 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1B200000000000000011 /* Assets.xcassets */; };
+		A1B200000000000000000012 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A1B200000000000000013 /* LaunchScreen.storyboard */; };
+		A1B200000000000000000030 /* LeapModelDownloader in Frameworks */ = {isa = PBXBuildFile; productRef = A1B200000000000000031 /* LeapModelDownloader */; };
+		B1EAD0000311 /* onnxruntime.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = B1EAD0000301 /* onnxruntime.xcframework */; };
+		B1EAD0000312 /* sherpa-onnx.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = B1EAD0000302 /* sherpa-onnx.xcframework */; };
+		B1EAD0000411 /* SherpaOnnx.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1EAD0000401 /* SherpaOnnx.swift */; };
+		B1EAD0000412 /* SherpaPiperAlbaVoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1EAD0000402 /* SherpaPiperAlbaVoice.swift */; };
+		B1EAD0000413 /* SherpaVLMPlayback.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1EAD0000403 /* SherpaVLMPlayback.swift */; };
+		B1EAD0000511 /* FeedbackAlbaSpeech.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1EAD0000501 /* FeedbackAlbaSpeech.swift */; };
+		B1EAD0000611 /* PiperAlba in Resources */ = {isa = PBXBuildFile; fileRef = B1EAD0000601 /* PiperAlba */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		A1B200000000000000000032 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		A1B100000000000000000001 /* MagicBrushy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MagicBrushy.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A1B200000000000000001 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		A1B200000000000000002 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
+		A1B200000000000000003 /* ColoringViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColoringViewController.swift; sourceTree = "<group>"; };
+		A1B200000000000000004 /* ColoringStrokeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColoringStrokeView.swift; sourceTree = "<group>"; };
+		A1B200000000000000005 /* BuiltInColoringPages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuiltInColoringPages.swift; sourceTree = "<group>"; };
+		A1B200000000000000007 /* LeapVLMModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeapVLMModel.swift; sourceTree = "<group>"; };
+		A1B200000000000000008 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A1B200000000000000011 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A1B200000000000000014 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		A1B200000000000000015 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		B1EAD0000301 /* onnxruntime.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = onnxruntime.xcframework; path = "../ASU/SmartDraw/ThirdParty/sherpa-onnx-ios/build-ios/ios-onnxruntime/1.17.1/onnxruntime.xcframework"; sourceTree = SOURCE_ROOT; };
+		B1EAD0000302 /* sherpa-onnx.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = "sherpa-onnx.xcframework"; path = "../ASU/SmartDraw/ThirdParty/sherpa-onnx-ios/build-ios/sherpa-onnx.xcframework"; sourceTree = SOURCE_ROOT; };
+		B1EAD0000401 /* SherpaOnnx.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SherpaOnnx.swift; path = ../ASU/SmartDraw/SmartDraw/VendorSherpaOnnx/SherpaOnnx.swift; sourceTree = SOURCE_ROOT; };
+		B1EAD0000402 /* SherpaPiperAlbaVoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SherpaPiperAlbaVoice.swift; path = ../ASU/SmartDraw/SmartDraw/SherpaPiperAlbaVoice.swift; sourceTree = SOURCE_ROOT; };
+		B1EAD0000403 /* SherpaVLMPlayback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SherpaVLMPlayback.swift; path = ../ASU/SmartDraw/SmartDraw/SherpaVLMPlayback.swift; sourceTree = SOURCE_ROOT; };
+		B1EAD0000501 /* FeedbackAlbaSpeech.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackAlbaSpeech.swift; sourceTree = "<group>"; };
+		B1EAD0000601 /* PiperAlba */ = {isa = PBXFileReference; lastKnownFileType = folder; name = PiperAlba; path = ../ASU/SmartDraw/SmartDraw/PiperAlba; sourceTree = SOURCE_ROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A1B100000000000000000050 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1B200000000000000000030 /* LeapModelDownloader in Frameworks */,
+				B1EAD0000311 /* onnxruntime.xcframework in Frameworks */,
+				B1EAD0000312 /* sherpa-onnx.xcframework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A1B100000000000000000100 = {
+			isa = PBXGroup;
+			children = (
+				A1B100000000000000000101 /* MagicBrushy */,
+				B1EAD0000701 /* AlbaTTS_via_SmartDraw */,
+				A1B100000000000000000102 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A1B100000000000000000101 /* MagicBrushy */ = {
+			isa = PBXGroup;
+			children = (
+				A1B200000000000000001 /* AppDelegate.swift */,
+				A1B200000000000000002 /* SceneDelegate.swift */,
+				A1B200000000000000003 /* ColoringViewController.swift */,
+				A1B200000000000000004 /* ColoringStrokeView.swift */,
+				A1B200000000000000005 /* BuiltInColoringPages.swift */,
+				B1EAD0000501 /* FeedbackAlbaSpeech.swift */,
+				A1B100000000000000000103 /* VLM */,
+				A1B200000000000000009 /* Main.storyboard */,
+				A1B200000000000000011 /* Assets.xcassets */,
+				A1B200000000000000013 /* LaunchScreen.storyboard */,
+				A1B200000000000000008 /* Info.plist */,
+			);
+			path = MagicBrushy;
+			sourceTree = "<group>";
+		};
+		A1B100000000000000000102 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A1B100000000000000000001 /* MagicBrushy.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A1B100000000000000000103 /* VLM */ = {
+			isa = PBXGroup;
+			children = (
+				A1B200000000000000007 /* LeapVLMModel.swift */,
+			);
+			path = VLM;
+			sourceTree = "<group>";
+		};
+		B1EAD0000701 /* AlbaTTS_via_SmartDraw */ = {
+			isa = PBXGroup;
+			children = (
+				B1EAD0000301 /* onnxruntime.xcframework */,
+				B1EAD0000302 /* sherpa-onnx.xcframework */,
+				B1EAD0000401 /* SherpaOnnx.swift */,
+				B1EAD0000402 /* SherpaPiperAlbaVoice.swift */,
+				B1EAD0000403 /* SherpaVLMPlayback.swift */,
+				B1EAD0000601 /* PiperAlba */,
+			);
+			name = AlbaTTS_via_SmartDraw;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A1B100000000000000000200 /* MagicBrushy */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A1B100000000000000000201 /* Build configuration list for PBXNativeTarget "MagicBrushy" */;
+			buildPhases = (
+				A1B100000000000000000210 /* Sources */,
+				A1B100000000000000000050 /* Frameworks */,
+				A1B100000000000000000220 /* Resources */,
+				A1B200000000000000000032 /* Embed Frameworks */,
+				A1B100000000000000000230 /* Sign nested LeapSDK dylibs */,
+				A1B100000000000000000231 /* Fix LeapSDK nested bundles (App Store) */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MagicBrushy;
+			packageProductDependencies = (
+				A1B200000000000000031 /* LeapModelDownloader */,
+			);
+			productName = MagicBrushy;
+			productReference = A1B100000000000000000001 /* MagicBrushy.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A1B100000000000000000300 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					A1B100000000000000000200 = {
+						CreatedOnToolsVersion = 15.0.1;
+					};
+				};
+			};
+			buildConfigurationList = A1B100000000000000000301 /* Build configuration list for PBXProject "MagicBrushy" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = A1B100000000000000000100;
+			packageReferences = (
+				A1B200000000000000040 /* XCRemoteSwiftPackageReference "leap-sdk" */,
+			);
+			productRefGroup = A1B100000000000000000102 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A1B100000000000000000200 /* MagicBrushy */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A1B100000000000000000220 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1B200000000000000000012 /* LaunchScreen.storyboard in Resources */,
+				A1B200000000000000000010 /* Assets.xcassets in Resources */,
+				A1B200000000000000000008 /* Main.storyboard in Resources */,
+				B1EAD0000611 /* PiperAlba in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		A1B100000000000000000230 /* Sign nested LeapSDK dylibs */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Sign nested LeapSDK dylibs";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Superseded by 'Fix LeapSDK nested bundles' phase below\n";
+		};
+		A1B100000000000000000231 /* Fix LeapSDK nested bundles (App Store) */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Fix LeapSDK nested bundles (App Store)";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "exec /bin/sh \"${PROJECT_DIR}/Scripts/leap-appstore-frameworks.sh\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A1B100000000000000000210 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1B200000000000000000001 /* AppDelegate.swift in Sources */,
+				A1B200000000000000000002 /* SceneDelegate.swift in Sources */,
+				A1B200000000000000000003 /* ColoringViewController.swift in Sources */,
+				A1B200000000000000000004 /* ColoringStrokeView.swift in Sources */,
+				A1B200000000000000000005 /* BuiltInColoringPages.swift in Sources */,
+				A1B200000000000000000006 /* LeapVLMModel.swift in Sources */,
+				B1EAD0000511 /* FeedbackAlbaSpeech.swift in Sources */,
+				B1EAD0000411 /* SherpaOnnx.swift in Sources */,
+				B1EAD0000412 /* SherpaPiperAlbaVoice.swift in Sources */,
+				B1EAD0000413 /* SherpaVLMPlayback.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		A1B200000000000000009 /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				A1B200000000000000014 /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+		A1B200000000000000013 /* LaunchScreen.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				A1B200000000000000015 /* Base */,
+			);
+			name = LaunchScreen.storyboard;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		A1B100000000000000000400 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		A1B100000000000000000401 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		A1B100000000000000000402 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = RDP29X8YF2;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
+				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/../ASU/SmartDraw/ThirdParty/sherpa-onnx-ios/build-ios/sherpa-onnx.xcframework/ios-arm64/Headers",
+					"$(PROJECT_DIR)/../ASU/SmartDraw/ThirdParty/sherpa-onnx-ios/build-ios/sherpa-onnx.xcframework/ios-arm64_x86_64-simulator/Headers",
+				);
+				INFOPLIST_FILE = MagicBrushy/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UIMainStoryboardFile = Main;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/Frameworks/LeapSDK.framework/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-lc++",
+					"-L$(BUILT_PRODUCTS_DIR)/LeapSDK.framework/Frameworks",
+					"-linference_engine",
+					"-linference_engine_llamacpp_backend",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = Senscilab.MagicBrushy;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "$(PROJECT_DIR)/MagicBrushy/MagicBrushy-Bridging-Header.h";
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		A1B100000000000000000403 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = RDP29X8YF2;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
+				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/../ASU/SmartDraw/ThirdParty/sherpa-onnx-ios/build-ios/sherpa-onnx.xcframework/ios-arm64/Headers",
+					"$(PROJECT_DIR)/../ASU/SmartDraw/ThirdParty/sherpa-onnx-ios/build-ios/sherpa-onnx.xcframework/ios-arm64_x86_64-simulator/Headers",
+				);
+				INFOPLIST_FILE = MagicBrushy/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UIMainStoryboardFile = Main;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-lc++",
+					"-L$(BUILT_PRODUCTS_DIR)/LeapSDK.framework/Frameworks",
+					"-linference_engine",
+					"-linference_engine_llamacpp_backend",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = Senscilab.MagicBrushy;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "$(PROJECT_DIR)/MagicBrushy/MagicBrushy-Bridging-Header.h";
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A1B100000000000000000201 /* Build configuration list for PBXNativeTarget "MagicBrushy" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A1B100000000000000000402 /* Debug */,
+				A1B100000000000000000403 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A1B100000000000000000301 /* Build configuration list for PBXProject "MagicBrushy" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A1B100000000000000000400 /* Debug */,
+				A1B100000000000000000401 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		A1B200000000000000040 /* XCRemoteSwiftPackageReference "leap-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Liquid4All/leap-sdk";
+			requirement = {
+				kind = revision;
+				revision = 887d56bca17b278354df46a7f1cb5c59c42c53b5;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A1B200000000000000031 /* LeapModelDownloader */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1B200000000000000040 /* XCRemoteSwiftPackageReference "leap-sdk" */;
+			productName = LeapModelDownloader;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = A1B100000000000000000300 /* Project object */;
+}
