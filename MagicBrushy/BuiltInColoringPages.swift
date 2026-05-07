@@ -7,11 +7,14 @@ enum BuiltInColoringPages {
         let image: UIImage
     }
 
-    static let all: [Page] = [
-        Page(title: "House", image: renderHouse()),
-        Page(title: "Rocket", image: renderRocket()),
-        Page(title: "Garden", image: renderGarden()),
-    ]
+    /// Lazy: images are rendered on first access, not at app launch.
+    static let all: [Page] = {
+        [
+            Page(title: "House",  image: renderHouse()),
+            Page(title: "Rocket", image: renderRocket()),
+            Page(title: "Garden", image: renderGarden()),
+        ]
+    }()
 
     private static func render(size: CGSize = CGSize(width: 800, height: 1000), draw: (CGContext) -> Void) -> UIImage {
         let format = UIGraphicsImageRendererFormat.default()

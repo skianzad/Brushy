@@ -11,6 +11,10 @@ final class ColoringStrokeView: UIView {
 
     private var strokes: [Stroke] = []
     private var current: Stroke?
+    /// Strokes older than the live window are flattened into this bitmap to bound memory.
+    private var bakedLayer: UIImage?
+    /// Number of live (un-baked) strokes kept so the most recent ones remain undoable.
+    private static let liveStrokeWindow = 20
     /// One entry per finished stroke (chronological) for feedback prompts — capped to avoid huge histories.
     private var finishedStrokeColors: [UIColor] = []
 
@@ -81,8 +85,46 @@ final class ColoringStrokeView: UIView {
         if finishedStrokeColors.count > 48 {
             finishedStrokeColors.removeFirst(finishedStrokeColors.count - 48)
         }
+        bakeOldStrokesIfNeeded()
         onCommittedStrokeEnded?()
         setNeedsDisplay()
+    }
+
+    /// Flatten strokes older than the live window into a bitmap so the strokes array stays small.
+    private func bakeOldStrokesIfNeeded() {
+        let window = Self.liveStrokeWindow
+        guard strokes.count > window else { return }
+        let toBake = Array(strokes.prefix(strokes.count - window))
+        strokes = Array(strokes.suffix(window))
+        let sz = bounds.size
+        guard sz.width > 1, sz.height > 1 else { return }
+        let format = UIGraphicsImageRendererFormat.default()
+        format.opaque = false
+        format.scale = 1
+        bakedLayer = UIGraphicsImageRenderer(size: sz, format: format).image { ctx in
+            bakedLayer?.draw(in: CGRect(origin: .zero, size: sz))
+            let c = ctx.cgContext
+            for s in toBake { paintStroke(s, in: c) }
+        }
+    }
+
+    private func paintStroke(_ stroke: Stroke, in ctx: CGContext) {
+        guard stroke.points.count >= 2 else {
+            ctx.setFillColor(stroke.color.cgColor)
+            let r = stroke.width * 0.55
+            if let q = stroke.points.first {
+                ctx.fillEllipse(in: CGRect(x: q.x - r, y: q.y - r, width: r * 2, height: r * 2))
+            }
+            return
+        }
+        ctx.setStrokeColor(stroke.color.cgColor)
+        ctx.setLineWidth(stroke.width)
+        ctx.setLineCap(.round)
+        ctx.setLineJoin(.round)
+        ctx.beginPath()
+        ctx.move(to: stroke.points[0])
+        for i in 1..<stroke.points.count { ctx.addLine(to: stroke.points[i]) }
+        ctx.strokePath()
     }
 
     private func scaledWidth(for touch: UITouch?) -> CGFloat {
@@ -100,10 +142,13 @@ final class ColoringStrokeView: UIView {
     }
 
     func undoLastStroke() {
-        guard !strokes.isEmpty else { return }
-        strokes.removeLast()
-        if !finishedStrokeColors.isEmpty {
-            finishedStrokeColors.removeLast()
+        if !strokes.isEmpty {
+            strokes.removeLast()
+            if !finishedStrokeColors.isEmpty { finishedStrokeColors.removeLast() }
+        } else if bakedLayer != nil {
+            // All live strokes already undone — drop the whole baked layer
+            bakedLayer = nil
+            finishedStrokeColors.removeAll()
         }
         setNeedsDisplay()
     }
@@ -111,6 +156,7 @@ final class ColoringStrokeView: UIView {
     func clearStrokes() {
         strokes.removeAll()
         finishedStrokeColors.removeAll()
+        bakedLayer = nil
         current = nil
         setNeedsDisplay()
     }
@@ -126,44 +172,32 @@ final class ColoringStrokeView: UIView {
                 UIBezierPath(rect: CGRect(origin: .zero, size: safe)).fill()
             }
         }
-        let pixelSize = CGSize(width: max(8, min(w, CGFloat(8192))), height: max(8, min(h, CGFloat(8192))))
+        // Cap snapshot at 512 px — the VLM never needs more, so rendering at 2× display
+        // scale wastes 4× the memory for zero quality gain.
+        let maxEdge: CGFloat = 512
+        let scale = min(maxEdge / w, maxEdge / h, 1.0)
+        let pixelSize = CGSize(width: max(8, (w * scale).rounded()),
+                               height: max(8, (h * scale).rounded()))
         let rect = CGRect(origin: .zero, size: pixelSize)
 
         let format = UIGraphicsImageRendererFormat.default()
         format.opaque = true
-        format.scale = max(1, traitCollection.displayScale)
+        format.scale = 1   // already in physical pixels
         let renderer = UIGraphicsImageRenderer(size: pixelSize, format: format)
         return renderer.image { _ in
             UIColor.white.setFill()
             UIBezierPath(rect: rect).fill()
-            if let img = template {
-                img.draw(in: rect)
-            }
+            if let img = template { img.draw(in: rect) }
+            // Baked historical strokes (drawn as a flat image, scales to pixelSize).
+            if let baked = bakedLayer { baked.draw(in: rect) }
             guard let ctx = UIGraphicsGetCurrentContext() else { return }
-
-            func paint(_ stroke: Stroke) {
-                guard stroke.points.count >= 2 else {
-                    ctx.setFillColor(stroke.color.cgColor)
-                    let r = stroke.width * 0.55
-                    if let q = stroke.points.first {
-                        ctx.fillEllipse(in: CGRect(x: q.x - r, y: q.y - r, width: r * 2, height: r * 2))
-                    }
-                    return
-                }
-                ctx.setStrokeColor(stroke.color.cgColor)
-                ctx.setLineWidth(stroke.width)
-                ctx.setLineCap(.round)
-                ctx.setLineJoin(.round)
-                ctx.beginPath()
-                ctx.move(to: stroke.points[0])
-                for i in 1..<stroke.points.count {
-                    ctx.addLine(to: stroke.points[i])
-                }
-                ctx.strokePath()
-            }
-
-            for s in strokes { paint(s) }
-            if let cur = current { paint(cur) }
+            // Live strokes are stored in view-space points; scale context so they align
+            // with the downscaled snapshot size.
+            ctx.saveGState()
+            ctx.scaleBy(x: scale, y: scale)
+            for s in strokes { paintStroke(s, in: ctx) }
+            if let cur = current { paintStroke(cur, in: ctx) }
+            ctx.restoreGState()
         }
     }
 
@@ -174,30 +208,13 @@ final class ColoringStrokeView: UIView {
 
     override func draw(_ rect: CGRect) {
         guard let ctx = UIGraphicsGetCurrentContext() else { return }
-
-        func paint(_ stroke: Stroke) {
-            guard stroke.points.count >= 2 else {
-                ctx.setFillColor(stroke.color.cgColor)
-                let r = stroke.width * 0.55
-                if let q = stroke.points.first {
-                    ctx.fillEllipse(in: CGRect(x: q.x - r, y: q.y - r, width: r * 2, height: r * 2))
-                }
-                return
-            }
-            ctx.setStrokeColor(stroke.color.cgColor)
-            ctx.setLineWidth(stroke.width)
-            ctx.setLineCap(.round)
-            ctx.setLineJoin(.round)
-            ctx.beginPath()
-            ctx.move(to: stroke.points[0])
-            for i in 1..<stroke.points.count {
-                ctx.addLine(to: stroke.points[i])
-            }
-            ctx.strokePath()
+        // Draw baked historical strokes first (single image draw, very cheap).
+        if let baked = bakedLayer {
+            baked.draw(in: bounds)
         }
-
-        for s in strokes { paint(s) }
-        if let cur = current { paint(cur) }
+        // Draw live (undoable) strokes + active stroke on top.
+        for s in strokes { paintStroke(s, in: ctx) }
+        if let cur = current { paintStroke(cur, in: ctx) }
     }
 }
 

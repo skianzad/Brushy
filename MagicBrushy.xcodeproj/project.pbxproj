@@ -12,6 +12,9 @@
 		A1B200000000000000000003 /* ColoringViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B200000000000000003 /* ColoringViewController.swift */; };
 		A1B200000000000000000004 /* ColoringStrokeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B200000000000000004 /* ColoringStrokeView.swift */; };
 		A1B200000000000000000005 /* BuiltInColoringPages.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B200000000000000005 /* BuiltInColoringPages.swift */; };
+		C1F700000000000000000001 /* FigmaTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F700000000000000000101 /* FigmaTheme.swift */; };
+		C1F700000000000000000002 /* HomeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F700000000000000000102 /* HomeViewController.swift */; };
+		C1F700000000000000000003 /* CategoryGridViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F700000000000000000103 /* CategoryGridViewController.swift */; };
 		A1B200000000000000000006 /* LeapVLMModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B200000000000000007 /* LeapVLMModel.swift */; };
 		A1B200000000000000000008 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A1B200000000000000009 /* Main.storyboard */; };
 		A1B200000000000000000010 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1B200000000000000011 /* Assets.xcassets */; };
@@ -46,6 +49,9 @@
 		A1B200000000000000003 /* ColoringViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColoringViewController.swift; sourceTree = "<group>"; };
 		A1B200000000000000004 /* ColoringStrokeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColoringStrokeView.swift; sourceTree = "<group>"; };
 		A1B200000000000000005 /* BuiltInColoringPages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuiltInColoringPages.swift; sourceTree = "<group>"; };
+		C1F700000000000000000101 /* FigmaTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FigmaTheme.swift; sourceTree = "<group>"; };
+		C1F700000000000000000102 /* HomeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewController.swift; sourceTree = "<group>"; };
+		C1F700000000000000000103 /* CategoryGridViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryGridViewController.swift; sourceTree = "<group>"; };
 		A1B200000000000000007 /* LeapVLMModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeapVLMModel.swift; sourceTree = "<group>"; };
 		A1B200000000000000008 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A1B200000000000000011 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -91,6 +97,9 @@
 				A1B200000000000000003 /* ColoringViewController.swift */,
 				A1B200000000000000004 /* ColoringStrokeView.swift */,
 				A1B200000000000000005 /* BuiltInColoringPages.swift */,
+				C1F700000000000000000101 /* FigmaTheme.swift */,
+				C1F700000000000000000102 /* HomeViewController.swift */,
+				C1F700000000000000000103 /* CategoryGridViewController.swift */,
 				B1EAD0000501 /* FeedbackAlbaSpeech.swift */,
 				A1B100000000000000000103 /* VLM */,
 				A1B200000000000000009 /* Main.storyboard */,
@@ -257,6 +266,9 @@
 				A1B200000000000000000003 /* ColoringViewController.swift in Sources */,
 				A1B200000000000000000004 /* ColoringStrokeView.swift in Sources */,
 				A1B200000000000000000005 /* BuiltInColoringPages.swift in Sources */,
+				C1F700000000000000000001 /* FigmaTheme.swift in Sources */,
+				C1F700000000000000000002 /* HomeViewController.swift in Sources */,
+				C1F700000000000000000003 /* CategoryGridViewController.swift in Sources */,
 				A1B200000000000000000006 /* LeapVLMModel.swift in Sources */,
 				B1EAD0000511 /* FeedbackAlbaSpeech.swift in Sources */,
 				B1EAD0000411 /* SherpaOnnx.swift in Sources */,
@@ -432,7 +444,6 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -479,7 +490,6 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (

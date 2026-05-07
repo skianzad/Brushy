@@ -13,6 +13,7 @@ import UIKit
 
 @MainActor
 final class LeapVLMModel {
+    static let shared = LeapVLMModel()
 
     public enum ModelBadgeState: Equatable {
         case idleNotLoaded
@@ -54,6 +55,10 @@ final class LeapVLMModel {
         "The Leap VLM only runs reliably on device (Simulator GPU builds may abort). Use a physical iPad or iPhone to get AI coloring feedback."
 
     public init() {}
+
+    public func prepareImageForModelPreview(_ image: UIImage) -> UIImage? {
+        image
+    }
 
     public func load() async {
         // No-op — never touch Liquid native layers in Simulator builds.
@@ -110,6 +115,7 @@ import LeapSDK
 
 @MainActor
 final class LeapVLMModel {
+    static let shared = LeapVLMModel()
 
     public enum ModelBadgeState: Equatable {
         case idleNotLoaded
@@ -149,6 +155,9 @@ final class LeapVLMModel {
 
     var maxTokens = 240
     let displayEveryNTokens = 4
+    public private(set) var lastPromptSent = ""
+    public private(set) var lastImageSizeSent: CGSize = .zero
+    public private(set) var lastJpegByteCountSent: Int = 0
 
     private var modelRunner: (any ModelRunner)?
     private var currentTask: Task<Void, Never>?
@@ -163,6 +172,10 @@ final class LeapVLMModel {
     public var evaluationState = EvaluationState.idle
 
     public init() {}
+
+    public func prepareImageForModelPreview(_ image: UIImage) -> UIImage? {
+        Self.resizedImage(from: image, maxEdge: Self.maxImageEdge)
+    }
 
     private func publishLoadPanel(visible: Bool, progress: Double, status: String, failed: Bool) {
         isModelLoadPanelVisible = visible
@@ -307,6 +320,10 @@ final class LeapVLMModel {
                     return
                 }
 
+                self.lastPromptSent = prompt
+                self.lastImageSizeSent = image.size
+                self.lastJpegByteCountSent = jpegData.count
+
                 self.evaluationState = .processingPrompt
                 self.output = ""
 
@@ -376,6 +393,11 @@ final class LeapVLMModel {
     }
 
     private static func resizedJPEGData(from image: UIImage, maxEdge: CGFloat) -> Data? {
+        guard let resized = resizedImage(from: image, maxEdge: maxEdge) else { return nil }
+        return resized.jpegData(compressionQuality: 0.9)
+    }
+
+    private static func resizedImage(from image: UIImage, maxEdge: CGFloat) -> UIImage? {
         let size = image.size
         guard size.width > 0, size.height > 0 else { return nil }
 
@@ -383,10 +405,9 @@ final class LeapVLMModel {
         let newSize = CGSize(width: size.width * ratio, height: size.height * ratio)
 
         let renderer = UIGraphicsImageRenderer(size: newSize)
-        let resized = renderer.image { _ in
+        return renderer.image { _ in
             image.draw(in: CGRect(origin: .zero, size: newSize))
         }
-        return resized.jpegData(compressionQuality: 0.9)
     }
 }
 
