@@ -4,6 +4,14 @@ import UIKit
 /// No Bluetooth pen stack — input is multitouch / Pencil only.
 final class ColoringViewController: UIViewController {
 
+    private enum TopChromeMetrics {
+        /// Pin the nav row to the safe-area top (no extra gap under the status bar).
+        static let menuTopOffset: CGFloat = 0
+        static let menuHorizontalInset: CGFloat = 6
+        /// Slightly reduce system safe-area padding so content can sit closer to edges.
+        static let additionalSafeAreaShrink = UIEdgeInsets(top: 0, left: -4, bottom: -6, right: -4)
+    }
+
     private let templateView = UIImageView()
     private let strokeView = ColoringStrokeView()
     /// Segments filled in `viewDidLoad`; avoids building outline bitmaps during storyboard instantiation.
@@ -19,23 +27,32 @@ final class ColoringViewController: UIViewController {
     private let modelStatusDot = UIView(frame: .zero)
     private let modelStatusLabel = UILabel()
     private let modelStatusStack = UIStackView()
-    /// When set (category flow), the segmented page picker stays hidden and this index is used.
+    /// When set from the category grid, this page is selected on first layout.
     var pinnedPageIndex: Int?
+    /// Pages for this canvas session (defaults to the first built-in shelf).
+    var coloringBookPages: [BuiltInColoringPages.Page] =
+        BuiltInColoringPages.library.first(where: { $0.id == "animals" })?.pages
+        ?? BuiltInColoringPages.library.first?.pages
+        ?? []
 
     private let skyView = UIView()
     private let cloudContainer = UIView()
     private let homeButton = UIButton(type: .system)
     private let toolRow = UIStackView()
-    private let figmaPaletteStack = UIStackView()
     private let prevPageButton = UIButton(type: .system)
     private let nextPageButton = UIButton(type: .system)
     private let doneButton = UIButton(type: .system)
     private let toolPairStack = UIStackView()
-    /// Maps Figma crayon slot → indices in `palette`.  7 slots = 7 Figma crayon images.
-    private let figmaPaletteOrder: [Int] = [6, 4, 3, 2, 1, 0, 7]
-    private var crayonButtons: [CrayonPaletteControl] = []
+    /// Holds `crayonScrollView` so Auto Layout gives the scroll view a **bounded** height (required for vertical scrolling).
+    private let crayonScrollContainer = UIView()
+    private let crayonScrollView = CrayonPaletteScrollView()
+    private let crayonStack = UIStackView()
+    private var crayonControls: [MagicCrayonControl] = []
+    /// Display order (top → bottom): maps to indices in `palette`.
+    private var crayonPaletteDisplayOrder: [Int] { Array(0..<palette.count) }
     private var isEraserMode = false
-    private var figmaStrokePaletteIndex: Int = 0
+    /// Index in `palette` when brush mode.
+    private var strokePaletteIndex: Int = 4
     private var brushToolButton: UIButton?
     private var eraserToolButton: UIButton?
 
@@ -45,12 +62,33 @@ final class ColoringViewController: UIViewController {
     /// Same order as `palette` — short words kids know.
     private let paletteKidNames = [
         "red", "orange", "yellow", "green", "blue", "deep blue", "purple", "pink", "brown", "black",
+        "cyan", "coral", "gold", "light green", "lavender", "rose",
+        "lime", "peach", "sky", "lilac", "maroon", "navy", "olive", "tan",
+        "cream", "gray", "magenta", "turquoise",
     ]
 
     private let palette: [UIColor] = [
         .systemRed, .systemOrange, .systemYellow, .systemGreen,
         .systemBlue, .systemIndigo, .systemPurple, .systemPink,
         .brown, .black,
+        UIColor(red: 0, green: 0.75, blue: 0.83, alpha: 1),
+        UIColor(red: 1, green: 0.45, blue: 0.42, alpha: 1),
+        UIColor(red: 0.85, green: 0.65, blue: 0.13, alpha: 1),
+        UIColor(red: 0.56, green: 0.93, blue: 0.56, alpha: 1),
+        UIColor(red: 0.58, green: 0.44, blue: 0.86, alpha: 1),
+        UIColor(red: 0.97, green: 0.51, blue: 0.75, alpha: 1),
+        UIColor(red: 0.55, green: 0.94, blue: 0.25, alpha: 1),
+        UIColor(red: 1, green: 0.72, blue: 0.56, alpha: 1),
+        UIColor(red: 0.53, green: 0.81, blue: 0.98, alpha: 1),
+        UIColor(red: 0.78, green: 0.64, blue: 0.86, alpha: 1),
+        UIColor(red: 0.55, green: 0.1, blue: 0.2, alpha: 1),
+        UIColor(red: 0.0, green: 0.2, blue: 0.45, alpha: 1),
+        UIColor(red: 0.45, green: 0.52, blue: 0.18, alpha: 1),
+        UIColor(red: 0.82, green: 0.71, blue: 0.55, alpha: 1),
+        UIColor(red: 0.98, green: 0.95, blue: 0.82, alpha: 1),
+        UIColor(red: 0.55, green: 0.57, blue: 0.6, alpha: 1),
+        UIColor(red: 0.86, green: 0.2, blue: 0.65, alpha: 1),
+        UIColor(red: 0.25, green: 0.88, blue: 0.82, alpha: 1),
     ]
 
     private var pageIndex = 0 {
@@ -66,6 +104,7 @@ final class ColoringViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        additionalSafeAreaInsets = TopChromeMetrics.additionalSafeAreaShrink
         let g = view.safeAreaLayoutGuide
         view.backgroundColor = FigmaTheme.skyBlue
 
@@ -81,14 +120,13 @@ final class ColoringViewController: UIViewController {
         templateView.layer.borderWidth = 5
         templateView.layer.borderColor = FigmaTheme.canvasBorder.cgColor
 
-        for page in BuiltInColoringPages.all {
+        for page in coloringBookPages {
             pageControl.insertSegment(withTitle: page.title, at: pageControl.numberOfSegments, animated: false)
         }
-        pageControl.selectedSegmentIndex = pinnedPageIndex ?? 0
+        pageControl.selectedSegmentIndex = min(max(0, pinnedPageIndex ?? 0), max(0, coloringBookPages.count - 1))
         pageControl.addTarget(self, action: #selector(pageChanged), for: .valueChanged)
-        if pinnedPageIndex != nil {
-            pageControl.isHidden = true
-        }
+        pageControl.isHidden = coloringBookPages.count <= 1
+        styleSkySegmentedPagePicker(pageControl)
 
         feedbackButton.setTitle("Feedback", for: .normal)
         feedbackButton.titleLabel?.font = FigmaTheme.bodyFont(size: 17, weight: .semibold)
@@ -126,28 +164,6 @@ final class ColoringViewController: UIViewController {
         modelStatusDot.widthAnchor.constraint(equalToConstant: 10).isActive = true
         modelStatusDot.heightAnchor.constraint(equalToConstant: 10).isActive = true
 
-        // ── Crayons (Figma-image based) ──────────────────────────────────────
-        let crayonImageNames = ["FigmaCrayon1","FigmaCrayon2","FigmaCrayon3",
-                                "FigmaCrayon4","FigmaCrayon5","FigmaCrayon6","FigmaCrayon7"]
-        figmaPaletteStack.axis = .vertical
-        figmaPaletteStack.spacing = 4
-        figmaPaletteStack.alignment = .fill
-        for (slot, _) in figmaPaletteOrder.enumerated() {
-            let c = CrayonPaletteControl()
-            c.tag = slot
-            if slot < crayonImageNames.count {
-                c.setCrayonImage(crayonImageNames[slot])
-            }
-            if slot < figmaCrayonPairs.count {
-                c.setCrayonColors(figmaCrayonPairs[slot].0, figmaCrayonPairs[slot].1)
-            }
-            c.translatesAutoresizingMaskIntoConstraints = false
-            c.heightAnchor.constraint(equalToConstant: 76).isActive = true
-            c.addTarget(self, action: #selector(crayonPicked(_:)), for: UIControl.Event.touchUpInside)
-            figmaPaletteStack.addArrangedSubview(c)
-            crayonButtons.append(c)
-        }
-
         // ── Tool pair (brush + eraser, side by side) ─────────────────────────
         brushToolButton = makeBrushToolButton()
         eraserToolButton = makeEraserToolButton()
@@ -159,12 +175,79 @@ final class ColoringViewController: UIViewController {
         toolPairStack.addArrangedSubview(eraserToolButton!)
         toolPairStack.translatesAutoresizingMaskIntoConstraints = false
 
+        // ── Crayons (custom horizontal wax crayons, scrollable) ─────────────
+        crayonScrollContainer.translatesAutoresizingMaskIntoConstraints = false
+        crayonScrollContainer.backgroundColor = .clear
+        crayonScrollContainer.clipsToBounds = true
+        crayonScrollContainer.setContentHuggingPriority(UILayoutPriority(1), for: .vertical)
+        crayonScrollContainer.setContentCompressionResistancePriority(UILayoutPriority(1), for: .vertical)
+
+        crayonScrollView.translatesAutoresizingMaskIntoConstraints = false
+        crayonScrollView.showsVerticalScrollIndicator = true
+        crayonScrollView.indicatorStyle = .default
+        crayonScrollView.alwaysBounceVertical = true
+        crayonScrollView.bounces = true
+        crayonScrollView.isDirectionalLockEnabled = true
+        crayonScrollView.isScrollEnabled = true
+        crayonScrollView.decelerationRate = .normal
+        crayonScrollView.contentInsetAdjustmentBehavior = .never
+        crayonScrollView.automaticallyAdjustsScrollIndicatorInsets = false
+        // Let the pan gesture cancel touches in crayons once the user moves (see CrayonPaletteScrollView).
+        crayonScrollView.canCancelContentTouches = true
+        crayonScrollView.delaysContentTouches = true
+        crayonScrollView.clipsToBounds = true
+        crayonScrollView.keyboardDismissMode = .onDrag
+        crayonScrollView.panGestureRecognizer.cancelsTouchesInView = true
+
+        crayonScrollContainer.addSubview(crayonScrollView)
+        NSLayoutConstraint.activate([
+            crayonScrollView.topAnchor.constraint(equalTo: crayonScrollContainer.topAnchor),
+            crayonScrollView.leadingAnchor.constraint(equalTo: crayonScrollContainer.leadingAnchor),
+            crayonScrollView.trailingAnchor.constraint(equalTo: crayonScrollContainer.trailingAnchor),
+            crayonScrollView.bottomAnchor.constraint(equalTo: crayonScrollContainer.bottomAnchor),
+            crayonScrollContainer.heightAnchor.constraint(greaterThanOrEqualToConstant: 120),
+        ])
+
+        crayonStack.axis = .vertical
+        crayonStack.spacing = 7
+        crayonStack.isLayoutMarginsRelativeArrangement = false
+        crayonStack.alignment = .fill
+        crayonStack.distribution = .fill
+        crayonStack.translatesAutoresizingMaskIntoConstraints = false
+        crayonScrollView.addSubview(crayonStack)
+        NSLayoutConstraint.activate([
+            crayonStack.topAnchor.constraint(equalTo: crayonScrollView.contentLayoutGuide.topAnchor),
+            crayonStack.leadingAnchor.constraint(equalTo: crayonScrollView.contentLayoutGuide.leadingAnchor),
+            crayonStack.trailingAnchor.constraint(equalTo: crayonScrollView.contentLayoutGuide.trailingAnchor),
+            crayonStack.bottomAnchor.constraint(equalTo: crayonScrollView.contentLayoutGuide.bottomAnchor),
+            crayonStack.widthAnchor.constraint(equalTo: crayonScrollView.frameLayoutGuide.widthAnchor),
+        ])
+
+        for paletteIndex in crayonPaletteDisplayOrder where palette.indices.contains(paletteIndex) {
+            let c = MagicCrayonControl()
+            c.tag = paletteIndex
+            c.accessibilityLabel = paletteKidNames[paletteIndex.clamped(to: 0...(paletteKidNames.count - 1))]
+            c.setColors(
+                wax: palette[paletteIndex.clamped(to: 0...(palette.count - 1))],
+                highlight: HorizontalCrayonShapeView.defaultHighlight(
+                    for: palette[paletteIndex.clamped(to: 0...(palette.count - 1))]
+                )
+            )
+            c.translatesAutoresizingMaskIntoConstraints = false
+            c.heightAnchor.constraint(equalToConstant: 52).isActive = true
+            c.addTarget(self, action: #selector(crayonTapped(_:)), for: .touchUpInside)
+            crayonStack.addArrangedSubview(c)
+            crayonControls.append(c)
+        }
+
         // ── Mascot (brush character at the top) ──────────────────────────────
-        let mascotImageView = UIImageView(image: UIImage(named: "BrushMascot"))
+        let mascotNames = (1...9).map { String(format: "BrushMascot%02d", $0) }
+        let mascotImage = UIImage(named: mascotNames.randomElement()!)
+        let mascotImageView = UIImageView(image: mascotImage)
         mascotImageView.contentMode = .scaleAspectFit
         mascotImageView.clipsToBounds = false
         mascotImageView.translatesAutoresizingMaskIntoConstraints = false
-        mascotImageView.heightAnchor.constraint(equalToConstant: 138).isActive = true
+        mascotImageView.heightAnchor.constraint(equalToConstant: 150).isActive = true
 
         let mascotContainer = UIView()
         mascotContainer.translatesAutoresizingMaskIntoConstraints = false
@@ -173,13 +256,14 @@ final class ColoringViewController: UIViewController {
             mascotImageView.centerXAnchor.constraint(equalTo: mascotContainer.centerXAnchor),
             mascotImageView.topAnchor.constraint(equalTo: mascotContainer.topAnchor, constant: -4),
             mascotImageView.bottomAnchor.constraint(equalTo: mascotContainer.bottomAnchor, constant: 4),
-            mascotImageView.widthAnchor.constraint(lessThanOrEqualTo: mascotContainer.widthAnchor, multiplier: 0.95)
+            mascotImageView.widthAnchor.constraint(lessThanOrEqualTo: mascotContainer.widthAnchor, multiplier: 0.98)
         ])
 
         // ── Right panel ───────────────────────────────────────────────────────
-        let rightPanelStack = UIStackView(arrangedSubviews: [mascotContainer, toolPairStack, figmaPaletteStack])
+        let rightPanelStack = UIStackView(arrangedSubviews: [mascotContainer, toolPairStack, crayonScrollContainer])
         rightPanelStack.axis = .vertical
-        rightPanelStack.spacing = 8
+        rightPanelStack.spacing = 10
+        rightPanelStack.distribution = .fill
         rightPanelStack.alignment = .fill
         rightPanelStack.translatesAutoresizingMaskIntoConstraints = false
         rightPanelStack.setContentHuggingPriority(.defaultHigh, for: .horizontal)
@@ -233,7 +317,7 @@ final class ColoringViewController: UIViewController {
         toolRow.addArrangedSubview(nextBtn)
         toolRow.addArrangedSubview(doneBtn)
         toolRow.addArrangedSubview(navSpacer)
-        toolRow.addArrangedSubview(modelStatusStack)
+        modelStatusStack.isHidden = true
 
         let bar = UIStackView(arrangedSubviews: [toolRow])
         bar.axis = .vertical
@@ -268,6 +352,8 @@ final class ColoringViewController: UIViewController {
         headerStack.axis = .vertical
         headerStack.spacing = 8
         headerStack.translatesAutoresizingMaskIntoConstraints = false
+        headerStack.isLayoutMarginsRelativeArrangement = false
+        headerStack.insetsLayoutMarginsFromSafeArea = false
         if !pageControl.isHidden {
             headerStack.insertArrangedSubview(pageControl, at: 0)
         }
@@ -316,7 +402,7 @@ final class ColoringViewController: UIViewController {
 
         let canvasAspect = canvasContainer.widthAnchor.constraint(equalTo: canvasContainer.heightAnchor, multiplier: 4 / 5)
         canvasAspect.priority = .defaultHigh
-        let rightPanelWidth = rightPanelStack.widthAnchor.constraint(equalToConstant: 148)
+        let rightPanelWidth = rightPanelStack.widthAnchor.constraint(equalToConstant: 172)
         rightPanelWidth.priority = .required
 
         NSLayoutConstraint.activate([
@@ -330,14 +416,14 @@ final class ColoringViewController: UIViewController {
             cloudContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             cloudContainer.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 0.55),
 
-            headerStack.topAnchor.constraint(equalTo: g.topAnchor, constant: 6),
-            headerStack.leadingAnchor.constraint(equalTo: g.leadingAnchor, constant: 10),
-            headerStack.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -10),
+            headerStack.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: TopChromeMetrics.menuTopOffset),
+            headerStack.leadingAnchor.constraint(equalTo: g.leadingAnchor, constant: TopChromeMetrics.menuHorizontalInset),
+            headerStack.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -TopChromeMetrics.menuHorizontalInset),
 
             paintRow.topAnchor.constraint(equalTo: headerStack.bottomAnchor, constant: 8),
-            paintRow.leadingAnchor.constraint(equalTo: g.leadingAnchor, constant: 8),
-            paintRow.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -8),
-            paintRow.bottomAnchor.constraint(equalTo: g.bottomAnchor, constant: -8),
+            paintRow.leadingAnchor.constraint(equalTo: g.leadingAnchor, constant: 6),
+            paintRow.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -6),
+            paintRow.bottomAnchor.constraint(equalTo: g.bottomAnchor, constant: -6),
 
             canvasContainer.heightAnchor.constraint(greaterThanOrEqualToConstant: 200),
             canvasAspect,
@@ -377,7 +463,8 @@ final class ColoringViewController: UIViewController {
             vlmInputPreviewLabel.bottomAnchor.constraint(equalTo: vlmInputPreviewImageView.topAnchor, constant: -6),
         ])
 
-        pageIndex = pinnedPageIndex ?? 0
+        let start = pinnedPageIndex ?? 0
+        pageIndex = min(max(0, start), max(0, coloringBookPages.count - 1))
 
         strokeView.onPaintingBegan = { [weak self] in
             self?.onColoringStrokeBegan()
@@ -389,6 +476,40 @@ final class ColoringViewController: UIViewController {
         refreshCrayonSelection(animated: false)
 
         view.bringSubviewToFront(loadOverlay)
+    }
+
+    /// Removes the default gray “track” / hairline on `UISegmentedControl` so it blends with the sky background.
+    private func styleSkySegmentedPagePicker(_ sc: UISegmentedControl) {
+        let sky = FigmaTheme.skyBlue
+        sc.backgroundColor = sky
+        sc.clipsToBounds = false
+        sc.layer.borderWidth = 0
+        sc.layer.cornerRadius = 0
+        sc.apportionsSegmentWidthsByContent = true
+
+        let normalAttrs: [NSAttributedString.Key: Any] = [
+            .foregroundColor: FigmaTheme.coastTitle,
+            .font: FigmaTheme.bodyFont(size: 13, weight: .semibold),
+        ]
+        let selectedAttrs: [NSAttributedString.Key: Any] = [
+            .foregroundColor: UIColor.white,
+            .font: FigmaTheme.bodyFont(size: 13, weight: .semibold),
+        ]
+        sc.setTitleTextAttributes(normalAttrs, for: .normal)
+        sc.setTitleTextAttributes(selectedAttrs, for: .selected)
+
+        let empty = UIImage()
+        sc.setBackgroundImage(empty, for: .normal, barMetrics: .default)
+        sc.setBackgroundImage(empty, for: .selected, barMetrics: .default)
+        sc.setBackgroundImage(empty, for: .highlighted, barMetrics: .default)
+        sc.setBackgroundImage(empty, for: .disabled, barMetrics: .default)
+        sc.setDividerImage(empty, forLeftSegmentState: .normal, rightSegmentState: .normal, barMetrics: .default)
+        sc.setDividerImage(empty, forLeftSegmentState: .selected, rightSegmentState: .normal, barMetrics: .default)
+        sc.setDividerImage(empty, forLeftSegmentState: .normal, rightSegmentState: .selected, barMetrics: .default)
+
+        if #available(iOS 13.0, *) {
+            sc.selectedSegmentTintColor = FigmaTheme.actionBlue
+        }
     }
 
     private func styleChromeButton(_ button: UIButton, fill: UIColor, border: UIColor, cornerRadius: CGFloat = 12) {
@@ -518,21 +639,8 @@ final class ColoringViewController: UIViewController {
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
     }
 
-    private func applyToolMode() {
-        if isEraserMode {
-            strokeView.strokeColor = .white
-            strokeView.strokeWidth = 34
-        } else {
-            let slot = figmaStrokePaletteIndex.clamped(to: 0...(figmaPaletteOrder.count - 1))
-            strokeView.strokeColor = slot < figmaCrayonPairs.count ? figmaCrayonPairs[slot].0 : palette[figmaPaletteOrder[slot]]
-            strokeView.strokeWidth = 22
-        }
-        brushToolButton?.alpha = isEraserMode ? 0.55 : 1.0
-        eraserToolButton?.alpha = isEraserMode ? 1.0 : 0.6
-    }
-
-    @objc private func crayonPicked(_ sender: CrayonPaletteControl) {
-        figmaStrokePaletteIndex = sender.tag.clamped(to: 0...(figmaPaletteOrder.count - 1))
+    @objc private func crayonTapped(_ sender: MagicCrayonControl) {
+        strokePaletteIndex = sender.tag.clamped(to: 0...(palette.count - 1))
         isEraserMode = false
         applyToolMode()
         refreshCrayonSelection(animated: true)
@@ -540,18 +648,23 @@ final class ColoringViewController: UIViewController {
     }
 
     private func refreshCrayonSelection(animated: Bool) {
-        for c in crayonButtons {
-            let on = c.tag == figmaStrokePaletteIndex && !isEraserMode
-            let changes = {
-                c.applySelected(on)
-                c.transform = on ? CGAffineTransform(scaleX: 1.06, y: 1.06) : .identity
-            }
-            if animated {
-                UIView.animate(withDuration: 0.18, animations: changes)
-            } else {
-                changes()
-            }
+        for c in crayonControls {
+            let on = c.tag == strokePaletteIndex && !isEraserMode
+            c.setSelected(on, animated: animated)
         }
+    }
+
+    private func applyToolMode() {
+        if isEraserMode {
+            strokeView.strokeColor = .white
+            strokeView.strokeWidth = 34
+        } else {
+            let i = strokePaletteIndex.clamped(to: 0...(palette.count - 1))
+            strokeView.strokeColor = palette[i]
+            strokeView.strokeWidth = 22
+        }
+        brushToolButton?.alpha = isEraserMode ? 0.55 : 1.0
+        eraserToolButton?.alpha = isEraserMode ? 1.0 : 0.6
     }
 
     deinit {
@@ -565,6 +678,42 @@ final class ColoringViewController: UIViewController {
         // Keep the shared model loaded; only stop active generation on this screen.
         vlm.cancel()
         refreshModelStatusIndicator()
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigationController?.view.backgroundColor = FigmaTheme.skyBlue
+        if let nav = navigationController {
+            let barAppearance = UINavigationBarAppearance()
+            barAppearance.configureWithTransparentBackground()
+            barAppearance.shadowColor = .clear
+            barAppearance.shadowImage = UIImage()
+            nav.navigationBar.standardAppearance = barAppearance
+            nav.navigationBar.scrollEdgeAppearance = barAppearance
+            nav.navigationBar.compactAppearance = barAppearance
+            if #available(iOS 15.0, *) {
+                nav.navigationBar.compactScrollEdgeAppearance = barAppearance
+            }
+            nav.navigationBar.setBackgroundImage(UIImage(), for: .default)
+            nav.navigationBar.shadowImage = UIImage()
+        }
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        hideFullWidthHairlineUnderStatusBarIfNeeded()
+    }
+
+    /// Some `UISegmentedControl` builds add a ~1pt tall full-width separator along the **top** edge; hide it after layout.
+    private func hideFullWidthHairlineUnderStatusBarIfNeeded() {
+        guard !pageControl.isHidden, pageControl.bounds.width > 10 else { return }
+        for sub in pageControl.subviews {
+            let w = sub.bounds.width
+            let h = sub.bounds.height
+            let top = sub.frame.minY
+            guard h > 0, h <= 2.5, w >= pageControl.bounds.width * 0.88, top < 4 else { continue }
+            sub.isHidden = true
+        }
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -698,29 +847,15 @@ final class ColoringViewController: UIViewController {
     }
 
     private func applyCurrentPage() {
-        guard pageIndex >= 0, pageIndex < BuiltInColoringPages.all.count else { return }
+        guard pageIndex >= 0, pageIndex < coloringBookPages.count else { return }
         if !pageControl.isHidden {
             pageControl.selectedSegmentIndex = pageIndex
         }
         FeedbackAlbaSpeech.stopSpeaking()
         invalidateFeedbackSession()
-        let page = BuiltInColoringPages.all[pageIndex]
+        let page = coloringBookPages[pageIndex]
         templateView.image = page.image
         strokeView.clearStrokes()
-    }
-
-    @objc private func colorPicked(_ sender: UIButton) {
-        let i = sender.tag.clamped(to: 0...(palette.count - 1))
-        strokeView.strokeColor = palette[i]
-        sender.layer.borderColor = UIColor.label.cgColor
-        UIView.animate(withDuration: 0.2) {
-            sender.transform = CGAffineTransform(scaleX: 1.12, y: 1.12)
-        } completion: { _ in
-            UIView.animate(withDuration: 0.15) {
-                sender.transform = .identity
-                sender.layer.borderColor = UIColor.label.withAlphaComponent(0.2).cgColor
-            }
-        }
     }
 
     @objc private func clearStrokes() {
@@ -839,8 +974,8 @@ final class ColoringViewController: UIViewController {
         }
 
         let themeLine: String
-        if pageIndex >= 0, pageIndex < BuiltInColoringPages.all.count {
-            let t = BuiltInColoringPages.all[pageIndex].title
+        if pageIndex >= 0, pageIndex < coloringBookPages.count {
+            let t = coloringBookPages[pageIndex].title
             themeLine = "Page: \(t)."
         } else {
             themeLine = ""
@@ -897,37 +1032,43 @@ IMPORTANT: Reply with ONLY the words you say aloud—no rules, no quotes about y
     }
 }
 
-// MARK: - Figma-style crayon / brush chrome (kept in this file so it always compiles with the main target)
+// MARK: - Magic crayon palette (horizontal wax crayons, drawn in code)
 
-// Figma crayon palette: [mainColor, highlightColor] per slot matching figmaPaletteOrder.
-let figmaCrayonPairs: [(UIColor, UIColor)] = [
-    (UIColor(hex: "#BC14FF"), UIColor(hex: "#EF3CE3")), // purple
-    (UIColor(hex: "#00D9FF"), UIColor(hex: "#6EC8FF")), // cyan
-    (UIColor(hex: "#00D26A"), UIColor(hex: "#C3EF3C")), // green
-    (UIColor(hex: "#FFE600"), UIColor(hex: "#E9EF3C")), // yellow
-    (UIColor(hex: "#FF8032"), UIColor(hex: "#EFAA3C")), // orange
-    (UIColor(hex: "#D20000"), UIColor(hex: "#EF3C69")), // red
-    (UIColor(hex: "#FF82D3"), UIColor(hex: "#FF7CF6")), // pink
-]
+/// Scroll view that hands drags to scrolling even when the gesture starts on a `UIControl` (crayon).
+private final class CrayonPaletteScrollView: UIScrollView {
 
-extension UIColor {
-    convenience init(hex: String) {
-        let h = hex.trimmingCharacters(in: CharacterSet(charactersIn: "#"))
-        var rgb: UInt64 = 0
-        Scanner(string: h).scanHexInt64(&rgb)
-        let r = CGFloat((rgb >> 16) & 0xFF) / 255
-        let g = CGFloat((rgb >> 8) & 0xFF) / 255
-        let b = CGFloat(rgb & 0xFF) / 255
-        self.init(red: r, green: g, blue: b, alpha: 1)
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+    }
+
+    override func touchesShouldCancel(in view: UIView) -> Bool {
+        if view is MagicCrayonControl { return true }
+        if view is UIControl { return true }
+        return super.touchesShouldCancel(in: view)
     }
 }
 
-/// Vertical crayon drawn in CoreGraphics matching the Figma SVG structure:
-/// rounded cap at top → dark band → wax body with oval label → dark band → pointed tip at bottom.
-final class CrayonShapeView: UIView {
+/// Renders a single horizontal crayon (tip on the left, rounded cap on the right).
+private final class HorizontalCrayonShapeView: UIView {
 
     var waxColor: UIColor = .systemBlue { didSet { setNeedsDisplay() } }
-    var highlightColor: UIColor = .systemTeal { didSet { setNeedsDisplay() } }
+    var highlightColor: UIColor = .white { didSet { setNeedsDisplay() } }
+
+    static func defaultHighlight(for wax: UIColor) -> UIColor {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        guard wax.getRed(&r, green: &g, blue: &b, alpha: &a) else { return wax }
+        let t: CGFloat = 0.38
+        return UIColor(
+            red: r + (1 - r) * t,
+            green: g + (1 - g) * t,
+            blue: b + (1 - b) * t,
+            alpha: a
+        )
+    }
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -947,72 +1088,45 @@ final class CrayonShapeView: UIView {
         guard let ctx = UIGraphicsGetCurrentContext() else { return }
         let W = bounds.width
         let H = bounds.height
+        let tipW = W * 0.22
+        let rCap = min(H * 0.42, (W - tipW) * 0.48)
+        let topY = H * 0.10
+        let botY = H * 0.90
+        let dark = UIColor(red: 0.20, green: 0.12, blue: 0.22, alpha: 1)
+        let bandH = max(1.2, H * 0.09)
 
-        // ── Section heights (Figma SVG proportions, vertical orientation) ──
-        // cap → band → body → band → pointed tip
-        let capH:  CGFloat = H * 0.10
-        let bandH: CGFloat = H * 0.025
-        let bodyH: CGFloat = H * 0.60
-        // tipH fills the rest (≈ 25%)
+        let outline = UIBezierPath()
+        outline.move(to: CGPoint(x: 0, y: H / 2))
+        outline.addLine(to: CGPoint(x: tipW, y: topY))
+        outline.addLine(to: CGPoint(x: W - rCap, y: topY))
+        outline.addArc(
+            withCenter: CGPoint(x: W - rCap, y: H / 2),
+            radius: rCap,
+            startAngle: -.pi / 2,
+            endAngle: .pi / 2,
+            clockwise: true
+        )
+        outline.addLine(to: CGPoint(x: tipW, y: botY))
+        outline.close()
 
-        let yBand1 = capH
-        let yBody  = yBand1 + bandH
-        let yBand2 = yBody  + bodyH
-        let yTip   = yBand2 + bandH
-
-        let cR   = W * 0.40                                                        // cap corner radius
-        let dark = UIColor(red: 0.196, green: 0.106, blue: 0.255, alpha: 1)       // Figma #321B41
-
-        // ── Full crayon outline path (rounded top, pointed bottom) ──
-        let crayon = UIBezierPath()
-        crayon.move(to: CGPoint(x: cR, y: 0))
-        crayon.addLine(to: CGPoint(x: W - cR, y: 0))
-        crayon.addArc(withCenter: CGPoint(x: W - cR, y: cR), radius: cR,
-                      startAngle: -.pi / 2, endAngle: 0, clockwise: true)
-        crayon.addLine(to: CGPoint(x: W, y: yTip))
-        crayon.addLine(to: CGPoint(x: W / 2, y: H))          // tip point
-        crayon.addLine(to: CGPoint(x: 0, y: yTip))
-        crayon.addLine(to: CGPoint(x: 0, y: cR))
-        crayon.addArc(withCenter: CGPoint(x: cR, y: cR), radius: cR,
-                      startAngle: .pi, endAngle: -.pi / 2, clockwise: true)
-        crayon.close()
-
-        // Clip all fills to the crayon silhouette
         ctx.saveGState()
-        ctx.addPath(crayon.cgPath)
+        ctx.addPath(outline.cgPath)
         ctx.clip()
 
-        // 1. Fill entire shape with wax color (body + tip share this)
         ctx.setFillColor(waxColor.cgColor)
         ctx.fill(bounds)
 
-        // 2. Rounded cap — highlightColor (lighter top, matches Figma's brighter tip end)
-        ctx.setFillColor(highlightColor.cgColor)
-        ctx.fill(CGRect(x: 0, y: 0, width: W, height: yBand1))
+        ctx.setFillColor(highlightColor.withAlphaComponent(0.95).cgColor)
+        ctx.fill(CGRect(x: tipW, y: topY, width: W - tipW - rCap * 0.2, height: (H / 2 - topY) + bandH * 0.2))
 
-        // 3. Dark separator band 1
         ctx.setFillColor(dark.cgColor)
-        ctx.fill(CGRect(x: 0, y: yBand1, width: W, height: bandH))
-
-        // 4. Dark oval label in the centre of the body (Figma ellipse)
-        let lCX = W / 2
-        let lCY = yBody + bodyH / 2
-        let lrx = W * 0.38
-        let lry = bodyH * 0.28
-        ctx.setFillColor(dark.withAlphaComponent(0.45).cgColor)
-        ctx.fillEllipse(in: CGRect(x: lCX - lrx, y: lCY - lry,
-                                   width: lrx * 2, height: lry * 2))
-
-        // 5. Dark separator band 2
-        ctx.setFillColor(dark.cgColor)
-        ctx.fill(CGRect(x: 0, y: yBand2, width: W, height: bandH))
+        ctx.fill(CGRect(x: tipW + (W - tipW - rCap) * 0.38, y: topY + bandH, width: bandH * 0.75, height: (botY - topY) - bandH * 2))
 
         ctx.restoreGState()
 
-        // 6. Subtle outline over the whole crayon
-        ctx.setStrokeColor(UIColor.black.withAlphaComponent(0.14).cgColor)
-        ctx.setLineWidth(0.8)
-        ctx.addPath(crayon.cgPath)
+        ctx.setStrokeColor(UIColor.black.withAlphaComponent(0.18).cgColor)
+        ctx.setLineWidth(max(0.6, H * 0.04))
+        ctx.addPath(outline.cgPath)
         ctx.strokePath()
     }
 
@@ -1022,19 +1136,12 @@ final class CrayonShapeView: UIView {
     }
 }
 
-/// Tappable diagonal crayon drawn with CoreGraphics (Figma color palette).
-final class CrayonPaletteControl: UIControl {
+private final class MagicCrayonControl: UIControl {
 
-    let shape = CrayonShapeView()
-    private let imageView = UIImageView()
+    private let shapeView = HorizontalCrayonShapeView()
 
     override var isHighlighted: Bool {
-        didSet { alpha = isHighlighted ? 0.82 : 1 }
-    }
-
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        shape.setNeedsDisplay()
+        didSet { alpha = isHighlighted ? 0.88 : 1 }
     }
 
     override init(frame: CGRect) {
@@ -1049,52 +1156,55 @@ final class CrayonPaletteControl: UIControl {
 
     private func commonInit() {
         backgroundColor = .clear
-
-        imageView.translatesAutoresizingMaskIntoConstraints = false
-        imageView.contentMode = .scaleAspectFit
-        imageView.isUserInteractionEnabled = false
-        addSubview(imageView)
-
-        shape.translatesAutoresizingMaskIntoConstraints = false
-        shape.isUserInteractionEnabled = false
-        addSubview(shape)
+        isExclusiveTouch = false
+        shapeView.isUserInteractionEnabled = false
+        shapeView.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(shapeView)
         NSLayoutConstraint.activate([
-            imageView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            imageView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            imageView.topAnchor.constraint(equalTo: topAnchor),
-            imageView.bottomAnchor.constraint(equalTo: bottomAnchor),
-            shape.leadingAnchor.constraint(equalTo: leadingAnchor),
-            shape.trailingAnchor.constraint(equalTo: trailingAnchor),
-            shape.topAnchor.constraint(equalTo: topAnchor),
-            shape.bottomAnchor.constraint(equalTo: bottomAnchor),
+            shapeView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 2),
+            shapeView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -2),
+            shapeView.centerYAnchor.constraint(equalTo: centerYAnchor),
+            shapeView.heightAnchor.constraint(equalTo: heightAnchor, multiplier: 0.62),
         ])
     }
 
-    func setCrayonImage(_ name: String) {
-        let img = UIImage(named: name)
-        imageView.image = img
-        imageView.isHidden = (img == nil)
-        shape.isHidden = (img != nil)
+    func setColors(wax: UIColor, highlight: UIColor) {
+        shapeView.waxColor = wax
+        shapeView.highlightColor = highlight
     }
 
-    func setWaxColor(_ color: UIColor) {
-        shape.waxColor = color
-    }
-
-    func setCrayonColors(_ main: UIColor, _ highlight: UIColor) {
-        shape.waxColor = main
-        shape.highlightColor = highlight
-    }
-
-    func applySelected(_ selected: Bool) {
-        if selected {
-            layer.shadowColor = UIColor.black.cgColor
-            layer.shadowOpacity = 0.35
-            layer.shadowRadius = 8
-            layer.shadowOffset = CGSize(width: 0, height: 3)
-        } else {
-            layer.shadowOpacity = 0
+    func setSelected(_ selected: Bool, animated: Bool) {
+        let apply = {
+            if selected {
+                self.layer.shadowColor = UIColor.white.cgColor
+                self.layer.shadowOpacity = 0.95
+                self.layer.shadowRadius = 7
+                self.layer.shadowOffset = .zero
+                self.transform = CGAffineTransform(scaleX: 1.05, y: 1.05)
+            } else {
+                self.layer.shadowOpacity = 0
+                self.transform = .identity
+            }
         }
+        if animated {
+            UIView.animate(withDuration: 0.18, delay: 0, options: [.curveEaseOut], animations: apply)
+        } else {
+            apply()
+        }
+    }
+}
+
+// MARK: - Brush chrome helpers
+
+extension UIColor {
+    convenience init(hex: String) {
+        let h = hex.trimmingCharacters(in: CharacterSet(charactersIn: "#"))
+        var rgb: UInt64 = 0
+        Scanner(string: h).scanHexInt64(&rgb)
+        let r = CGFloat((rgb >> 16) & 0xFF) / 255
+        let g = CGFloat((rgb >> 8) & 0xFF) / 255
+        let b = CGFloat(rgb & 0xFF) / 255
+        self.init(red: r, green: g, blue: b, alpha: 1)
     }
 }
 
