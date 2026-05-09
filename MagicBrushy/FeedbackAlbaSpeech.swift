@@ -3,6 +3,9 @@ import AVFoundation
 /// Reads feedback aloud with bundled Piper Alba (Sherpa ONNX, same bundle layout as SmartDraw), then falls back to system en-GB.
 enum FeedbackAlbaSpeech {
 
+    /// Optional mascot mouth driver (set from `ColoringViewController`).
+    @MainActor static weak var mascotLipSync: MascotLipSyncDriver?
+
     nonisolated static func stripEmojis(_ s: String) -> String {
         s.unicodeScalars
             .filter { scalar in
@@ -33,9 +36,12 @@ enum FeedbackAlbaSpeech {
 
         if SherpaPiperAlbaVoice.isBundledVoiceAvailable {
             do {
-                try await SherpaPiperAlbaVoice.speakAlbaBritishEnglish(clean)
-                return
+                try await SherpaPiperAlbaVoice.speakAlbaBritishEnglish(clean) { text, duration in
+                    Self.mascotLipSync?.startSherpaDrivenLipSync(text: text, duration: duration)
+                }
             } catch {}
+            Self.mascotLipSync?.sessionEnded()
+            return
         }
 
         await AppleFeedbackSynth.shared.speak(clean)
@@ -43,6 +49,7 @@ enum FeedbackAlbaSpeech {
 
     @MainActor
     static func stopSpeaking() {
+        Self.mascotLipSync?.sessionEnded()
         SherpaVLMPlayback.stopPlayback()
         AppleFeedbackSynth.shared.stop()
     }
@@ -71,6 +78,7 @@ enum FeedbackAlbaSpeech {
         func speak(_ text: String) async {
             guard !text.isEmpty else { return }
             stop()
+            FeedbackAlbaSpeech.mascotLipSync?.startAppleDrivenLipSync()
             let voice = Self.preferredBritishEnglishVoice()
 
             await withCheckedContinuation { (cont: CheckedContinuation<Void, Never>) in
@@ -82,13 +90,26 @@ enum FeedbackAlbaSpeech {
             }
         }
 
-        func speechSynthesizer(_ _: AVSpeechSynthesizer, didFinish _: AVSpeechUtterance) {
+        func speechSynthesizer(
+            _ synthesizer: AVSpeechSynthesizer,
+            willSpeakRangeOfSpeechString characterRange: NSRange,
+            utterance: AVSpeechUtterance
+        ) {
+            let s = utterance.speechString as NSString
+            guard characterRange.location != NSNotFound, characterRange.length > 0 else { return }
+            let sub = s.substring(with: characterRange)
+            FeedbackAlbaSpeech.mascotLipSync?.appleWillSpeak(substring: sub)
+        }
+
+        func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+            FeedbackAlbaSpeech.mascotLipSync?.sessionEnded()
             guard let c = speakContinuation else { return }
             speakContinuation = nil
             c.resume()
         }
 
-        func speechSynthesizer(_ _: AVSpeechSynthesizer, didCancel _: AVSpeechUtterance) {
+        func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
+            FeedbackAlbaSpeech.mascotLipSync?.sessionEnded()
             guard let c = speakContinuation else { return }
             speakContinuation = nil
             c.resume()

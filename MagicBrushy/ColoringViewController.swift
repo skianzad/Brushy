@@ -14,6 +14,10 @@ final class ColoringViewController: UIViewController {
 
     private let templateView = UIImageView()
     private let strokeView = ColoringStrokeView()
+    /// Line art only, above strokes so white eraser cannot hide template outlines.
+    private let templateLineOverlayView = UIImageView()
+    private let mascotImageView = UIImageView()
+    private let mascotLipSync = MascotLipSyncDriver()
     /// Segments filled in `viewDidLoad`; avoids building outline bitmaps during storyboard instantiation.
     private let pageControl = UISegmentedControl()
     private let feedbackButton = UIButton(type: .system)
@@ -97,10 +101,13 @@ final class ColoringViewController: UIViewController {
 
     private var pollTimer: Timer?
     /// After brush lift, defer VLM this long so a quick continuation cancels pending feedback (`onPaintingBegan` clears it).
-    private static let feedbackIdleTriggerDelay: TimeInterval = 0.5
+    private static let feedbackIdleTriggerDelay: TimeInterval = 0.3
     private var pendingAutoFeedbackWork: DispatchWorkItem?
-    /// Bumped when the user paints again, changes page, clears, etc. — stale VLM work discards its result.
+    private var pendingReactionWork: DispatchWorkItem?
+    /// Bumped when the user paints again, changes page, clears, etc. — stale **spoken feedback** VLM work discards its result.
     private var feedbackGeneration: UInt64 = 0
+    /// Bumped on page change / clear / undo only — **not** on every new stroke, so debounced mascot reactions can still apply after pen lift.
+    private var reactionSession: UInt64 = 0
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -241,13 +248,23 @@ final class ColoringViewController: UIViewController {
         }
 
         // ── Mascot (brush character at the top) ──────────────────────────────
-        let mascotNames = (1...9).map { String(format: "BrushMascot%02d", $0) }
-        let mascotImage = UIImage(named: mascotNames.randomElement()!)
-        let mascotImageView = UIImageView(image: mascotImage)
+        let mascotImage = MascotReactionState.hello.loadImage()
+            ?? MascotReactionState.neutral.loadImage()
+            ?? UIImage(named: "BrushMascot01")
+        mascotImageView.image = mascotImage
         mascotImageView.contentMode = .scaleAspectFit
         mascotImageView.clipsToBounds = false
         mascotImageView.translatesAutoresizingMaskIntoConstraints = false
         mascotImageView.heightAnchor.constraint(equalToConstant: 150).isActive = true
+        mascotLipSync.attach(
+            imageView: mascotImageView,
+            closed: UIImage(named: "MascotTalkingMouthClosed")
+                ?? MascotReactionState.talking.loadImage(),
+            open: UIImage(named: "MascotTalkingMouthOpen")
+                ?? MascotReactionState.happy.loadImage(),
+            oMouth: UIImage(named: "MascotTalkingMouthO")
+                ?? MascotReactionState.oMouth.loadImage()
+        )
 
         let mascotContainer = UIView()
         mascotContainer.translatesAutoresizingMaskIntoConstraints = false
@@ -330,9 +347,16 @@ final class ColoringViewController: UIViewController {
 
         templateView.translatesAutoresizingMaskIntoConstraints = false
         strokeView.translatesAutoresizingMaskIntoConstraints = false
+        templateLineOverlayView.translatesAutoresizingMaskIntoConstraints = false
+        templateLineOverlayView.contentMode = .scaleAspectFit
+        templateLineOverlayView.clipsToBounds = true
+        templateLineOverlayView.layer.cornerRadius = 24
+        templateLineOverlayView.backgroundColor = .clear
+        templateLineOverlayView.isUserInteractionEnabled = false
 
         canvasContainer.addSubview(templateView)
         canvasContainer.addSubview(strokeView)
+        canvasContainer.addSubview(templateLineOverlayView)
 
         let paintRow = UIStackView()
         paintRow.axis = .horizontal
@@ -439,6 +463,11 @@ final class ColoringViewController: UIViewController {
             strokeView.topAnchor.constraint(equalTo: templateView.topAnchor),
             strokeView.bottomAnchor.constraint(equalTo: templateView.bottomAnchor),
 
+            templateLineOverlayView.leadingAnchor.constraint(equalTo: templateView.leadingAnchor),
+            templateLineOverlayView.trailingAnchor.constraint(equalTo: templateView.trailingAnchor),
+            templateLineOverlayView.topAnchor.constraint(equalTo: templateView.topAnchor),
+            templateLineOverlayView.bottomAnchor.constraint(equalTo: templateView.bottomAnchor),
+
             loadOverlay.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             loadOverlay.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             loadOverlay.topAnchor.constraint(equalTo: view.topAnchor),
@@ -470,6 +499,7 @@ final class ColoringViewController: UIViewController {
             self?.onColoringStrokeBegan()
         }
         strokeView.onCommittedStrokeEnded = { [weak self] in
+            // self?.scheduleDebouncedStrokeReaction()  // legacy: separate reaction VLM; mascot pose now comes from combined prompt with coach line
             self?.scheduleFeedbackIdleTimer()
         }
         applyToolMode()
@@ -718,6 +748,7 @@ final class ColoringViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        FeedbackAlbaSpeech.mascotLipSync = mascotLipSync
         if pollTimer == nil {
             startPollingVLMUi()
         }
@@ -728,7 +759,9 @@ final class ColoringViewController: UIViewController {
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         FeedbackAlbaSpeech.stopSpeaking()
+        FeedbackAlbaSpeech.mascotLipSync = nil
         cancelFeedbackIdleTimer()
+        cancelPendingReactionWork()
         pollTimer?.invalidate()
         pollTimer = nil
     }
@@ -759,17 +792,47 @@ final class ColoringViewController: UIViewController {
         pendingAutoFeedbackWork = nil
     }
 
-    /// Discard pending timers, in-flight model work, and any generation token so old answers never land after a new gesture.
+    private func cancelPendingReactionWork() {
+        pendingReactionWork?.cancel()
+        pendingReactionWork = nil
+    }
+
+    /// Full reset: page / clear / undo — drop pending mascot reaction and all VLM work.
     private func invalidateFeedbackSession() {
+        feedbackGeneration &+= 1
+        reactionSession &+= 1
+        cancelFeedbackIdleTimer()
+        cancelPendingReactionWork()
+        vlm.cancel()
+    }
+
+    /// New stroke started — stop deferred **speech** and cancel in-flight VLM, but keep the debounced **reaction** work item
+    /// so a lift → short pause → new stroke does not lose `feedbackGeneration` before the reaction task runs.
+    private func invalidatePaintingFeedbackOnly() {
         feedbackGeneration &+= 1
         cancelFeedbackIdleTimer()
         vlm.cancel()
     }
 
     private func onColoringStrokeBegan() {
-        invalidateFeedbackSession()
+        invalidatePaintingFeedbackOnly()
         FeedbackAlbaSpeech.stopSpeaking()
     }
+
+    /*
+    private func scheduleDebouncedStrokeReaction() {
+        cancelPendingReactionWork()
+        guard !strokeView.chronologicalStrokeColors.isEmpty else { return }
+        let snap = reactionSession
+        let work = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            self.pendingReactionWork = nil
+            self.runReactionOnlyPipeline(reactionSnap: snap)
+        }
+        pendingReactionWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + Self.reactionDebounceDelay, execute: work)
+    }
+    */
 
     private func scheduleFeedbackIdleTimer() {
         cancelFeedbackIdleTimer()
@@ -778,7 +841,7 @@ final class ColoringViewController: UIViewController {
         let work = DispatchWorkItem { [weak self] in
             guard let self else { return }
             self.pendingAutoFeedbackWork = nil
-            self.runFeedbackPipeline()
+            self.runSpeechFeedbackPipeline()
         }
         pendingAutoFeedbackWork = work
         DispatchQueue.main.asyncAfter(deadline: .now() + Self.feedbackIdleTriggerDelay, execute: work)
@@ -855,6 +918,7 @@ final class ColoringViewController: UIViewController {
         invalidateFeedbackSession()
         let page = coloringBookPages[pageIndex]
         templateView.image = page.image
+        templateLineOverlayView.image = page.image.magicBrushyLineArtOverlay()
         strokeView.clearStrokes()
     }
 
@@ -872,48 +936,117 @@ final class ColoringViewController: UIViewController {
 
     @objc private func requestFeedback() {
         cancelFeedbackIdleTimer()
+        cancelPendingReactionWork()
+        reactionSession &+= 1
         FeedbackAlbaSpeech.stopSpeaking()
         runFeedbackPipeline()
     }
 
-    private func runFeedbackPipeline() {
-        let model = modelForInference()
-        guard !model.running else { return }
-        view.layoutIfNeeded()
-
-        let bounds = strokeView.bounds
-        guard bounds.width >= 16, bounds.height >= 16 else {
-            return
-        }
-
-        let img = captureCanvasForVLM()
-        let prompt = composeFeedbackPrompt()
-        let previewImage = model.prepareImageForModelPreview(img) ?? img
-        showVLMInputPreview(previewImage)
-        model.maxTokens = 120
-
-        let gen = feedbackGeneration
+    /*
+    /// Legacy: mascot reaction only (second VLM). Superseded by `Reaction.combinedCoachPrompt` + single `generate`.
+    private func runReactionOnlyPipeline(reactionSnap: UInt64) {
         Task { @MainActor [weak self] in
             guard let self else { return }
+            guard reactionSnap == self.reactionSession else { return }
+            let model = self.modelForInference()
+            var spins = 0
+            while model.running, spins < 120 {
+                try? await Task.sleep(nanoseconds: 80_000_000)
+                spins += 1
+            }
+            guard !model.running else { return }
+            guard reactionSnap == self.reactionSession else { return }
+            guard !self.strokeView.chronologicalStrokeColors.isEmpty else { return }
+            self.view.layoutIfNeeded()
+            let bounds = self.strokeView.bounds
+            guard bounds.width >= 16, bounds.height >= 16 else { return }
+
+            let img = self.captureCanvasForVLM()
+            let previewImage = model.prepareImageForModelPreview(img) ?? img
+            self.showVLMInputPreview(previewImage)
+            let reactionPrompt = Reaction.classificationPrompt()
+
+            model.maxTokens = 64
+            let reactionTask = await model.generate(
+                image: previewImage,
+                prompt: reactionPrompt,
+                maxOutputTokens: 32
+            )
+            await reactionTask.value
+
+            guard reactionSnap == self.reactionSession else { return }
+            if let pose = Reaction.parseMascotReaction(from: model.output) {
+                self.applyMascotReaction(pose)
+            }
+        }
+    }
+    */
+
+    /// After idle: original coach-only VLM; mascot pose from that same reply.
+    private func runSpeechFeedbackPipeline() {
+        let gen = feedbackGeneration
+        runCoachFeedbackVLM(feedbackGen: gen, requireStrokeHistory: true)
+    }
+
+    /// Checkmark: same original coach-only VLM + mascot from reply.
+    private func runFeedbackPipeline() {
+        let gen = feedbackGeneration
+        runCoachFeedbackVLM(feedbackGen: gen, requireStrokeHistory: false)
+    }
+
+    private func runCoachFeedbackVLM(feedbackGen: UInt64, requireStrokeHistory: Bool) {
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            let model = self.modelForInference()
+            var spins = 0
+            while model.running, spins < 120 {
+                try? await Task.sleep(nanoseconds: 80_000_000)
+                spins += 1
+            }
+            guard !model.running else { return }
+            guard feedbackGen == self.feedbackGeneration else { return }
+            if requireStrokeHistory {
+                guard !self.strokeView.chronologicalStrokeColors.isEmpty else { return }
+            }
+            self.view.layoutIfNeeded()
+            let bounds = self.strokeView.bounds
+            guard bounds.width >= 16, bounds.height >= 16 else { return }
+
+            let img = self.captureCanvasForVLM()
+            let previewImage = model.prepareImageForModelPreview(img) ?? img
+            self.showVLMInputPreview(previewImage)
+            let prompt = self.composeFeedbackPrompt()
+
+            model.maxTokens = 120
             #if DEBUG
             print("""
-            [MagicBrushy][VLM] Sending request
-            - image size: \(Int(img.size.width))x\(Int(img.size.height))
-            - max output tokens: 96
-            - prompt:
+            [MagicBrushy][VLM][Feedback] image \(Int(img.size.width))x\(Int(img.size.height)), max tokens 96
             \(prompt)
             """)
             #endif
-            let inner = await model.generate(image: previewImage, prompt: prompt, maxOutputTokens: 96)
-            await inner.value
-
-            guard gen == self.feedbackGeneration else { return }
-            let spoken = MagicBrushyVLMOutputCleanup.sanitizeKidFeedback(
-                model.output.trimmingCharacters(in: .whitespacesAndNewlines)
+            let task = await model.generate(
+                image: previewImage,
+                prompt: prompt,
+                maxOutputTokens: 96
             )
+            await task.value
+
+            guard feedbackGen == self.feedbackGeneration else { return }
+            let raw = model.output.trimmingCharacters(in: .whitespacesAndNewlines)
+            let pose = Reaction.mascotPoseFromCoachResponse(raw)
+            self.applyMascotReaction(pose)
+
+            let spoken = MagicBrushyVLMOutputCleanup.sanitizeKidFeedback(raw)
             guard !spoken.isEmpty, spoken != "…",
                   !spoken.hasPrefix("Failed:") else { return }
             await FeedbackAlbaSpeech.speakFeedback(spoken)
+        }
+    }
+
+    private func applyMascotReaction(_ state: MascotReactionState) {
+        guard let image = state.loadImage() else { return }
+        UIView.transition(with: mascotImageView, duration: 0.22, options: .transitionCrossDissolve) {
+            self.mascotImageView.image = image
         }
     }
 
@@ -921,7 +1054,11 @@ final class ColoringViewController: UIViewController {
     private func captureCanvasForVLM() -> UIImage {
         let size = strokeView.bounds.size
         guard size.width > 1, size.height > 1 else {
-            return strokeView.snapshotComposite(underneath: templateView.image, in: strokeView.bounds)
+            return strokeView.snapshotComposite(
+                underneath: templateView.image,
+                lineOverlay: templateLineOverlayView.image,
+                in: strokeView.bounds
+            )
         }
 
         let format = UIGraphicsImageRendererFormat.default()
@@ -933,9 +1070,10 @@ final class ColoringViewController: UIViewController {
             UIColor.white.setFill()
             ctx.fill(CGRect(origin: .zero, size: size))
 
-            // Render both layers as currently displayed (includes UIImageView aspect-fit behavior).
+            // Template, strokes, then line overlay — matches on-screen stacking.
             templateView.layer.render(in: ctx.cgContext)
             strokeView.layer.render(in: ctx.cgContext)
+            templateLineOverlayView.layer.render(in: ctx.cgContext)
         }
     }
 

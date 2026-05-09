@@ -161,7 +161,7 @@ final class ColoringStrokeView: UIView {
         setNeedsDisplay()
     }
 
-    func snapshotComposite(underneath template: UIImage?, in bounds: CGRect) -> UIImage {
+    func snapshotComposite(underneath template: UIImage?, lineOverlay: UIImage?, in bounds: CGRect) -> UIImage {
         let w = bounds.width.rounded(.down)
         let h = bounds.height.rounded(.down)
         guard w > 0.5, h > 0.5 else {
@@ -198,6 +198,7 @@ final class ColoringStrokeView: UIView {
             for s in strokes { paintStroke(s, in: ctx) }
             if let cur = current { paintStroke(cur, in: ctx) }
             ctx.restoreGState()
+            if let line = lineOverlay { line.draw(in: rect) }
         }
     }
 
@@ -221,5 +222,92 @@ final class ColoringStrokeView: UIView {
 private extension Comparable {
     func clamped(to range: ClosedRange<Self>) -> Self {
         min(max(self, range.lowerBound), range.upperBound)
+    }
+}
+
+private enum MagicBrushyLineArtCache {
+    static let store = NSCache<AnyObject, UIImage>()
+}
+
+extension UIImage {
+    /// Black line art on a transparent background so it can sit above user paint (including white eraser).
+    /// Light paper and bright template fills drop out; dark strokes stay opaque with soft edges for anti-aliasing.
+    func magicBrushyLineArtOverlay() -> UIImage {
+        guard let cgKey = cgImage else { return self }
+        if let cached = MagicBrushyLineArtCache.store.object(forKey: cgKey as AnyObject) {
+            return cached
+        }
+
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = scale
+        format.opaque = false
+        let sampled = UIGraphicsImageRenderer(size: size, format: format).image { _ in
+            draw(in: CGRect(origin: .zero, size: size))
+        }
+        guard let cg = sampled.cgImage else { return self }
+
+        let w = cg.width
+        let h = cg.height
+        let rowBytes = w * 4
+        guard let data = NSMutableData(length: rowBytes * h) else { return self }
+        let ptr = data.mutableBytes.assumingMemoryBound(to: UInt8.self)
+
+        let bitmapInfo = CGImageAlphaInfo.premultipliedFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue
+        guard let ctx = CGContext(
+            data: ptr,
+            width: w,
+            height: h,
+            bitsPerComponent: 8,
+            bytesPerRow: rowBytes,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: bitmapInfo
+        ) else { return self }
+
+        ctx.draw(cg, in: CGRect(x: 0, y: 0, width: w, height: h))
+
+        let paperLum: Double = 216
+        let inkLum: Double = 88
+
+        for y in 0..<h {
+            var o = y * rowBytes
+            for _ in 0..<w {
+                let b = Double(ptr[o])
+                let g = Double(ptr[o + 1])
+                let r = Double(ptr[o + 2])
+                let aIn = Double(ptr[o + 3])
+                if aIn < 2 {
+                    ptr[o] = 0
+                    ptr[o + 1] = 0
+                    ptr[o + 2] = 0
+                    ptr[o + 3] = 0
+                } else {
+                    let lum = 0.299 * r + 0.587 * g + 0.114 * b
+                    if lum >= paperLum {
+                        ptr[o] = 0
+                        ptr[o + 1] = 0
+                        ptr[o + 2] = 0
+                        ptr[o + 3] = 0
+                    } else if lum <= inkLum {
+                        ptr[o] = 0
+                        ptr[o + 1] = 0
+                        ptr[o + 2] = 0
+                        ptr[o + 3] = 255
+                    } else {
+                        let t = (lum - inkLum) / (paperLum - inkLum)
+                        let alpha = UInt8((255 * (1 - t)).rounded())
+                        ptr[o] = 0
+                        ptr[o + 1] = 0
+                        ptr[o + 2] = 0
+                        ptr[o + 3] = alpha < 6 ? 0 : alpha
+                    }
+                }
+                o += 4
+            }
+        }
+
+        guard let outCg = ctx.makeImage() else { return self }
+        let out = UIImage(cgImage: outCg, scale: scale, orientation: imageOrientation)
+        MagicBrushyLineArtCache.store.setObject(out, forKey: cgKey as AnyObject)
+        return out
     }
 }

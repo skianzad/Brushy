@@ -12,6 +12,9 @@
 		A1B200000000000000000003 /* ColoringViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B200000000000000003 /* ColoringViewController.swift */; };
 		A1B200000000000000000004 /* ColoringStrokeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B200000000000000004 /* ColoringStrokeView.swift */; };
 		A1B200000000000000000005 /* BuiltInColoringPages.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B200000000000000005 /* BuiltInColoringPages.swift */; };
+		D1MAC000000000000000001 /* MascotReactionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1MAC000000000000000101 /* MascotReactionState.swift */; };
+		R1ACT000000000000000001 /* Reaction.swift in Sources */ = {isa = PBXBuildFile; fileRef = R1ACT000000000000000101 /* Reaction.swift */; };
+		M1LIP000000000000000001 /* MascotLipSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = M1LIP000000000000000101 /* MascotLipSync.swift */; };
 		C1F700000000000000000001 /* FigmaTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F700000000000000000101 /* FigmaTheme.swift */; };
 		C1F700000000000000000002 /* HomeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F700000000000000000102 /* HomeViewController.swift */; };
 		C1F700000000000000000003 /* CategoryGridViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F700000000000000000103 /* CategoryGridViewController.swift */; };
@@ -49,6 +52,9 @@
 		A1B200000000000000003 /* ColoringViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColoringViewController.swift; sourceTree = "<group>"; };
 		A1B200000000000000004 /* ColoringStrokeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColoringStrokeView.swift; sourceTree = "<group>"; };
 		A1B200000000000000005 /* BuiltInColoringPages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuiltInColoringPages.swift; sourceTree = "<group>"; };
+		D1MAC000000000000000101 /* MascotReactionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MascotReactionState.swift; sourceTree = "<group>"; };
+		R1ACT000000000000000101 /* Reaction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Reaction.swift; sourceTree = "<group>"; };
+		M1LIP000000000000000101 /* MascotLipSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MascotLipSync.swift; sourceTree = "<group>"; };
 		C1F700000000000000000101 /* FigmaTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FigmaTheme.swift; sourceTree = "<group>"; };
 		C1F700000000000000000102 /* HomeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewController.swift; sourceTree = "<group>"; };
 		C1F700000000000000000103 /* CategoryGridViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryGridViewController.swift; sourceTree = "<group>"; };
@@ -97,6 +103,9 @@
 				A1B200000000000000003 /* ColoringViewController.swift */,
 				A1B200000000000000004 /* ColoringStrokeView.swift */,
 				A1B200000000000000005 /* BuiltInColoringPages.swift */,
+				D1MAC000000000000000101 /* MascotReactionState.swift */,
+				R1ACT000000000000000101 /* Reaction.swift */,
+				M1LIP000000000000000101 /* MascotLipSync.swift */,
 				C1F700000000000000000101 /* FigmaTheme.swift */,
 				C1F700000000000000000102 /* HomeViewController.swift */,
 				C1F700000000000000000103 /* CategoryGridViewController.swift */,
@@ -266,6 +275,9 @@
 				A1B200000000000000000003 /* ColoringViewController.swift in Sources */,
 				A1B200000000000000000004 /* ColoringStrokeView.swift in Sources */,
 				A1B200000000000000000005 /* BuiltInColoringPages.swift in Sources */,
+				D1MAC000000000000000001 /* MascotReactionState.swift in Sources */,
+				R1ACT000000000000000001 /* Reaction.swift in Sources */,
+				M1LIP000000000000000001 /* MascotLipSync.swift in Sources */,
 				C1F700000000000000000001 /* FigmaTheme.swift in Sources */,
 				C1F700000000000000000002 /* HomeViewController.swift in Sources */,
 				C1F700000000000000000003 /* CategoryGridViewController.swift in Sources */,
