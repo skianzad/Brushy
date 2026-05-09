@@ -106,6 +106,8 @@ final class ColoringViewController: UIViewController {
     private var pendingReactionWork: DispatchWorkItem?
     /// Bumped when the user paints again, changes page, clears, etc. — stale **spoken feedback** VLM work discards its result.
     private var feedbackGeneration: UInt64 = 0
+    /// Last mascot pose applied after coach VLM — passed into semantic mapping to reduce back-to-back duplicates.
+    private var lastMascotReaction: MascotReactionState?
     /// Bumped on page change / clear / undo only — **not** on every new stroke, so debounced mascot reactions can still apply after pen lift.
     private var reactionSession: UInt64 = 0
 
@@ -801,6 +803,7 @@ final class ColoringViewController: UIViewController {
     private func invalidateFeedbackSession() {
         feedbackGeneration &+= 1
         reactionSession &+= 1
+        lastMascotReaction = nil
         cancelFeedbackIdleTimer()
         cancelPendingReactionWork()
         vlm.cancel()
@@ -1033,7 +1036,7 @@ final class ColoringViewController: UIViewController {
 
             guard feedbackGen == self.feedbackGeneration else { return }
             let raw = model.output.trimmingCharacters(in: .whitespacesAndNewlines)
-            let pose = Reaction.mascotPoseFromCoachResponse(raw)
+            let pose = Reaction.mascotPoseFromCoachResponse(raw, avoidingRepeatOf: self.lastMascotReaction)
             self.applyMascotReaction(pose)
 
             let spoken = MagicBrushyVLMOutputCleanup.sanitizeKidFeedback(raw)
@@ -1045,6 +1048,7 @@ final class ColoringViewController: UIViewController {
 
     private func applyMascotReaction(_ state: MascotReactionState) {
         guard let image = state.loadImage() else { return }
+        lastMascotReaction = state
         UIView.transition(with: mascotImageView, duration: 0.22, options: .transitionCrossDissolve) {
             self.mascotImageView.image = image
         }
