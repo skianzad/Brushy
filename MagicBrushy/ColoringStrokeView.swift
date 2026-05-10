@@ -141,6 +141,36 @@ final class ColoringStrokeView: UIView {
         strokes.last?.points.count ?? 0
     }
 
+    /// Where the newest finished stroke sits on the canvas (UIKit coords, origin top-left), for steering the coach VLM toward the last painted area.
+    func lastFinishedStrokeSpatialHint() -> String? {
+        guard let stroke = strokes.last, !stroke.points.isEmpty else { return nil }
+        let w = bounds.width
+        let h = bounds.height
+        guard w > 4, h > 4 else { return nil }
+        var minX = CGFloat.greatestFiniteMagnitude
+        var maxX = -CGFloat.greatestFiniteMagnitude
+        var minY = CGFloat.greatestFiniteMagnitude
+        var maxY = -CGFloat.greatestFiniteMagnitude
+        for p in stroke.points {
+            minX = min(minX, p.x)
+            maxX = max(maxX, p.x)
+            minY = min(minY, p.y)
+            maxY = max(maxY, p.y)
+        }
+        let pad = max(stroke.width, 8)
+        minX = max(0, minX - pad)
+        maxX = min(w, maxX + pad)
+        minY = max(0, minY - pad)
+        maxY = min(h, maxY + pad)
+        let cx = ((minX + maxX) * 0.5) / w
+        let cy = ((minY + maxY) * 0.5) / h
+        let horiz: String
+        if cx < 0.34 { horiz = "left" } else if cx > 0.66 { horiz = "right" } else { horiz = "center" }
+        let vert: String
+        if cy < 0.34 { vert = "upper" } else if cy > 0.66 { vert = "lower" } else { vert = "middle" }
+        return "Their newest brush stroke is centered roughly in the \(horiz)-\(vert) part of the picture (inside the coloring area)."
+    }
+
     func undoLastStroke() {
         if !strokes.isEmpty {
             strokes.removeLast()

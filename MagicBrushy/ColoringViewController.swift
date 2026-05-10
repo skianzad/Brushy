@@ -1303,16 +1303,28 @@ final class ColoringViewController: UIViewController {
     private func composeFeedbackPrompt() -> String {
         let lastPoints = strokeView.lastFinishedStrokePointCount
         let lastColor = strokeView.chronologicalStrokeColors.last
+        let spatial = strokeView.lastFinishedStrokeSpatialHint()
 
         let paletteHintBlock: String
         if lastPoints > 30, let c = lastColor {
             let paintWord = simpleKidColorName(for: c)
             paletteHintBlock = "Their last big stroke was palette “\(paintWord)” — use this only if the photo matches."
 
+        } else if lastPoints > 0, let c = lastColor {
+            let paintWord = simpleKidColorName(for: c)
+            paletteHintBlock = "Their last stroke was smaller—palette “\(paintWord)” — look for that fresh dab or line in the photo where they brushed most recently."
+
         } else if lastPoints > 0 {
-            paletteHintBlock = "No palette hint; use only the photo."
+            paletteHintBlock = "Their last stroke was small; look for the freshest dab or line inside the outlines."
         } else {
             paletteHintBlock = "No new stroke tracked; peek at the picture and cheer gently."
+        }
+
+        let spatialBlock: String
+        if let s = spatial {
+            spatialBlock = "\(s) Aim your praise at that region first."
+        } else {
+            spatialBlock = "Find the patch of paint that looks newest or brightest compared with the rest, usually near the last finger path."
         }
 
         let themeLine: String
@@ -1330,9 +1342,11 @@ final class ColoringViewController: UIViewController {
 
 \(paletteHintBlock)
 
-Your job: say one cheery thing about what they JUST painted—name the part and the color you see. If you are unsure, pick the brightest new patch of paint inside the outlines.
+\(spatialBlock)
 
-Speak to THEM: write one or two very short sentences, easy words, use "you" or "your". Start with warmth. Add a 3-5 words compliment using the phsychology of color about their personality for the kid. 
+Your job: say one cheery thing about what they JUST painted—name the body part or object area AND the color you see there. Do not stay generic about the whole page; tie your words to that newest paint.
+
+Speak to THEM: write one or two very short sentences, easy words, use "you" or "your". Start with warmth. Add a 3-5 word compliment using color psychology that fits what they painted.
 
 IMPORTANT: Reply with ONLY the words you say aloud—no rules, no quotes about yourself, no repeating this text, no bullets, no markdown, no symbols like <>. Never mention AI, robots, computers, phones, apps, or internet.
 
