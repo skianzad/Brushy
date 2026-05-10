@@ -1,4 +1,5 @@
 import UIKit
+import Photos
 
 /// Full-screen coloring: built-in outlines, finger or Apple Pencil, on-device VLM feedback.
 /// No Bluetooth pen stack — input is multitouch / Pencil only.
@@ -13,6 +14,8 @@ final class ColoringViewController: UIViewController {
     }
 
     private let templateView = UIImageView()
+    /// Flattened snapshot when resuming from `LastDrawingStore` (sits between template and live strokes).
+    private let resumeSnapshotView = UIImageView()
     private let strokeView = ColoringStrokeView()
     /// Line art only, above strokes so white eraser cannot hide template outlines.
     private let templateLineOverlayView = UIImageView()
@@ -38,6 +41,16 @@ final class ColoringViewController: UIViewController {
         BuiltInColoringPages.library.first(where: { $0.id == "animals" })?.pages
         ?? BuiltInColoringPages.library.first?.pages
         ?? []
+
+    /// Set when pushing from the category grid so we can persist `LastDrawingStore` on the way home.
+    var sessionPackId: String?
+    /// Set when opening from the home “Your drawings” strip; home overwrites this record instead of appending a new save.
+    var continuingSavedDrawingId: UUID?
+    /// When continuing from the home “last drawing” strip, flattened art to show under new strokes.
+    var pendingResumeComposite: UIImage?
+    /// True when `pendingResumeComposite` is a line-free underlay; line art comes from `templateLineOverlayView` so the eraser cannot remove outlines.
+    var pendingResumeHasSeparateLineOverlay = false
+    private var didConsumePendingResumeComposite = false
 
     private let skyView = UIView()
     private let cloudContainer = UIView()
@@ -257,7 +270,7 @@ final class ColoringViewController: UIViewController {
         mascotImageView.contentMode = .scaleAspectFit
         mascotImageView.clipsToBounds = false
         mascotImageView.translatesAutoresizingMaskIntoConstraints = false
-        mascotImageView.heightAnchor.constraint(equalToConstant: 150).isActive = true
+        mascotImageView.heightAnchor.constraint(equalToConstant: 300).isActive = true
         mascotLipSync.attach(
             imageView: mascotImageView,
             closed: UIImage(named: "MascotTalkingMouthClosed")
@@ -326,6 +339,10 @@ final class ColoringViewController: UIViewController {
         let doneBtn = makeNavButton(icon: "checkmark", fill: FigmaTheme.actionBlue, border: FigmaTheme.actionBlueBorder)
         doneBtn.addTarget(self, action: #selector(requestFeedback), for: .touchUpInside)
 
+        let saveBtn = makeNavButton(icon: "square.and.arrow.down", fill: FigmaTheme.actionBlue, border: FigmaTheme.actionBlueBorder)
+        saveBtn.accessibilityLabel = "Save to Photos"
+        saveBtn.addTarget(self, action: #selector(saveColoringTapped), for: .touchUpInside)
+
         let navSpacer = UIView()
         navSpacer.setContentHuggingPriority(UILayoutPriority(1), for: .horizontal)
         toolRow.axis = .horizontal
@@ -334,6 +351,7 @@ final class ColoringViewController: UIViewController {
         toolRow.addArrangedSubview(homeButton)
         toolRow.addArrangedSubview(prevBtn)
         toolRow.addArrangedSubview(nextBtn)
+        toolRow.addArrangedSubview(saveBtn)
         toolRow.addArrangedSubview(doneBtn)
         toolRow.addArrangedSubview(navSpacer)
         modelStatusStack.isHidden = true
@@ -356,7 +374,15 @@ final class ColoringViewController: UIViewController {
         templateLineOverlayView.backgroundColor = .clear
         templateLineOverlayView.isUserInteractionEnabled = false
 
+        resumeSnapshotView.translatesAutoresizingMaskIntoConstraints = false
+        resumeSnapshotView.contentMode = .scaleAspectFit
+        resumeSnapshotView.backgroundColor = .clear
+        resumeSnapshotView.clipsToBounds = true
+        resumeSnapshotView.isUserInteractionEnabled = false
+        resumeSnapshotView.isHidden = true
+
         canvasContainer.addSubview(templateView)
+        canvasContainer.addSubview(resumeSnapshotView)
         canvasContainer.addSubview(strokeView)
         canvasContainer.addSubview(templateLineOverlayView)
 
@@ -459,6 +485,11 @@ final class ColoringViewController: UIViewController {
             templateView.trailingAnchor.constraint(equalTo: canvasContainer.trailingAnchor),
             templateView.topAnchor.constraint(equalTo: canvasContainer.topAnchor),
             templateView.bottomAnchor.constraint(equalTo: canvasContainer.bottomAnchor),
+
+            resumeSnapshotView.leadingAnchor.constraint(equalTo: templateView.leadingAnchor),
+            resumeSnapshotView.trailingAnchor.constraint(equalTo: templateView.trailingAnchor),
+            resumeSnapshotView.topAnchor.constraint(equalTo: templateView.topAnchor),
+            resumeSnapshotView.bottomAnchor.constraint(equalTo: templateView.bottomAnchor),
 
             strokeView.leadingAnchor.constraint(equalTo: templateView.leadingAnchor),
             strokeView.trailingAnchor.constraint(equalTo: templateView.trailingAnchor),
@@ -661,6 +692,46 @@ final class ColoringViewController: UIViewController {
     }
 
     @objc private func homeTapped() {
+        if let packId = sessionPackId,
+           strokeView.hasUserPaint,
+           coloringBookPages.indices.contains(pageIndex) {
+            let title = coloringBookPages[pageIndex].title
+            let pxScale = view.window?.screen.scale ?? UIScreen.main.scale
+            // Legacy flat resume hides the line overlay; outlines live inside the JPEG — no true line-free underlay to save.
+            let canSaveLineFreeUnderlay = resumeSnapshotView.isHidden || !templateLineOverlayView.isHidden
+            let composite = captureCanvasForExport()
+            let underlay = canSaveLineFreeUnderlay
+                ? captureCanvasBitmap(includeLineOverlay: false, displayScale: pxScale)
+                : nil
+            if let existingId = continuingSavedDrawingId {
+                let didUpdate = LastDrawingStore.updateRecord(
+                    id: existingId,
+                    packId: packId,
+                    pageIndex: pageIndex,
+                    pageTitle: title,
+                    composite: composite,
+                    resumeUnderlay: underlay
+                )
+                if !didUpdate {
+                    _ = LastDrawingStore.save(
+                        packId: packId,
+                        pageIndex: pageIndex,
+                        pageTitle: title,
+                        composite: composite,
+                        resumeUnderlay: underlay
+                    )
+                }
+                continuingSavedDrawingId = nil
+            } else {
+                _ = LastDrawingStore.save(
+                    packId: packId,
+                    pageIndex: pageIndex,
+                    pageTitle: title,
+                    composite: composite,
+                    resumeUnderlay: underlay
+                )
+            }
+        }
         navigationController?.popToRootViewController(animated: true)
     }
 
@@ -734,6 +805,7 @@ final class ColoringViewController: UIViewController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         hideFullWidthHairlineUnderStatusBarIfNeeded()
+        applyPendingResumeCompositeIfNeeded()
     }
 
     /// Some `UISegmentedControl` builds add a ~1pt tall full-width separator along the **top** edge; hide it after layout.
@@ -750,6 +822,9 @@ final class ColoringViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        // First `viewDidLayoutSubviews` can run before the canvas has final bounds; apply resume once geometry is stable.
+        view.layoutIfNeeded()
+        applyPendingResumeCompositeIfNeeded()
         FeedbackAlbaSpeech.mascotLipSync = mascotLipSync
         if pollTimer == nil {
             startPollingVLMUi()
@@ -912,8 +987,37 @@ final class ColoringViewController: UIViewController {
         pageIndex = pageControl.selectedSegmentIndex
     }
 
+    private func clearResumeSnapshot() {
+        resumeSnapshotView.image = nil
+        resumeSnapshotView.isHidden = true
+        resumeSnapshotView.contentMode = .scaleAspectFit
+        templateLineOverlayView.contentMode = .scaleAspectFit
+        templateView.isHidden = false
+        templateLineOverlayView.isHidden = false
+    }
+
+    private func applyPendingResumeCompositeIfNeeded() {
+        guard !didConsumePendingResumeComposite, let img = pendingResumeComposite else { return }
+        // Match `captureCanvasBitmap` / `UIImage.draw(in:)` — full-bounds stretch, not letterboxed aspect fit.
+        let b = strokeView.bounds
+        guard b.width > 1, b.height > 1 else { return }
+        didConsumePendingResumeComposite = true
+        let separateLines = pendingResumeHasSeparateLineOverlay
+        pendingResumeComposite = nil
+        pendingResumeHasSeparateLineOverlay = false
+        resumeSnapshotView.contentMode = .scaleToFill
+        if separateLines {
+            templateLineOverlayView.contentMode = .scaleToFill
+        }
+        resumeSnapshotView.image = img
+        resumeSnapshotView.isHidden = false
+        templateView.isHidden = true
+        templateLineOverlayView.isHidden = !separateLines
+    }
+
     private func applyCurrentPage() {
         guard pageIndex >= 0, pageIndex < coloringBookPages.count else { return }
+        clearResumeSnapshot()
         if !pageControl.isHidden {
             pageControl.selectedSegmentIndex = pageIndex
         }
@@ -1054,31 +1158,122 @@ final class ColoringViewController: UIViewController {
         }
     }
 
-    /// Capture exactly what the user sees on the canvas (template + strokes), then VLM can downscale it.
-    private func captureCanvasForVLM() -> UIImage {
+    /// Renders template and/or resume underlay, live strokes, and optionally line art (same stacking as on screen when the overlay is visible).
+    /// - Parameters:
+    ///   - includeLineOverlay: When false, produces a resume underlay (no black outlines) so outlines can stay in `templateLineOverlayView` above strokes.
+    ///   - displayScale: `1` keeps VLM captures smaller; use screen scale for Photos export.
+    private func captureCanvasBitmap(includeLineOverlay: Bool, displayScale: CGFloat) -> UIImage {
+        view.layoutIfNeeded()
         let size = strokeView.bounds.size
         guard size.width > 1, size.height > 1 else {
             return strokeView.snapshotComposite(
                 underneath: templateView.image,
-                lineOverlay: templateLineOverlayView.image,
+                lineOverlay: includeLineOverlay ? templateLineOverlayView.image : nil,
                 in: strokeView.bounds
             )
         }
 
         let format = UIGraphicsImageRendererFormat.default()
-        format.scale = 1
+        format.scale = max(1, displayScale)
         format.opaque = true
 
+        let drawRect = CGRect(origin: .zero, size: size)
         let renderer = UIGraphicsImageRenderer(size: size, format: format)
-        return renderer.image { ctx in
+        return renderer.image { _ in
             UIColor.white.setFill()
-            ctx.fill(CGRect(origin: .zero, size: size))
+            UIBezierPath(rect: drawRect).fill()
 
-            // Template, strokes, then line overlay — matches on-screen stacking.
-            templateView.layer.render(in: ctx.cgContext)
-            strokeView.layer.render(in: ctx.cgContext)
-            templateLineOverlayView.layer.render(in: ctx.cgContext)
+            if !resumeSnapshotView.isHidden, let base = resumeSnapshotView.image {
+                base.draw(in: drawRect)
+            } else if let tpl = templateView.image {
+                tpl.draw(in: drawRect)
+            }
+
+            if let strokes = strokeView.strokesOnlyImage(displayScale: format.scale) {
+                strokes.draw(in: drawRect)
+            }
+
+            if includeLineOverlay,
+               !templateLineOverlayView.isHidden,
+               let line = templateLineOverlayView.image {
+                line.draw(in: drawRect)
+            }
         }
+    }
+
+    /// Capture for the vision model (1× scale to limit memory).
+    private func captureCanvasForVLM() -> UIImage {
+        captureCanvasBitmap(includeLineOverlay: true, displayScale: 1)
+    }
+
+    /// Capture for saving to Photos (Retina resolution).
+    private func captureCanvasForExport() -> UIImage {
+        let s = view.window?.screen.scale ?? UIScreen.main.scale
+        return captureCanvasBitmap(includeLineOverlay: true, displayScale: s)
+    }
+
+    @objc private func saveColoringTapped() {
+        let title = coloringBookPages.indices.contains(pageIndex) ? coloringBookPages[pageIndex].title : "Coloring"
+
+        let status = PHPhotoLibrary.authorizationStatus(for: .addOnly)
+        switch status {
+        case .authorized, .limited:
+            saveImageToPhotoLibrary(captureCanvasForExport(), title: title)
+        case .notDetermined:
+            PHPhotoLibrary.requestAuthorization(for: .addOnly) { [weak self] newStatus in
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    if newStatus == .authorized || newStatus == .limited {
+                        self.saveImageToPhotoLibrary(self.captureCanvasForExport(), title: title)
+                    } else {
+                        self.presentPhotoAccessDeniedAlert()
+                    }
+                }
+            }
+        default:
+            presentPhotoAccessDeniedAlert()
+        }
+    }
+
+    private func saveImageToPhotoLibrary(_ image: UIImage, title: String) {
+        PHPhotoLibrary.shared().performChanges({
+            let request = PHAssetChangeRequest.creationRequestForAsset(from: image)
+            request.creationDate = Date()
+        }, completionHandler: { [weak self] success, error in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                if success {
+                    UINotificationFeedbackGenerator().notificationOccurred(.success)
+                    let sheet = UIAlertController(
+                        title: "Saved",
+                        message: "“\(title)” was added to your Photos library.",
+                        preferredStyle: .alert
+                    )
+                    sheet.addAction(UIAlertAction(title: "OK", style: .default))
+                    self.present(sheet, animated: true)
+                } else {
+                    let msg = error?.localizedDescription ?? "Could not save."
+                    let sheet = UIAlertController(title: "Couldn’t save", message: msg, preferredStyle: .alert)
+                    sheet.addAction(UIAlertAction(title: "OK", style: .default))
+                    self.present(sheet, animated: true)
+                }
+            }
+        })
+    }
+
+    private func presentPhotoAccessDeniedAlert() {
+        let sheet = UIAlertController(
+            title: "Photos access needed",
+            message: "Allow MagicBrushy to add photos in Settings so your coloring can be saved.",
+            preferredStyle: .alert
+        )
+        sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        sheet.addAction(UIAlertAction(title: "Open Settings", style: .default) { _ in
+            if let url = URL(string: UIApplication.openSettingsURLString) {
+                UIApplication.shared.open(url)
+            }
+        })
+        present(sheet, animated: true)
     }
 
     private func showVLMInputPreview(_ image: UIImage) {
@@ -1132,7 +1327,7 @@ final class ColoringViewController: UIViewController {
 
 Your job: say one cheery thing about what they JUST painted—name the part and the color you see. If you are unsure, pick the brightest new patch of paint inside the outlines.
 
-Speak to THEM: write one or two very short sentences, easy words, use "you" or "your". Start with warmth.
+Speak to THEM: write one or two very short sentences, easy words, use "you" or "your". Start with warmth. Add a 3-5 words compliment using the phsychology of color about their personality for the kid. 
 
 IMPORTANT: Reply with ONLY the words you say aloud—no rules, no quotes about yourself, no repeating this text, no bullets, no markdown, no symbols like <>. Never mention AI, robots, computers, phones, apps, or internet.
 

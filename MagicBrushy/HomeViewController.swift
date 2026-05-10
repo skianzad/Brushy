@@ -1,4 +1,5 @@
 import UIKit
+import Photos
 
 /// Figma: “Color with Drawy” home — category grid over hero illustration.
 final class HomeViewController: UIViewController {
@@ -6,55 +7,43 @@ final class HomeViewController: UIViewController {
     /// Home tiles map 1:1 to `BuiltInColoringPages.library` packs via `packId`.
     private enum Category: Int, CaseIterable {
         case ocean = 0
-        case magic = 1
-        case animals = 2
-        case food = 3
-        case dinosaurs = 4
-        case famousArt = 5
-        case fantasy = 6
-        case funStuff = 7
-        case nature = 8
-        case roomsScenes = 9
-        case sports = 10
-        case transportation = 11
-        case winterSports = 12
-        case naturePlants = 13
+        case animals = 1
+        case dinosaurs = 2
+        case famousArt = 3
+        case fantasyAndMagic = 4
+        case food = 5
+        case naturePlants = 6
+        case sports = 7
+        case vehicles = 8
+        case winterSports = 9
 
         var title: String {
             switch self {
             case .ocean: return "Ocean"
-            case .magic: return "Magic"
             case .animals: return "Animals"
-            case .food: return "Food"
             case .dinosaurs: return "Dinosaurs"
             case .famousArt: return "Art"
-            case .fantasy: return "Fantasy"
-            case .funStuff: return "Fun"
-            case .nature: return "Nature"
-            case .roomsScenes: return "Rooms"
+            case .fantasyAndMagic: return "Fantasy & Magic"
+            case .food: return "Food"
+            case .naturePlants: return "Nature & Plants"
             case .sports: return "Sports"
-            case .transportation: return "Transit"
+            case .vehicles: return "Vehicles"
             case .winterSports: return "Winter"
-            case .naturePlants: return "Plants"
             }
         }
 
         var packId: String {
             switch self {
             case .ocean: return "ocean"
-            case .magic: return "magic"
             case .animals: return "animals"
-            case .food: return "food"
             case .dinosaurs: return "dinosaurs"
             case .famousArt: return "famous_art"
-            case .fantasy: return "fantasy"
-            case .funStuff: return "fun_stuff"
-            case .nature: return "nature"
-            case .roomsScenes: return "rooms_scenes"
-            case .sports: return "sports"
-            case .transportation: return "transportation"
-            case .winterSports: return "winter_sports"
+            case .fantasyAndMagic: return "fantasy_and_magic"
+            case .food: return "food"
             case .naturePlants: return "nature_plants"
+            case .sports: return "sports"
+            case .vehicles: return "vehicles"
+            case .winterSports: return "winter_sports"
             }
         }
 
@@ -62,18 +51,14 @@ final class HomeViewController: UIViewController {
             switch self {
             case .animals: return FigmaTheme.animalsAccent
             case .ocean: return FigmaTheme.oceanAccent
-            case .food: return FigmaTheme.foodAccent
-            case .magic: return FigmaTheme.magicAccent
             case .dinosaurs: return FigmaTheme.dinosaursAccent
             case .famousArt: return FigmaTheme.famousArtAccent
-            case .fantasy: return FigmaTheme.fantasyAccent
-            case .funStuff: return FigmaTheme.funStuffAccent
-            case .nature: return FigmaTheme.natureAccent
-            case .roomsScenes: return FigmaTheme.roomsScenesAccent
-            case .sports: return FigmaTheme.sportsAccent
-            case .transportation: return FigmaTheme.transportationAccent
-            case .winterSports: return FigmaTheme.winterSportsAccent
+            case .fantasyAndMagic: return FigmaTheme.fantasyAccent
+            case .food: return FigmaTheme.foodAccent
             case .naturePlants: return FigmaTheme.natureAccent
+            case .sports: return FigmaTheme.sportsAccent
+            case .vehicles: return FigmaTheme.vehiclesAccent
+            case .winterSports: return FigmaTheme.winterSportsAccent
             }
         }
 
@@ -90,14 +75,33 @@ final class HomeViewController: UIViewController {
     private let mascotView = UIImageView()
     private let titleLabel = UILabel()
     private let bodyStack = UIStackView()
+    /// Vertical list of category rows; lives inside `categoryGridScrollView` so only two rows show at once.
     private let gridStack = UIStackView()
+    private let categoryGridScrollView = UIScrollView()
+    private let categoryGridContentView = UIView()
+    private var categoryGridViewportHeightConstraint: NSLayoutConstraint!
+    private var heroTopConstraint: NSLayoutConstraint!
+    private var heroBottomConstraint: NSLayoutConstraint!
+    private var scrollTopConstraint: NSLayoutConstraint!
+    private var scrollBottomConstraint: NSLayoutConstraint!
+    private var lastAppliedLetterboxInset: CGFloat?
     private let unlockButton = UIButton(type: .custom)
     /// Horizontal space between mascot and category grid; a flexible spacer grows here so the grid stays compact on the right.
     private let mascotToGridSpacer = UIView()
 
+    /// Title + category row + saved-drawing strip (bottom).
+    private let homeMainStack = UIStackView()
+    private let lastDrawingCard = UIView()
+    private let savedDrawingsSectionTitle = UILabel()
+    private let savedDrawingsScrollView = UIScrollView()
+    private let savedDrawingsStack = UIStackView()
+    /// Mirrors `savedDrawingsStack` order for tap / menu handlers.
+    private var displayedSavedRecords: [LastDrawingStore.SavedDrawingRecord] = []
+
     /// Category tiles are intentionally smaller than “fill remaining width” so the hero art stays visible.
     private enum HomeCategoryTileMetrics {
-        static let gridWidthFraction: CGFloat = 0.44
+        /// Wider grid so more tiles sit left of center (still leaves room for mascot + hero).
+        static let gridWidthFraction: CGFloat = 0.62
         static let rowSpacing: CGFloat = 8
         static let columnSpacing: CGFloat = 8
         static let bodyStackSpacing: CGFloat = 12
@@ -139,17 +143,26 @@ final class HomeViewController: UIViewController {
 
         populateCategoryGrid()
 
+        categoryGridScrollView.translatesAutoresizingMaskIntoConstraints = false
+        categoryGridScrollView.alwaysBounceVertical = true
+        categoryGridScrollView.showsVerticalScrollIndicator = true
+        categoryGridScrollView.clipsToBounds = true
+        categoryGridContentView.translatesAutoresizingMaskIntoConstraints = false
+        categoryGridScrollView.addSubview(categoryGridContentView)
+        categoryGridContentView.addSubview(gridStack)
+
         mascotToGridSpacer.translatesAutoresizingMaskIntoConstraints = false
         mascotToGridSpacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
         mascotToGridSpacer.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
         bodyStack.axis = .horizontal
-        bodyStack.alignment = .center
+        // Top-align so the mascot doesn’t float mid-air beside the taller category grid in portrait.
+        bodyStack.alignment = .top
         bodyStack.spacing = HomeCategoryTileMetrics.bodyStackSpacing
         bodyStack.translatesAutoresizingMaskIntoConstraints = false
         bodyStack.addArrangedSubview(mascotView)
         bodyStack.addArrangedSubview(mascotToGridSpacer)
-        bodyStack.addArrangedSubview(gridStack)
+        bodyStack.addArrangedSubview(categoryGridScrollView)
 
         styleUnlockButton()
         unlockButton.translatesAutoresizingMaskIntoConstraints = false
@@ -168,44 +181,67 @@ final class HomeViewController: UIViewController {
         view.addSubview(scrollView)
         scrollView.addSubview(contentView)
         contentView.addSubview(titleLabel)
-        contentView.addSubview(bodyStack)
+        installLastDrawingStrip()
+        homeMainStack.axis = .vertical
+        homeMainStack.spacing = 16
+        homeMainStack.alignment = .fill
+        homeMainStack.translatesAutoresizingMaskIntoConstraints = false
+        homeMainStack.addArrangedSubview(bodyStack)
+        homeMainStack.addArrangedSubview(lastDrawingCard)
+        contentView.addSubview(homeMainStack)
         view.addSubview(unlockButton)
 
+        categoryGridViewportHeightConstraint = categoryGridScrollView.heightAnchor.constraint(equalToConstant: 240)
+
         let g = view.safeAreaLayoutGuide
+        heroTopConstraint = heroView.topAnchor.constraint(equalTo: view.topAnchor)
+        heroBottomConstraint = heroView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        scrollTopConstraint = scrollView.topAnchor.constraint(equalTo: view.topAnchor)
+        scrollBottomConstraint = scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+
         NSLayoutConstraint.activate([
-            // Hero fills the entire screen as a fixed background
-            heroView.topAnchor.constraint(equalTo: view.topAnchor),
+            heroTopConstraint,
             heroView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             heroView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            heroView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            heroBottomConstraint,
 
-            scrollView.topAnchor.constraint(equalTo: view.topAnchor),
+            scrollTopConstraint,
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            scrollBottomConstraint,
 
             contentView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
             contentView.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor),
             contentView.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor),
             contentView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
             contentView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor),
-            contentView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
-            contentView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
 
             titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 24),
             titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -24),
-            titleLabel.topAnchor.constraint(equalTo: g.topAnchor, constant: 12),
+            titleLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
 
-            bodyStack.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 10),
-            bodyStack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
-            bodyStack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
-            bodyStack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -24),
+            homeMainStack.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 10),
+            homeMainStack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            homeMainStack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+            homeMainStack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -22),
 
-            // Mascot: 22% of view width, correct 499:656 aspect ratio
-            mascotView.widthAnchor.constraint(equalTo: contentView.widthAnchor, multiplier: 0.22),
+            // Mascot: narrower so the category grid can extend further left.
+            mascotView.widthAnchor.constraint(equalTo: contentView.widthAnchor, multiplier: 0.17),
             mascotView.heightAnchor.constraint(equalTo: mascotView.widthAnchor, multiplier: 656.0 / 499.0),
 
-            gridStack.widthAnchor.constraint(equalTo: contentView.widthAnchor, multiplier: HomeCategoryTileMetrics.gridWidthFraction),
+            categoryGridScrollView.widthAnchor.constraint(equalTo: contentView.widthAnchor, multiplier: HomeCategoryTileMetrics.gridWidthFraction),
+            categoryGridViewportHeightConstraint,
+
+            categoryGridContentView.topAnchor.constraint(equalTo: categoryGridScrollView.contentLayoutGuide.topAnchor),
+            categoryGridContentView.leadingAnchor.constraint(equalTo: categoryGridScrollView.contentLayoutGuide.leadingAnchor),
+            categoryGridContentView.trailingAnchor.constraint(equalTo: categoryGridScrollView.contentLayoutGuide.trailingAnchor),
+            categoryGridContentView.bottomAnchor.constraint(equalTo: categoryGridScrollView.contentLayoutGuide.bottomAnchor),
+            categoryGridContentView.widthAnchor.constraint(equalTo: categoryGridScrollView.frameLayoutGuide.widthAnchor),
+
+            gridStack.topAnchor.constraint(equalTo: categoryGridContentView.topAnchor),
+            gridStack.leadingAnchor.constraint(equalTo: categoryGridContentView.leadingAnchor),
+            gridStack.trailingAnchor.constraint(equalTo: categoryGridContentView.trailingAnchor),
+            gridStack.bottomAnchor.constraint(equalTo: categoryGridContentView.bottomAnchor),
 
             unlockButton.widthAnchor.constraint(equalToConstant: 56),
             unlockButton.heightAnchor.constraint(equalToConstant: 56),
@@ -214,11 +250,327 @@ final class HomeViewController: UIViewController {
         ])
     }
 
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        updatePortraitLetterboxingIfNeeded()
+        updateCategoryGridViewportHeightIfNeeded()
+    }
+
+    /// Portrait: equal black bands above/below the hero + scroll content (view background is black).
+    private func portraitLetterboxInset() -> CGFloat {
+        let b = view.bounds
+        guard b.height > b.width + 0.5 else { return 0 }
+        let base = min(b.width, b.height)
+        return min(96, max(40, base * 0.065))
+    }
+
+    private func updatePortraitLetterboxingIfNeeded() {
+        let inset = portraitLetterboxInset()
+        if let last = lastAppliedLetterboxInset, abs(inset - last) < 0.5 { return }
+        lastAppliedLetterboxInset = inset
+        heroTopConstraint.constant = inset
+        heroBottomConstraint.constant = -inset
+        scrollTopConstraint.constant = inset
+        scrollBottomConstraint.constant = -inset
+    }
+
+    /// Keeps the category area to exactly two tile rows (6 categories); remaining rows scroll inside `categoryGridScrollView`.
+    private func updateCategoryGridViewportHeightIfNeeded() {
+        let w = categoryGridScrollView.bounds.width
+        guard w > 1 else { return }
+        let col = HomeCategoryTileMetrics.columnSpacing
+        let aspect = HomeCategoryTileMetrics.cardAspectHeightPerWidth
+        let tileWidth = (w - 2 * col) / 3
+        let rowHeight = tileWidth * aspect
+        let visible = 2 * rowHeight + HomeCategoryTileMetrics.rowSpacing
+        guard abs(categoryGridViewportHeightConstraint.constant - visible) > 0.5 else { return }
+        categoryGridViewportHeightConstraint.constant = visible
+    }
+
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         Task { @MainActor in
             await LeapVLMModel.shared.load()
         }
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        refreshLastDrawingStrip()
+    }
+
+    private func installLastDrawingStrip() {
+        lastDrawingCard.translatesAutoresizingMaskIntoConstraints = false
+        lastDrawingCard.isHidden = true
+        lastDrawingCard.layer.cornerRadius = 20
+        lastDrawingCard.layer.borderWidth = 1.5
+        lastDrawingCard.layer.borderColor = UIColor.white.withAlphaComponent(0.65).cgColor
+        lastDrawingCard.backgroundColor = UIColor(red: 1, green: 252 / 255, blue: 248 / 255, alpha: 0.96)
+        lastDrawingCard.layer.shadowColor = UIColor.black.cgColor
+        lastDrawingCard.layer.shadowOpacity = 0.12
+        lastDrawingCard.layer.shadowRadius = 10
+        lastDrawingCard.layer.shadowOffset = CGSize(width: 0, height: 4)
+
+        savedDrawingsSectionTitle.translatesAutoresizingMaskIntoConstraints = false
+        savedDrawingsSectionTitle.text = "Your drawings"
+        savedDrawingsSectionTitle.font = FigmaTheme.bodyFont(size: 14, weight: .bold)
+        savedDrawingsSectionTitle.textColor = FigmaTheme.titleStroke.withAlphaComponent(0.88)
+
+        savedDrawingsScrollView.translatesAutoresizingMaskIntoConstraints = false
+        savedDrawingsScrollView.showsHorizontalScrollIndicator = true
+        savedDrawingsScrollView.alwaysBounceHorizontal = true
+        savedDrawingsScrollView.clipsToBounds = true
+
+        savedDrawingsStack.axis = .horizontal
+        savedDrawingsStack.spacing = 12
+        savedDrawingsStack.alignment = .top
+        savedDrawingsStack.translatesAutoresizingMaskIntoConstraints = false
+
+        savedDrawingsScrollView.addSubview(savedDrawingsStack)
+
+        let column = UIStackView(arrangedSubviews: [savedDrawingsSectionTitle, savedDrawingsScrollView])
+        column.axis = .vertical
+        column.spacing = 10
+        column.alignment = .fill
+        column.translatesAutoresizingMaskIntoConstraints = false
+
+        lastDrawingCard.addSubview(column)
+        NSLayoutConstraint.activate([
+            column.topAnchor.constraint(equalTo: lastDrawingCard.topAnchor, constant: 12),
+            column.leadingAnchor.constraint(equalTo: lastDrawingCard.leadingAnchor, constant: 14),
+            column.trailingAnchor.constraint(equalTo: lastDrawingCard.trailingAnchor, constant: -14),
+            column.bottomAnchor.constraint(equalTo: lastDrawingCard.bottomAnchor, constant: -12),
+
+            savedDrawingsStack.topAnchor.constraint(equalTo: savedDrawingsScrollView.contentLayoutGuide.topAnchor),
+            savedDrawingsStack.leadingAnchor.constraint(equalTo: savedDrawingsScrollView.contentLayoutGuide.leadingAnchor),
+            savedDrawingsStack.bottomAnchor.constraint(equalTo: savedDrawingsScrollView.contentLayoutGuide.bottomAnchor),
+            savedDrawingsStack.trailingAnchor.constraint(equalTo: savedDrawingsScrollView.contentLayoutGuide.trailingAnchor),
+            savedDrawingsStack.heightAnchor.constraint(equalTo: savedDrawingsScrollView.frameLayoutGuide.heightAnchor),
+
+            savedDrawingsScrollView.heightAnchor.constraint(equalToConstant: 152),
+        ])
+    }
+
+    private func refreshLastDrawingStrip() {
+        savedDrawingsStack.arrangedSubviews.forEach {
+            savedDrawingsStack.removeArrangedSubview($0)
+            $0.removeFromSuperview()
+        }
+        displayedSavedRecords = LastDrawingStore.allRecordsNewestFirst()
+        guard !displayedSavedRecords.isEmpty else {
+            lastDrawingCard.isHidden = true
+            return
+        }
+        lastDrawingCard.isHidden = false
+        for (index, rec) in displayedSavedRecords.enumerated() {
+            savedDrawingsStack.addArrangedSubview(makeSavedDrawingMiniCard(record: rec, index: index))
+        }
+    }
+
+    private func makeSavedDrawingMiniCard(record: LastDrawingStore.SavedDrawingRecord, index: Int) -> UIView {
+        let card = UIView()
+        card.translatesAutoresizingMaskIntoConstraints = false
+        card.tag = index
+        card.backgroundColor = UIColor.white.withAlphaComponent(0.58)
+        card.layer.cornerRadius = 14
+        card.layer.borderWidth = 2
+        card.layer.borderColor = FigmaTheme.primaryOrange.withAlphaComponent(0.55).cgColor
+        card.widthAnchor.constraint(equalToConstant: 114).isActive = true
+
+        let thumb = UIImageView(image: LastDrawingStore.loadThumbnail(id: record.id))
+        thumb.translatesAutoresizingMaskIntoConstraints = false
+        thumb.contentMode = .scaleAspectFill
+        thumb.clipsToBounds = true
+        thumb.layer.cornerRadius = 10
+        thumb.backgroundColor = UIColor(white: 0.93, alpha: 1)
+
+        let title = UILabel()
+        title.translatesAutoresizingMaskIntoConstraints = false
+        title.text = record.pageTitle
+        title.font = FigmaTheme.bodyFont(size: 11, weight: .semibold)
+        title.textColor = UIColor(red: 12 / 255, green: 58 / 255, blue: 118 / 255, alpha: 1)
+        title.numberOfLines = 2
+        title.lineBreakMode = .byTruncatingTail
+        title.textAlignment = .center
+
+        var menuCfg = UIButton.Configuration.plain()
+        menuCfg.image = UIImage(systemName: "ellipsis.circle.fill")
+        menuCfg.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 22, weight: .semibold)
+        menuCfg.baseForegroundColor = FigmaTheme.actionBlue
+        let menuBtn = UIButton(type: .system)
+        menuBtn.configuration = menuCfg
+        menuBtn.tag = index
+        menuBtn.accessibilityLabel = "Options for this drawing"
+        menuBtn.translatesAutoresizingMaskIntoConstraints = false
+        menuBtn.addTarget(self, action: #selector(savedDrawingMenuTapped(_:)), for: .touchUpInside)
+
+        let tap = UITapGestureRecognizer(target: self, action: #selector(savedDrawingContinueTapped(_:)))
+        card.addGestureRecognizer(tap)
+
+        card.addSubview(thumb)
+        card.addSubview(title)
+        card.addSubview(menuBtn)
+
+        NSLayoutConstraint.activate([
+            thumb.topAnchor.constraint(equalTo: card.topAnchor, constant: 8),
+            thumb.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 8),
+            thumb.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -8),
+            thumb.heightAnchor.constraint(equalToConstant: 78),
+
+            menuBtn.topAnchor.constraint(equalTo: card.topAnchor, constant: 2),
+            menuBtn.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -2),
+            menuBtn.widthAnchor.constraint(equalToConstant: 34),
+            menuBtn.heightAnchor.constraint(equalToConstant: 34),
+
+            title.topAnchor.constraint(equalTo: thumb.bottomAnchor, constant: 6),
+            title.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 4),
+            title.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -4),
+            title.bottomAnchor.constraint(lessThanOrEqualTo: card.bottomAnchor, constant: -6),
+        ])
+        card.bringSubviewToFront(menuBtn)
+        return card
+    }
+
+    @objc private func savedDrawingContinueTapped(_ gesture: UITapGestureRecognizer) {
+        guard let v = gesture.view else { return }
+        openSavedDrawing(at: v.tag)
+    }
+
+    @objc private func savedDrawingMenuTapped(_ sender: UIButton) {
+        let index = sender.tag
+        guard displayedSavedRecords.indices.contains(index) else { return }
+        let rec = displayedSavedRecords[index]
+        let sheet = UIAlertController(title: rec.pageTitle, message: nil, preferredStyle: .actionSheet)
+        sheet.addAction(UIAlertAction(title: "Save to Photos", style: .default, handler: { [weak self] _ in
+            self?.exportSavedDrawingToPhotos(record: rec)
+        }))
+        sheet.addAction(UIAlertAction(title: "Delete this drawing", style: .destructive, handler: { [weak self] _ in
+            LastDrawingStore.deleteRecord(id: rec.id)
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            self?.refreshLastDrawingStrip()
+        }))
+        sheet.addAction(UIAlertAction(title: "Delete all drawings", style: .destructive, handler: { [weak self] _ in
+            self?.confirmDeleteAllSavedDrawings()
+        }))
+        sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        if let pop = sheet.popoverPresentationController {
+            pop.sourceView = sender
+            pop.sourceRect = sender.bounds
+        }
+        present(sheet, animated: true)
+    }
+
+    private func confirmDeleteAllSavedDrawings() {
+        let confirm = UIAlertController(
+            title: "Delete all drawings?",
+            message: "This removes every saved picture from this device. You can’t undo it.",
+            preferredStyle: .alert
+        )
+        confirm.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        confirm.addAction(UIAlertAction(title: "Delete all", style: .destructive, handler: { [weak self] _ in
+            LastDrawingStore.clearAll()
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            self?.refreshLastDrawingStrip()
+        }))
+        present(confirm, animated: true)
+    }
+
+    private func openSavedDrawing(at index: Int) {
+        guard displayedSavedRecords.indices.contains(index) else { return }
+        let rec = displayedSavedRecords[index]
+        guard let pack = BuiltInColoringPages.library.first(where: { $0.id == rec.packId }) else { return }
+        let unlocked = UserDefaults.standard.bool(forKey: Self.unlockDefaultsKey)
+        let packUnlocked = pack.id == "animals" || unlocked
+        guard packUnlocked else {
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            let sheet = UIAlertController(
+                title: "Locked",
+                message: "Unlock categories with the key to open this picture again.",
+                preferredStyle: .alert
+            )
+            sheet.addAction(UIAlertAction(title: "OK", style: .default))
+            present(sheet, animated: true)
+            return
+        }
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        let canvas = ColoringViewController()
+        canvas.coloringBookPages = pack.pages
+        let safeIndex = min(max(0, rec.pageIndex), max(0, pack.pages.count - 1))
+        canvas.pinnedPageIndex = safeIndex
+        canvas.sessionPackId = rec.packId
+        canvas.continuingSavedDrawingId = rec.id
+        if let underlay = LastDrawingStore.loadResumeUnderlay(id: rec.id) {
+            canvas.pendingResumeComposite = underlay
+            canvas.pendingResumeHasSeparateLineOverlay = true
+        } else if let flat = LastDrawingStore.loadComposite(id: rec.id) {
+            canvas.pendingResumeComposite = flat
+            canvas.pendingResumeHasSeparateLineOverlay = false
+        }
+        navigationController?.pushViewController(canvas, animated: true)
+    }
+
+    private func exportSavedDrawingToPhotos(record: LastDrawingStore.SavedDrawingRecord) {
+        guard let image = LastDrawingStore.loadComposite(id: record.id) else { return }
+        let title = record.pageTitle
+        let status = PHPhotoLibrary.authorizationStatus(for: .addOnly)
+        switch status {
+        case .authorized, .limited:
+            saveImageToPhotoLibrary(image, title: title)
+        case .notDetermined:
+            PHPhotoLibrary.requestAuthorization(for: .addOnly) { [weak self] newStatus in
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    if newStatus == .authorized || newStatus == .limited {
+                        self.saveImageToPhotoLibrary(image, title: title)
+                    } else {
+                        self.presentPhotoAccessDeniedAlert()
+                    }
+                }
+            }
+        default:
+            presentPhotoAccessDeniedAlert()
+        }
+    }
+
+    private func saveImageToPhotoLibrary(_ image: UIImage, title: String) {
+        PHPhotoLibrary.shared().performChanges({
+            let request = PHAssetChangeRequest.creationRequestForAsset(from: image)
+            request.creationDate = Date()
+        }, completionHandler: { [weak self] success, error in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                if success {
+                    UINotificationFeedbackGenerator().notificationOccurred(.success)
+                    let ok = UIAlertController(
+                        title: "Saved",
+                        message: "“\(title)” was added to your Photos library.",
+                        preferredStyle: .alert
+                    )
+                    ok.addAction(UIAlertAction(title: "OK", style: .default))
+                    self.present(ok, animated: true)
+                } else {
+                    let msg = error?.localizedDescription ?? "Could not save."
+                    let err = UIAlertController(title: "Couldn’t save", message: msg, preferredStyle: .alert)
+                    err.addAction(UIAlertAction(title: "OK", style: .default))
+                    self.present(err, animated: true)
+                }
+            }
+        })
+    }
+
+    private func presentPhotoAccessDeniedAlert() {
+        let sheet = UIAlertController(
+            title: "Photos access needed",
+            message: "Allow MagicBrushy to add photos in Settings so your coloring can be saved.",
+            preferredStyle: .alert
+        )
+        sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        sheet.addAction(UIAlertAction(title: "Open Settings", style: .default) { _ in
+            if let url = URL(string: UIApplication.openSettingsURLString) {
+                UIApplication.shared.open(url)
+            }
+        })
+        present(sheet, animated: true)
     }
 
     private func applyTitleAttributedText() {
@@ -346,31 +698,28 @@ final class HomeViewController: UIViewController {
         row3.axis = .horizontal
         row3.spacing = HomeCategoryTileMetrics.columnSpacing
         row3.distribution = .fillEqually
-        let row4 = UIStackView()
-        row4.axis = .horizontal
-        row4.spacing = HomeCategoryTileMetrics.columnSpacing
-        row4.distribution = .fillEqually
 
         row0.addArrangedSubview(makeTile(for: .ocean))
-        row0.addArrangedSubview(makeTile(for: .magic))
         row0.addArrangedSubview(makeTile(for: .animals))
-        row1.addArrangedSubview(makeTile(for: .food))
-        row1.addArrangedSubview(makeTile(for: .dinosaurs))
+        row0.addArrangedSubview(makeTile(for: .dinosaurs))
         row1.addArrangedSubview(makeTile(for: .famousArt))
-        row2.addArrangedSubview(makeTile(for: .fantasy))
-        row2.addArrangedSubview(makeTile(for: .funStuff))
-        row2.addArrangedSubview(makeTile(for: .nature))
-        row3.addArrangedSubview(makeTile(for: .roomsScenes))
-        row3.addArrangedSubview(makeTile(for: .sports))
-        row3.addArrangedSubview(makeTile(for: .transportation))
-        row4.addArrangedSubview(makeTile(for: .winterSports))
-        row4.addArrangedSubview(makeTile(for: .naturePlants))
-        row4.addArrangedSubview(UIView())
+        row1.addArrangedSubview(makeTile(for: .fantasyAndMagic))
+        row1.addArrangedSubview(makeTile(for: .food))
+        row2.addArrangedSubview(makeTile(for: .naturePlants))
+        row2.addArrangedSubview(makeTile(for: .sports))
+        row2.addArrangedSubview(makeTile(for: .vehicles))
+        let row3LeftPad = UIView()
+        row3LeftPad.backgroundColor = .clear
+        let row3RightPad = UIView()
+        row3RightPad.backgroundColor = .clear
+        row3.addArrangedSubview(row3LeftPad)
+        row3.addArrangedSubview(makeTile(for: .winterSports))
+        row3.addArrangedSubview(row3RightPad)
         gridStack.addArrangedSubview(row0)
         gridStack.addArrangedSubview(row1)
         gridStack.addArrangedSubview(row2)
         gridStack.addArrangedSubview(row3)
-        gridStack.addArrangedSubview(row4)
+        refreshLastDrawingStrip()
     }
 
     @objc private func categoryTapped(_ gesture: UITapGestureRecognizer) {
@@ -427,6 +776,7 @@ final class HomeViewController: UIViewController {
             UserDefaults.standard.set(true, forKey: Self.unlockDefaultsKey)
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
             self?.populateCategoryGrid()
+            self?.refreshLastDrawingStrip()
         }))
         present(sheet, animated: true)
     }
