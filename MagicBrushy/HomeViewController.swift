@@ -80,14 +80,10 @@ final class HomeViewController: UIViewController {
     private let categoryGridScrollView = UIScrollView()
     private let categoryGridContentView = UIView()
     private var categoryGridViewportHeightConstraint: NSLayoutConstraint!
-    private var heroTopConstraint: NSLayoutConstraint!
-    private var heroBottomConstraint: NSLayoutConstraint!
-    private var scrollTopConstraint: NSLayoutConstraint!
-    private var scrollBottomConstraint: NSLayoutConstraint!
-    private var lastAppliedLetterboxInset: CGFloat?
     private let unlockButton = UIButton(type: .custom)
-    /// Horizontal space between mascot and category grid; a flexible spacer grows here so the grid stays compact on the right.
-    private let mascotToGridSpacer = UIView()
+    /// Bottom-left (scroll content); sits above the saved strip when it is visible.
+    private var mascotBottomToContentConstraint: NSLayoutConstraint!
+    private var mascotBottomAboveSavedStripConstraint: NSLayoutConstraint!
 
     /// Title + category row + saved-drawing strip (bottom).
     private let homeMainStack = UIStackView()
@@ -141,8 +137,6 @@ final class HomeViewController: UIViewController {
         gridStack.spacing = HomeCategoryTileMetrics.rowSpacing
         gridStack.translatesAutoresizingMaskIntoConstraints = false
 
-        populateCategoryGrid()
-
         categoryGridScrollView.translatesAutoresizingMaskIntoConstraints = false
         categoryGridScrollView.alwaysBounceVertical = true
         categoryGridScrollView.showsVerticalScrollIndicator = true
@@ -151,17 +145,10 @@ final class HomeViewController: UIViewController {
         categoryGridScrollView.addSubview(categoryGridContentView)
         categoryGridContentView.addSubview(gridStack)
 
-        mascotToGridSpacer.translatesAutoresizingMaskIntoConstraints = false
-        mascotToGridSpacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        mascotToGridSpacer.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-
         bodyStack.axis = .horizontal
-        // Top-align so the mascot doesn’t float mid-air beside the taller category grid in portrait.
-        bodyStack.alignment = .top
+        bodyStack.alignment = .center
         bodyStack.spacing = HomeCategoryTileMetrics.bodyStackSpacing
         bodyStack.translatesAutoresizingMaskIntoConstraints = false
-        bodyStack.addArrangedSubview(mascotView)
-        bodyStack.addArrangedSubview(mascotToGridSpacer)
         bodyStack.addArrangedSubview(categoryGridScrollView)
 
         styleUnlockButton()
@@ -189,26 +176,24 @@ final class HomeViewController: UIViewController {
         homeMainStack.addArrangedSubview(bodyStack)
         homeMainStack.addArrangedSubview(lastDrawingCard)
         contentView.addSubview(homeMainStack)
+        mascotView.isUserInteractionEnabled = false
+        contentView.addSubview(mascotView)
         view.addSubview(unlockButton)
 
         categoryGridViewportHeightConstraint = categoryGridScrollView.heightAnchor.constraint(equalToConstant: 240)
 
         let g = view.safeAreaLayoutGuide
-        heroTopConstraint = heroView.topAnchor.constraint(equalTo: view.topAnchor)
-        heroBottomConstraint = heroView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-        scrollTopConstraint = scrollView.topAnchor.constraint(equalTo: view.topAnchor)
-        scrollBottomConstraint = scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
 
         NSLayoutConstraint.activate([
-            heroTopConstraint,
+            heroView.topAnchor.constraint(equalTo: view.topAnchor),
             heroView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             heroView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            heroBottomConstraint,
+            heroView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
-            scrollTopConstraint,
+            scrollView.topAnchor.constraint(equalTo: view.topAnchor),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scrollBottomConstraint,
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
             contentView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
             contentView.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor),
@@ -224,10 +209,6 @@ final class HomeViewController: UIViewController {
             homeMainStack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
             homeMainStack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
             homeMainStack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -22),
-
-            // Mascot: narrower so the category grid can extend further left.
-            mascotView.widthAnchor.constraint(equalTo: contentView.widthAnchor, multiplier: 0.17),
-            mascotView.heightAnchor.constraint(equalTo: mascotView.widthAnchor, multiplier: 656.0 / 499.0),
 
             categoryGridScrollView.widthAnchor.constraint(equalTo: contentView.widthAnchor, multiplier: HomeCategoryTileMetrics.gridWidthFraction),
             categoryGridViewportHeightConstraint,
@@ -247,31 +228,36 @@ final class HomeViewController: UIViewController {
             unlockButton.heightAnchor.constraint(equalToConstant: 56),
             unlockButton.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -20),
             unlockButton.topAnchor.constraint(equalTo: g.topAnchor, constant: 8),
+
+            mascotView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            mascotView.widthAnchor.constraint(equalTo: contentView.widthAnchor, multiplier: 0.2),
+            mascotView.heightAnchor.constraint(equalTo: mascotView.widthAnchor, multiplier: 656.0 / 499.0),
         ])
+
+        mascotBottomToContentConstraint = mascotView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -22)
+        mascotBottomAboveSavedStripConstraint = mascotView.bottomAnchor.constraint(equalTo: lastDrawingCard.topAnchor, constant: -10)
+        mascotBottomToContentConstraint.isActive = true
+        mascotBottomAboveSavedStripConstraint.isActive = false
+
+        populateCategoryGrid()
+        applyMascotVerticalForSavedStripVisibility()
+        contentView.bringSubviewToFront(mascotView)
+    }
+
+    private func applyMascotVerticalForSavedStripVisibility() {
+        let showSaved = !lastDrawingCard.isHidden
+        if showSaved {
+            mascotBottomToContentConstraint.isActive = false
+            mascotBottomAboveSavedStripConstraint.isActive = true
+        } else {
+            mascotBottomAboveSavedStripConstraint.isActive = false
+            mascotBottomToContentConstraint.isActive = true
+        }
     }
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        updatePortraitLetterboxingIfNeeded()
         updateCategoryGridViewportHeightIfNeeded()
-    }
-
-    /// Portrait: equal black bands above/below the hero + scroll content (view background is black).
-    private func portraitLetterboxInset() -> CGFloat {
-        let b = view.bounds
-        guard b.height > b.width + 0.5 else { return 0 }
-        let base = min(b.width, b.height)
-        return min(96, max(40, base * 0.065))
-    }
-
-    private func updatePortraitLetterboxingIfNeeded() {
-        let inset = portraitLetterboxInset()
-        if let last = lastAppliedLetterboxInset, abs(inset - last) < 0.5 { return }
-        lastAppliedLetterboxInset = inset
-        heroTopConstraint.constant = inset
-        heroBottomConstraint.constant = -inset
-        scrollTopConstraint.constant = inset
-        scrollBottomConstraint.constant = -inset
     }
 
     /// Keeps the category area to exactly two tile rows (6 categories); remaining rows scroll inside `categoryGridScrollView`.
@@ -359,12 +345,16 @@ final class HomeViewController: UIViewController {
         displayedSavedRecords = LastDrawingStore.allRecordsNewestFirst()
         guard !displayedSavedRecords.isEmpty else {
             lastDrawingCard.isHidden = true
+            applyMascotVerticalForSavedStripVisibility()
+            contentView.bringSubviewToFront(mascotView)
             return
         }
         lastDrawingCard.isHidden = false
         for (index, rec) in displayedSavedRecords.enumerated() {
             savedDrawingsStack.addArrangedSubview(makeSavedDrawingMiniCard(record: rec, index: index))
         }
+        applyMascotVerticalForSavedStripVisibility()
+        contentView.bringSubviewToFront(mascotView)
     }
 
     private func makeSavedDrawingMiniCard(record: LastDrawingStore.SavedDrawingRecord, index: Int) -> UIView {
