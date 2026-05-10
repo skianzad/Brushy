@@ -16,6 +16,8 @@ enum LastDrawingStore {
     }
 
     private static let indexKey = "MagicBrushySavedDrawingsIndexV2"
+    /// When opening a saved drawing from home, we stash its record id so `homeTapped` can update-in-place even if the canvas VC’s in-memory property was not retained.
+    private static let continueSessionDrawingIdKey = "MagicBrushyContinueSessionDrawingId"
     private static let legacyMetaKey = "MagicBrushyLastDrawingMetaV1"
     private static let legacyCompositeName = "last_drawing_composite.jpg"
     private static let legacyThumbName = "last_drawing_thumb.jpg"
@@ -32,6 +34,21 @@ enum LastDrawingStore {
 
     private static func fileURL(_ name: String) -> URL {
         directoryURL.appendingPathComponent(name)
+    }
+
+    // MARK: - Continue session (update same row instead of appending)
+
+    static func registerContinueDrawingSession(id: UUID) {
+        UserDefaults.standard.set(id.uuidString, forKey: continueSessionDrawingIdKey)
+    }
+
+    static func peekContinueDrawingSessionId() -> UUID? {
+        guard let s = UserDefaults.standard.string(forKey: continueSessionDrawingIdKey) else { return nil }
+        return UUID(uuidString: s)
+    }
+
+    static func clearContinueDrawingSession() {
+        UserDefaults.standard.removeObject(forKey: continueSessionDrawingIdKey)
     }
 
     // MARK: - Public API

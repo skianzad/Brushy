@@ -12,6 +12,7 @@
 		A1B200000000000000000003 /* ColoringViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B200000000000000003 /* ColoringViewController.swift */; };
 		A1B200000000000000000004 /* ColoringStrokeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B200000000000000004 /* ColoringStrokeView.swift */; };
 		A1B200000000000000000005 /* BuiltInColoringPages.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B200000000000000005 /* BuiltInColoringPages.swift */; };
+		L1AST000000000000000001 /* LastDrawingStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = L1AST000000000000000101 /* LastDrawingStore.swift */; };
 		D1MAC000000000000000001 /* MascotReactionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1MAC000000000000000101 /* MascotReactionState.swift */; };
 		R1ACT000000000000000001 /* Reaction.swift in Sources */ = {isa = PBXBuildFile; fileRef = R1ACT000000000000000101 /* Reaction.swift */; };
 		M1LIP000000000000000001 /* MascotLipSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = M1LIP000000000000000101 /* MascotLipSync.swift */; };
@@ -52,6 +53,7 @@
 		A1B200000000000000003 /* ColoringViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColoringViewController.swift; sourceTree = "<group>"; };
 		A1B200000000000000004 /* ColoringStrokeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColoringStrokeView.swift; sourceTree = "<group>"; };
 		A1B200000000000000005 /* BuiltInColoringPages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuiltInColoringPages.swift; sourceTree = "<group>"; };
+		L1AST000000000000000101 /* LastDrawingStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LastDrawingStore.swift; sourceTree = "<group>"; };
 		D1MAC000000000000000101 /* MascotReactionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MascotReactionState.swift; sourceTree = "<group>"; };
 		R1ACT000000000000000101 /* Reaction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Reaction.swift; sourceTree = "<group>"; };
 		M1LIP000000000000000101 /* MascotLipSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MascotLipSync.swift; sourceTree = "<group>"; };
@@ -103,6 +105,7 @@
 				A1B200000000000000003 /* ColoringViewController.swift */,
 				A1B200000000000000004 /* ColoringStrokeView.swift */,
 				A1B200000000000000005 /* BuiltInColoringPages.swift */,
+				L1AST000000000000000101 /* LastDrawingStore.swift */,
 				D1MAC000000000000000101 /* MascotReactionState.swift */,
 				R1ACT000000000000000101 /* Reaction.swift */,
 				M1LIP000000000000000101 /* MascotLipSync.swift */,
@@ -275,6 +278,7 @@
 				A1B200000000000000000003 /* ColoringViewController.swift in Sources */,
 				A1B200000000000000000004 /* ColoringStrokeView.swift in Sources */,
 				A1B200000000000000000005 /* BuiltInColoringPages.swift in Sources */,
+				L1AST000000000000000001 /* LastDrawingStore.swift in Sources */,
 				D1MAC000000000000000001 /* MascotReactionState.swift in Sources */,
 				R1ACT000000000000000001 /* Reaction.swift in Sources */,
 				M1LIP000000000000000001 /* MascotLipSync.swift in Sources */,
@@ -554,7 +558,7 @@
 			repositoryURL = "https://github.com/Liquid4All/leap-sdk";
 			requirement = {
 				kind = revision;
-				revision = 887d56bca17b278354df46a7f1cb5c59c42c53b5;
+				revision = 1cb9e1ec2538d5330ac11f33221e30dbc31817bf;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */

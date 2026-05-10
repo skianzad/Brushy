@@ -20,8 +20,10 @@ enum FigmaTheme {
     static let natureAccent = UIColor(red: 52 / 255, green: 120 / 255, blue: 72 / 255, alpha: 1)
     static let roomsScenesAccent = UIColor(red: 169 / 255, green: 113 / 255, blue: 66 / 255, alpha: 1)
     static let sportsAccent = UIColor(red: 10 / 255, green: 132 / 255, blue: 255 / 255, alpha: 1)
-    static let transportationAccent = UIColor(red: 97 / 255, green: 97 / 255, blue: 97 / 255, alpha: 1)
+    static let vehiclesAccent = UIColor(red: 97 / 255, green: 97 / 255, blue: 97 / 255, alpha: 1)
     static let winterSportsAccent = UIColor(red: 88 / 255, green: 86 / 255, blue: 214 / 255, alpha: 1)
+    static let historyCultureAccent = UIColor(red: 139 / 255, green: 90 / 255, blue: 43 / 255, alpha: 1)
+    static let landmarksAccent = UIColor(red: 46 / 255, green: 125 / 255, blue: 168 / 255, alpha: 1)
 
     static let primaryOrange = UIColor(red: 1, green: 137 / 255, blue: 3 / 255, alpha: 1)
     static let primaryOrangeBorder = UIColor(red: 220 / 255, green: 103 / 255, blue: 39 / 255, alpha: 1)

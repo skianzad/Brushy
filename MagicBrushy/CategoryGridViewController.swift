@@ -1,6 +1,6 @@
 import UIKit
 
-/// Browse shelves: horizontal category chips + a grid of outlines (coastal-style layout).
+/// Browse shelves: horizontal category chips + a grid of outlines (home-style hero + orange accents).
 final class CategoryGridViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate {
 
     /// Set before the controller loads (e.g. from the home tile) to open on a specific shelf.
@@ -10,11 +10,14 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
         didSet { refreshPackChrome() }
     }
 
+    private let backgroundImageView = UIImageView()
+    private let blurEffectView = UIVisualEffectView(effect: UIBlurEffect(style: .systemThinMaterialLight))
+
     private lazy var collectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
-        layout.minimumInteritemSpacing = 12
-        layout.minimumLineSpacing = 16
-        layout.sectionInset = UIEdgeInsets(top: 8, left: 20, bottom: 24, right: 20)
+        layout.minimumInteritemSpacing = 14
+        layout.minimumLineSpacing = 18
+        layout.sectionInset = UIEdgeInsets(top: 10, left: 20, bottom: 28, right: 20)
         let cv = UICollectionView(frame: .zero, collectionViewLayout: layout)
         cv.backgroundColor = .clear
         cv.alwaysBounceVertical = true
@@ -26,7 +29,7 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
     }()
 
     private let titleLabel = UILabel()
-    private let backButton = UIButton(type: .system)
+    private let backButton = UIButton(type: .custom)
     private let categoryScroll = UIScrollView()
     private let categoryStack = UIStackView()
     private var categoryButtons: [UIButton] = []
@@ -44,26 +47,38 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
            let idx = BuiltInColoringPages.library.firstIndex(where: { $0.id == id }) {
             selectedPackIndex = idx
         }
-        view.backgroundColor = FigmaTheme.coastBackground
+        view.backgroundColor = .black
 
         navigationController?.setNavigationBarHidden(true, animated: false)
 
-        titleLabel.text = BuiltInColoringPages.library.indices.contains(selectedPackIndex)
-            ? BuiltInColoringPages.library[selectedPackIndex].title
-            : "Categories"
-        titleLabel.textAlignment = .center
-        titleLabel.numberOfLines = 1
-        titleLabel.font = FigmaTheme.titleFont(size: 34)
-        titleLabel.textColor = FigmaTheme.coastTitle
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        backgroundImageView.image = UIImage(named: "HomeHero")
+        backgroundImageView.contentMode = .scaleAspectFill
+        backgroundImageView.clipsToBounds = true
+        backgroundImageView.translatesAutoresizingMaskIntoConstraints = false
 
-        var backCfg = UIButton.Configuration.plain()
-        backCfg.image = UIImage(systemName: "chevron.backward.circle.fill")
-        backCfg.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 28, weight: .bold)
-        backCfg.baseForegroundColor = FigmaTheme.coastChip
-        backButton.configuration = backCfg
+        blurEffectView.translatesAutoresizingMaskIntoConstraints = false
+        blurEffectView.isUserInteractionEnabled = false
+
+        titleLabel.textAlignment = .center
+        titleLabel.numberOfLines = 2
+        titleLabel.lineBreakMode = .byTruncatingTail
+        titleLabel.adjustsFontSizeToFitWidth = true
+        titleLabel.minimumScaleFactor = 0.55
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        applyCategoryTitleAttributes()
+
         backButton.translatesAutoresizingMaskIntoConstraints = false
+        backButton.backgroundColor = FigmaTheme.primaryOrange
+        backButton.layer.cornerRadius = 12
+        backButton.layer.borderWidth = 3
+        backButton.layer.borderColor = FigmaTheme.primaryOrangeBorder.cgColor
+        backButton.tintColor = .white
+        let chevron = UIImage(systemName: "chevron.left", withConfiguration: UIImage.SymbolConfiguration(pointSize: 18, weight: .bold))
+        backButton.setImage(chevron, for: .normal)
+        backButton.contentEdgeInsets = UIEdgeInsets(top: 10, left: 12, bottom: 10, right: 12)
+        backButton.accessibilityLabel = "Back"
         backButton.addTarget(self, action: #selector(goBack), for: .touchUpInside)
+        FigmaTheme.applyCardShadow(to: backButton.layer)
 
         categoryScroll.translatesAutoresizingMaskIntoConstraints = false
         categoryScroll.showsHorizontalScrollIndicator = false
@@ -78,6 +93,8 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
         categoryScroll.addSubview(categoryStack)
         buildCategoryChips()
 
+        view.addSubview(backgroundImageView)
+        view.addSubview(blurEffectView)
         view.addSubview(backButton)
         view.addSubview(titleLabel)
         view.addSubview(categoryScroll)
@@ -85,28 +102,58 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
 
         let g = view.safeAreaLayoutGuide
         NSLayoutConstraint.activate([
-            backButton.leadingAnchor.constraint(equalTo: g.leadingAnchor, constant: 12),
+            backgroundImageView.topAnchor.constraint(equalTo: view.topAnchor),
+            backgroundImageView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            backgroundImageView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            backgroundImageView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            blurEffectView.topAnchor.constraint(equalTo: view.topAnchor),
+            blurEffectView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            blurEffectView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            blurEffectView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            backButton.leadingAnchor.constraint(equalTo: g.leadingAnchor, constant: 14),
             backButton.topAnchor.constraint(equalTo: g.topAnchor, constant: 8),
 
             titleLabel.centerXAnchor.constraint(equalTo: g.centerXAnchor),
             titleLabel.centerYAnchor.constraint(equalTo: backButton.centerYAnchor),
-            titleLabel.leadingAnchor.constraint(greaterThanOrEqualTo: backButton.trailingAnchor, constant: 8),
+            titleLabel.leadingAnchor.constraint(greaterThanOrEqualTo: backButton.trailingAnchor, constant: 10),
+            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: g.trailingAnchor, constant: -16),
 
-            categoryScroll.topAnchor.constraint(equalTo: backButton.bottomAnchor, constant: 12),
+            categoryScroll.topAnchor.constraint(equalTo: backButton.bottomAnchor, constant: 14),
             categoryScroll.leadingAnchor.constraint(equalTo: g.leadingAnchor),
             categoryScroll.trailingAnchor.constraint(equalTo: g.trailingAnchor),
-            categoryScroll.heightAnchor.constraint(equalToConstant: 48),
+            categoryScroll.heightAnchor.constraint(equalToConstant: 52),
 
             categoryStack.leadingAnchor.constraint(equalTo: categoryScroll.contentLayoutGuide.leadingAnchor, constant: 16),
             categoryStack.trailingAnchor.constraint(equalTo: categoryScroll.contentLayoutGuide.trailingAnchor, constant: -16),
             categoryStack.centerYAnchor.constraint(equalTo: categoryScroll.frameLayoutGuide.centerYAnchor),
             categoryStack.heightAnchor.constraint(lessThanOrEqualTo: categoryScroll.frameLayoutGuide.heightAnchor),
 
-            collectionView.topAnchor.constraint(equalTo: categoryScroll.bottomAnchor, constant: 12),
+            collectionView.topAnchor.constraint(equalTo: categoryScroll.bottomAnchor, constant: 14),
             collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             collectionView.bottomAnchor.constraint(equalTo: g.bottomAnchor),
         ])
+    }
+
+    /// Bubble title: cream fill + orange stroke (matches home “Color with Drawy” treatment).
+    private func applyCategoryTitleAttributes() {
+        let text = BuiltInColoringPages.library.indices.contains(selectedPackIndex)
+            ? BuiltInColoringPages.library[selectedPackIndex].title
+            : "Categories"
+        let font = FigmaTheme.titleFont(size: 34)
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.alignment = .center
+        paragraph.lineBreakMode = .byTruncatingTail
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: FigmaTheme.creamText,
+            .strokeColor: FigmaTheme.titleStroke,
+            .strokeWidth: -3.5,
+            .paragraphStyle: paragraph,
+        ]
+        titleLabel.attributedText = NSAttributedString(string: text, attributes: attrs)
     }
 
     private func buildCategoryChips() {
@@ -127,23 +174,33 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
     }
 
     private func refreshPackChrome() {
-        titleLabel.text = BuiltInColoringPages.library[selectedPackIndex].title
+        applyCategoryTitleAttributes()
         for (i, b) in categoryButtons.enumerated() {
             let pack = BuiltInColoringPages.library[i]
+            let selected = i == selectedPackIndex
             var cfg = UIButton.Configuration.filled()
             cfg.title = pack.title
             cfg.image = UIImage(systemName: pack.symbolName)
             cfg.imagePlacement = .leading
             cfg.imagePadding = 6
-            cfg.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 14, bottom: 8, trailing: 14)
-            cfg.baseForegroundColor = .white
-            cfg.background.backgroundColor = i == selectedPackIndex ? FigmaTheme.coastChipSelected : FigmaTheme.coastChip
+            cfg.contentInsets = NSDirectionalEdgeInsets(top: 9, leading: 14, bottom: 9, trailing: 14)
             cfg.cornerStyle = .capsule
-            cfg.titleLineBreakMode = .byClipping
+            cfg.titleLineBreakMode = .byTruncatingTail
             cfg.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
                 var out = incoming
-                out.font = FigmaTheme.bodyFont(size: 15, weight: .semibold)
+                out.font = FigmaTheme.bodyFont(size: 14, weight: .semibold)
                 return out
+            }
+            if selected {
+                cfg.baseForegroundColor = .white
+                cfg.baseBackgroundColor = FigmaTheme.primaryOrange
+                cfg.background.strokeColor = FigmaTheme.primaryOrangeBorder
+                cfg.background.strokeWidth = 2
+            } else {
+                cfg.baseForegroundColor = UIColor(red: 12 / 255, green: 58 / 255, blue: 118 / 255, alpha: 1)
+                cfg.baseBackgroundColor = UIColor(white: 1, alpha: 0.92)
+                cfg.background.strokeColor = FigmaTheme.primaryOrange
+                cfg.background.strokeWidth = 2.5
             }
             b.configuration = cfg
         }
@@ -175,26 +232,18 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
         let lineSpacing = layout.minimumLineSpacing
         let availableWidth = max(1, collectionView.bounds.width - horizontalInset)
 
-        // First shelf: force a 2x3 viewport (2 columns, 3 rows visible) and keep scrolling for extras.
-        if selectedPackIndex == 0 {
-            let columns: CGFloat = 2
-            let rows: CGFloat = 3
+        // Match pick-a-page slide: 3 columns × 2 rows visible; scroll for more.
+        let columns: CGFloat = 3
+        let rows: CGFloat = 2
 
-            let widthRaw = availableWidth - interItemSpacing * (columns - 1)
-            let widthBasedCellW = max(72, floor(widthRaw / columns))
+        let widthRaw = availableWidth - interItemSpacing * (columns - 1)
+        let widthBasedCellW = max(72, floor(widthRaw / columns))
 
-            let availableHeight = max(1, collectionView.bounds.height - verticalInset)
-            let rowHeight = max(56, floor((availableHeight - lineSpacing * (rows - 1)) / rows))
-            let heightBasedCellW = floor(rowHeight / 0.78)
+        let availableHeight = max(1, collectionView.bounds.height - verticalInset)
+        let rowHeight = max(56, floor((availableHeight - lineSpacing * (rows - 1)) / rows))
+        let heightBasedCellW = floor(rowHeight / 0.78)
 
-            let cellW = min(widthBasedCellW, heightBasedCellW)
-            layout.itemSize = CGSize(width: cellW, height: cellW * 0.78)
-            return
-        }
-
-        let columns: CGFloat = traitCollection.horizontalSizeClass == .regular ? 4 : 2
-        let raw = availableWidth - interItemSpacing * (columns - 1)
-        let cellW = max(72, floor(raw / columns))
+        let cellW = min(widthBasedCellW, heightBasedCellW)
         layout.itemSize = CGSize(width: cellW, height: cellW * 0.78)
     }
 
@@ -211,9 +260,13 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
     }
 
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        LastDrawingStore.clearContinueDrawingSession()
         let canvas = ColoringViewController()
         canvas.coloringBookPages = currentPages
         canvas.pinnedPageIndex = indexPath.item
+        if BuiltInColoringPages.library.indices.contains(selectedPackIndex) {
+            canvas.sessionPackId = BuiltInColoringPages.library[selectedPackIndex].id
+        }
         navigationController?.pushViewController(canvas, animated: true)
     }
 
@@ -229,32 +282,35 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
 
         override init(frame: CGRect) {
             super.init(frame: frame)
-            contentView.layer.cornerRadius = 14
+            contentView.layer.cornerRadius = 12
             contentView.clipsToBounds = true
             contentView.backgroundColor = .white
-            contentView.layer.borderWidth = 3
-            contentView.layer.borderColor = FigmaTheme.coastChip.withAlphaComponent(0.35).cgColor
+            contentView.layer.borderWidth = 2
+            contentView.layer.borderColor = FigmaTheme.primaryOrange.cgColor
+            FigmaTheme.applyCardShadow(to: contentView.layer)
 
             imageView.contentMode = .scaleAspectFit
             imageView.translatesAutoresizingMaskIntoConstraints = false
 
-            titleLabel.font = FigmaTheme.bodyFont(size: 14, weight: .semibold)
-            titleLabel.textColor = FigmaTheme.coastTitle
+            titleLabel.font = FigmaTheme.bodyFont(size: 11, weight: .semibold)
+            titleLabel.textColor = FigmaTheme.titleStroke.withAlphaComponent(0.75)
             titleLabel.textAlignment = .center
+            titleLabel.numberOfLines = 1
+            titleLabel.lineBreakMode = .byTruncatingTail
             titleLabel.translatesAutoresizingMaskIntoConstraints = false
 
             contentView.addSubview(imageView)
             contentView.addSubview(titleLabel)
 
             NSLayoutConstraint.activate([
-                imageView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
-                imageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 8),
-                imageView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -8),
+                imageView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 10),
+                imageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 10),
+                imageView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -10),
                 imageView.bottomAnchor.constraint(equalTo: titleLabel.topAnchor, constant: -4),
 
                 titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 6),
                 titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -6),
-                titleLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8),
+                titleLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -6),
             ])
         }
 

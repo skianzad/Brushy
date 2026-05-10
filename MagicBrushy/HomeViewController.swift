@@ -499,6 +499,7 @@ final class HomeViewController: UIViewController {
         canvas.pinnedPageIndex = safeIndex
         canvas.sessionPackId = rec.packId
         canvas.continuingSavedDrawingId = rec.id
+        LastDrawingStore.registerContinueDrawingSession(id: rec.id)
         if let underlay = LastDrawingStore.loadResumeUnderlay(id: rec.id) {
             canvas.pendingResumeComposite = underlay
             canvas.pendingResumeHasSeparateLineOverlay = true

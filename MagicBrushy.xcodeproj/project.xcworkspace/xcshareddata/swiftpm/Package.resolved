@@ -1,12 +1,11 @@
 {
-  "originHash" : "f8d488c6abf22bf6f9e05d56b7d3a277fff3797c1fd29a9f0ff8fc79746e05c1",
   "pins" : [
     {
       "identity" : "leap-sdk",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/Liquid4All/leap-sdk",
       "state" : {
-        "revision" : "887d56bca17b278354df46a7f1cb5c59c42c53b5"
+        "revision" : "1cb9e1ec2538d5330ac11f33221e30dbc31817bf"
       }
     },
     {

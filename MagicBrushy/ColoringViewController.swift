@@ -703,7 +703,8 @@ final class ColoringViewController: UIViewController {
             let underlay = canSaveLineFreeUnderlay
                 ? captureCanvasBitmap(includeLineOverlay: false, displayScale: pxScale)
                 : nil
-            if let existingId = continuingSavedDrawingId {
+            let continueTargetId = continuingSavedDrawingId ?? LastDrawingStore.peekContinueDrawingSessionId()
+            if let existingId = continueTargetId {
                 let didUpdate = LastDrawingStore.updateRecord(
                     id: existingId,
                     packId: packId,
@@ -731,6 +732,7 @@ final class ColoringViewController: UIViewController {
                     resumeUnderlay: underlay
                 )
             }
+            LastDrawingStore.clearContinueDrawingSession()
         }
         navigationController?.popToRootViewController(animated: true)
     }
@@ -835,6 +837,9 @@ final class ColoringViewController: UIViewController {
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
+        if isMovingFromParent {
+            LastDrawingStore.clearContinueDrawingSession()
+        }
         FeedbackAlbaSpeech.stopSpeaking()
         FeedbackAlbaSpeech.mascotLipSync = nil
         cancelFeedbackIdleTimer()

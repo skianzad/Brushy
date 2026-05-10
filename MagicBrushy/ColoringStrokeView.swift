@@ -161,6 +161,30 @@ final class ColoringStrokeView: UIView {
         setNeedsDisplay()
     }
 
+    /// Whether the user has placed any paint (including fully baked strokes).
+    var hasUserPaint: Bool {
+        current != nil || !strokes.isEmpty || bakedLayer != nil
+    }
+
+    /// Transparent-backed image of baked + live strokes only (for compositing on top of template or resume underlay).
+    func strokesOnlyImage(displayScale: CGFloat) -> UIImage? {
+        guard current != nil || !strokes.isEmpty || bakedLayer != nil else { return nil }
+        let sz = bounds.size
+        guard sz.width > 1, sz.height > 1 else { return nil }
+        let format = UIGraphicsImageRendererFormat.default()
+        format.scale = max(1, displayScale)
+        format.opaque = false
+        let r = CGRect(origin: .zero, size: sz)
+        return UIGraphicsImageRenderer(size: sz, format: format).image { _ in
+            if let baked = bakedLayer {
+                baked.draw(in: r)
+            }
+            guard let ctx = UIGraphicsGetCurrentContext() else { return }
+            for s in strokes { paintStroke(s, in: ctx) }
+            if let cur = current { paintStroke(cur, in: ctx) }
+        }
+    }
+
     func snapshotComposite(underneath template: UIImage?, lineOverlay: UIImage?, in bounds: CGRect) -> UIImage {
         let w = bounds.width.rounded(.down)
         let h = bounds.height.rounded(.down)

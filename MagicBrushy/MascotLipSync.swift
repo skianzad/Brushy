@@ -20,6 +20,8 @@ final class MascotLipSyncDriver: NSObject {
     private static let appleMouthToggleInterval: CFTimeInterval = 0.18
     /// Sherpa path: timer cadence for closed ↔ open (larger = slower).
     private static let sherpaLipTimerInterval: TimeInterval = 0.16
+    /// Mouth timeline lags wall clock so we stay closer to **heard** audio after `play()` (DAC / route / small buffer delay).
+    private static let sherpaHeardAudioLeadInSeconds: TimeInterval = 0.05
 
     func attach(imageView: UIImageView, closed: UIImage?, open: UIImage?, oMouth: UIImage?) {
         self.imageView = imageView
@@ -41,6 +43,7 @@ final class MascotLipSyncDriver: NSObject {
         if let lipTimer {
             RunLoop.main.add(lipTimer, forMode: .common)
         }
+        sherpaFire()
     }
 
     func startAppleDrivenLipSync() {
@@ -51,14 +54,15 @@ final class MascotLipSyncDriver: NSObject {
     }
 
     private func sherpaFire() {
-        let elapsed = CACurrentMediaTime() - sherpaStart
+        let rawElapsed = CACurrentMediaTime() - sherpaStart
+        let lipElapsed = max(0, rawElapsed - Self.sherpaHeardAudioLeadInSeconds)
         mouthFlipPhase &+= 1
-        if elapsed > sherpaDuration + 0.08 {
+        if lipElapsed > sherpaDuration + 0.08 {
             stopTimer()
             return
         }
         let n = max(1, sherpaGlyphs.count)
-        let progress = min(1, elapsed / sherpaDuration)
+        let progress = min(1, lipElapsed / sherpaDuration)
         let idx = min(n - 1, max(0, Int(progress * Double(n))))
         let ch = sherpaGlyphs[idx]
         applyMouth(for: ch)
