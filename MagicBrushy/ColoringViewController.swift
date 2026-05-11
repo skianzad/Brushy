@@ -1047,16 +1047,16 @@ final class ColoringViewController: UIViewController {
 
     private func applyPendingResumeCompositeIfNeeded() {
         guard !didConsumePendingResumeComposite, let img = pendingResumeComposite else { return }
-        // Match `captureCanvasBitmap` / `UIImage.draw(in:)` — full-bounds stretch, not letterboxed aspect fit.
+        // Match on-screen + `captureCanvasBitmap`: aspect-fit art inside the canvas (same as `templateView`).
         let b = strokeView.bounds
         guard b.width > 1, b.height > 1 else { return }
         didConsumePendingResumeComposite = true
         let separateLines = pendingResumeHasSeparateLineOverlay
         pendingResumeComposite = nil
         pendingResumeHasSeparateLineOverlay = false
-        resumeSnapshotView.contentMode = .scaleToFill
+        resumeSnapshotView.contentMode = .scaleAspectFit
         if separateLines {
-            templateLineOverlayView.contentMode = .scaleToFill
+            templateLineOverlayView.contentMode = .scaleAspectFit
         }
         resumeSnapshotView.image = img
         resumeSnapshotView.isHidden = false
@@ -1220,6 +1220,21 @@ final class ColoringViewController: UIViewController {
         }
     }
 
+    /// Pixels of `image` laid out like `UIImageView` with **aspect fit** inside `bounds` (matches `templateView` on screen).
+    private func aspectFitRect(for image: UIImage, in bounds: CGRect) -> CGRect {
+        let sz = image.size
+        guard sz.width > 0.5, sz.height > 0.5, bounds.width > 0.5, bounds.height > 0.5 else { return bounds }
+        let scale = min(bounds.width / sz.width, bounds.height / sz.height)
+        let w = sz.width * scale
+        let h = sz.height * scale
+        return CGRect(
+            x: bounds.midX - w * 0.5,
+            y: bounds.midY - h * 0.5,
+            width: w,
+            height: h
+        )
+    }
+
     /// Renders template and/or resume underlay, live strokes, and optionally line art (same stacking as on screen when the overlay is visible).
     /// - Parameters:
     ///   - includeLineOverlay: When false, produces a resume underlay (no black outlines) so outlines can stay in `templateLineOverlayView` above strokes.
@@ -1246,9 +1261,13 @@ final class ColoringViewController: UIViewController {
             UIBezierPath(rect: drawRect).fill()
 
             if !resumeSnapshotView.isHidden, let base = resumeSnapshotView.image {
-                base.draw(in: drawRect)
+                // Resume JPEG was composed for the same canvas; filling the rect matches `scaleAspectFit` when aspects match.
+                let baseRect = resumeSnapshotView.contentMode == .scaleAspectFit
+                    ? aspectFitRect(for: base, in: drawRect)
+                    : drawRect
+                base.draw(in: baseRect)
             } else if let tpl = templateView.image {
-                tpl.draw(in: drawRect)
+                tpl.draw(in: aspectFitRect(for: tpl, in: drawRect))
             }
 
             if let strokes = strokeView.strokesOnlyImage(displayScale: format.scale) {
@@ -1258,7 +1277,10 @@ final class ColoringViewController: UIViewController {
             if includeLineOverlay,
                !templateLineOverlayView.isHidden,
                let line = templateLineOverlayView.image {
-                line.draw(in: drawRect)
+                let lineRect = templateLineOverlayView.contentMode == .scaleAspectFit
+                    ? aspectFitRect(for: line, in: drawRect)
+                    : drawRect
+                line.draw(in: lineRect)
             }
         }
     }

@@ -241,7 +241,7 @@ final class ColoringStrokeView: UIView {
         return renderer.image { _ in
             UIColor.white.setFill()
             UIBezierPath(rect: rect).fill()
-            if let img = template { img.draw(in: rect) }
+            if let img = template { img.draw(in: Self.aspectFitRect(for: img, in: rect)) }
             // Baked historical strokes (drawn as a flat image, scales to pixelSize).
             if let baked = bakedLayer { baked.draw(in: rect) }
             guard let ctx = UIGraphicsGetCurrentContext() else { return }
@@ -252,8 +252,17 @@ final class ColoringStrokeView: UIView {
             for s in strokes { paintStroke(s, in: ctx) }
             if let cur = current { paintStroke(cur, in: ctx) }
             ctx.restoreGState()
-            if let line = lineOverlay { line.draw(in: rect) }
+            if let line = lineOverlay { line.draw(in: Self.aspectFitRect(for: line, in: rect)) }
         }
+    }
+
+    private static func aspectFitRect(for image: UIImage, in bounds: CGRect) -> CGRect {
+        let sz = image.size
+        guard sz.width > 0.5, sz.height > 0.5, bounds.width > 0.5, bounds.height > 0.5 else { return bounds }
+        let s = min(bounds.width / sz.width, bounds.height / sz.height)
+        let w = sz.width * s
+        let h = sz.height * s
+        return CGRect(x: bounds.midX - w * 0.5, y: bounds.midY - h * 0.5, width: w, height: h)
     }
 
     /// Colors used on each finished brush stroke, oldest first — up to recent cap.
