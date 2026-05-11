@@ -137,7 +137,7 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
         ])
     }
 
-    /// Bubble title: cream fill + orange stroke (matches home “Color with Drawy” treatment).
+    /// Bubble title: cream fill + orange stroke (matches home “Color with Brushi” treatment).
     private func applyCategoryTitleAttributes() {
         let text = BuiltInColoringPages.library.indices.contains(selectedPackIndex)
             ? BuiltInColoringPages.library[selectedPackIndex].title

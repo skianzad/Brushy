@@ -25,10 +25,5 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         window.rootViewController = nav
         window.makeKeyAndVisible()
         self.window = window
-
-        // Preload once at app startup so opening Coloring does not trigger a fresh model load.
-        Task { @MainActor in
-            await LeapVLMModel.shared.load()
-        }
     }
 }

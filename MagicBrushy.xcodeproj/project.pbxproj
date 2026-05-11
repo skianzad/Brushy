@@ -47,7 +47,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		A1B100000000000000000001 /* MagicBrushy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MagicBrushy.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A1B100000000000000000001 /* Brushi.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Brushi.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1B200000000000000001 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		A1B200000000000000002 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		A1B200000000000000003 /* ColoringViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColoringViewController.swift; sourceTree = "<group>"; };
@@ -125,7 +125,7 @@
 		A1B100000000000000000102 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				A1B100000000000000000001 /* MagicBrushy.app */,
+				A1B100000000000000000001 /* Brushi.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -174,7 +174,7 @@
 				A1B200000000000000031 /* LeapModelDownloader */,
 			);
 			productName = MagicBrushy;
-			productReference = A1B100000000000000000001 /* MagicBrushy.app */;
+			productReference = A1B100000000000000000001 /* Brushi.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -457,6 +457,7 @@
 					"$(PROJECT_DIR)/../ASU/SmartDraw/ThirdParty/sherpa-onnx-ios/build-ios/sherpa-onnx.xcframework/ios-arm64_x86_64-simulator/Headers",
 				);
 				INFOPLIST_FILE = MagicBrushy/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Brushi;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
@@ -476,7 +477,8 @@
 					"-linference_engine_llamacpp_backend",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = Senscilab.MagicBrushy;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_MODULE_NAME = MagicBrushy;
+				PRODUCT_NAME = Brushi;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = "$(PROJECT_DIR)/MagicBrushy/MagicBrushy-Bridging-Header.h";
 				SWIFT_VERSION = 5.9;
@@ -503,6 +505,7 @@
 					"$(PROJECT_DIR)/../ASU/SmartDraw/ThirdParty/sherpa-onnx-ios/build-ios/sherpa-onnx.xcframework/ios-arm64_x86_64-simulator/Headers",
 				);
 				INFOPLIST_FILE = MagicBrushy/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Brushi;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
@@ -521,7 +524,8 @@
 					"-linference_engine_llamacpp_backend",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = Senscilab.MagicBrushy;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_MODULE_NAME = MagicBrushy;
+				PRODUCT_NAME = Brushi;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = "$(PROJECT_DIR)/MagicBrushy/MagicBrushy-Bridging-Header.h";
 				SWIFT_VERSION = 5.9;

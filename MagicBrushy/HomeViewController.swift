@@ -1,7 +1,7 @@
 import UIKit
 import Photos
 
-/// Figma: “Color with Drawy” home — category grid over hero illustration.
+/// Figma-inspired home — category grid over hero illustration (“Color with Brushi”).
 final class HomeViewController: UIViewController {
 
     /// Home tiles map 1:1 to `BuiltInColoringPages.library` packs via `packId`.
@@ -81,6 +81,12 @@ final class HomeViewController: UIViewController {
     private let categoryGridContentView = UIView()
     private var categoryGridViewportHeightConstraint: NSLayoutConstraint!
     private let unlockButton = UIButton(type: .custom)
+    /// Compact top-trailing chip while Leap assets download / load (non-blocking; short copy only while downloading).
+    private let assetsLoadChip = UIView()
+    private let assetsLoadSpinner = UIActivityIndicatorView(style: .medium)
+    private let assetsLoadLabel = UILabel()
+    private let assetsLoadProgress = UIProgressView(progressViewStyle: .bar)
+    private var assetsLoadPanelObserver: NSObjectProtocol?
     /// Bottom-left (scroll content); sits above the saved strip when it is visible.
     private var mascotBottomToContentConstraint: NSLayoutConstraint!
     private var mascotBottomAboveSavedStripConstraint: NSLayoutConstraint!
@@ -235,13 +241,179 @@ final class HomeViewController: UIViewController {
         ])
 
         mascotBottomToContentConstraint = mascotView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -22)
-        mascotBottomAboveSavedStripConstraint = mascotView.bottomAnchor.constraint(equalTo: lastDrawingCard.topAnchor, constant: -10)
+        mascotBottomAboveSavedStripConstraint = mascotView.bottomAnchor.constraint(equalTo: lastDrawingCard.topAnchor)
         mascotBottomToContentConstraint.isActive = true
         mascotBottomAboveSavedStripConstraint.isActive = false
 
         populateCategoryGrid()
         applyMascotVerticalForSavedStripVisibility()
         contentView.bringSubviewToFront(mascotView)
+
+        installAssetsLoadPanel()
+    }
+
+    deinit {
+        if let assetsLoadPanelObserver {
+            NotificationCenter.default.removeObserver(assetsLoadPanelObserver)
+        }
+    }
+
+    private func installAssetsLoadPanel() {
+        let g = view.safeAreaLayoutGuide
+
+        assetsLoadChip.translatesAutoresizingMaskIntoConstraints = false
+        assetsLoadChip.backgroundColor = UIColor(white: 0.1, alpha: 0.88)
+        assetsLoadChip.layer.cornerRadius = 14
+        if #available(iOS 13.0, *) {
+            assetsLoadChip.layer.cornerCurve = .continuous
+        }
+        assetsLoadChip.layer.borderWidth = 1
+        assetsLoadChip.layer.borderColor = UIColor.white.withAlphaComponent(0.2).cgColor
+        assetsLoadChip.clipsToBounds = true
+        assetsLoadChip.isHidden = true
+        assetsLoadChip.alpha = 0
+        assetsLoadChip.isUserInteractionEnabled = false
+
+        assetsLoadSpinner.translatesAutoresizingMaskIntoConstraints = false
+        assetsLoadSpinner.color = FigmaTheme.primaryOrange
+        assetsLoadSpinner.hidesWhenStopped = true
+
+        assetsLoadLabel.translatesAutoresizingMaskIntoConstraints = false
+        assetsLoadLabel.textColor = .white
+        assetsLoadLabel.font = FigmaTheme.bodyFont(size: 12, weight: .semibold)
+        assetsLoadLabel.numberOfLines = 1
+        assetsLoadLabel.textAlignment = .natural
+        assetsLoadLabel.adjustsFontSizeToFitWidth = true
+        assetsLoadLabel.minimumScaleFactor = 0.85
+
+        assetsLoadProgress.translatesAutoresizingMaskIntoConstraints = false
+        assetsLoadProgress.progressTintColor = FigmaTheme.primaryOrange
+        assetsLoadProgress.trackTintColor = UIColor.white.withAlphaComponent(0.28)
+        assetsLoadProgress.layer.cornerRadius = 2
+        assetsLoadProgress.clipsToBounds = true
+        assetsLoadProgress.progress = 0
+
+        let row = UIStackView(arrangedSubviews: [assetsLoadSpinner, assetsLoadLabel])
+        row.axis = .horizontal
+        row.spacing = 8
+        row.alignment = .center
+
+        let stack = UIStackView(arrangedSubviews: [row, assetsLoadProgress])
+        stack.axis = .vertical
+        stack.spacing = 8
+        stack.alignment = .fill
+        stack.translatesAutoresizingMaskIntoConstraints = false
+
+        assetsLoadChip.addSubview(stack)
+        view.addSubview(assetsLoadChip)
+
+        NSLayoutConstraint.activate([
+            assetsLoadChip.topAnchor.constraint(equalTo: unlockButton.bottomAnchor, constant: 10),
+            assetsLoadChip.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -20),
+            assetsLoadChip.widthAnchor.constraint(lessThanOrEqualToConstant: 158),
+
+            stack.topAnchor.constraint(equalTo: assetsLoadChip.topAnchor, constant: 10),
+            stack.leadingAnchor.constraint(equalTo: assetsLoadChip.leadingAnchor, constant: 12),
+            stack.trailingAnchor.constraint(equalTo: assetsLoadChip.trailingAnchor, constant: -12),
+            stack.bottomAnchor.constraint(equalTo: assetsLoadChip.bottomAnchor, constant: -10),
+
+            assetsLoadProgress.heightAnchor.constraint(equalToConstant: 4),
+        ])
+
+        assetsLoadPanelObserver = NotificationCenter.default.addObserver(
+            forName: .leapVLMLoadPanelStateDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.refreshAssetsLoadOverlay()
+        }
+
+        view.bringSubviewToFront(assetsLoadChip)
+    }
+
+    private func stopAssetsLoadChipAnimations() {
+        assetsLoadSpinner.stopAnimating()
+        assetsLoadChip.layer.removeAnimation(forKey: "assetsLoadShimmer")
+    }
+
+    private func setAssetsLoadChipProgressShimmer(_ active: Bool) {
+        assetsLoadChip.layer.removeAnimation(forKey: "assetsLoadShimmer")
+        guard active else { return }
+        let anim = CABasicAnimation(keyPath: "opacity")
+        anim.fromValue = 1.0
+        anim.toValue = 0.65
+        anim.duration = 0.7
+        anim.autoreverses = true
+        anim.repeatCount = .infinity
+        anim.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        assetsLoadChip.layer.add(anim, forKey: "assetsLoadShimmer")
+    }
+
+    private func refreshAssetsLoadOverlay() {
+        let vlm = LeapVLMModel.shared
+        let show = vlm.isModelLoadPanelVisible
+
+        if !show {
+            stopAssetsLoadChipAnimations()
+            UIView.animate(withDuration: 0.22, delay: 0, options: [.curveEaseIn]) {
+                self.assetsLoadChip.alpha = 0
+                self.assetsLoadChip.transform = CGAffineTransform(translationX: 0, y: -6).scaledBy(x: 0.96, y: 0.96)
+            } completion: { _ in
+                self.assetsLoadChip.isHidden = true
+                self.assetsLoadChip.transform = .identity
+            }
+            return
+        }
+
+        let wasHidden = assetsLoadChip.isHidden
+        if wasHidden {
+            assetsLoadChip.isHidden = false
+            assetsLoadChip.alpha = 0
+            assetsLoadChip.transform = CGAffineTransform(translationX: 0, y: -10).scaledBy(x: 0.92, y: 0.92)
+            UIView.animate(
+                withDuration: 0.42,
+                delay: 0,
+                usingSpringWithDamping: 0.78,
+                initialSpringVelocity: 0.55,
+                options: [.allowUserInteraction]
+            ) {
+                self.assetsLoadChip.alpha = 1
+                self.assetsLoadChip.transform = .identity
+            }
+        }
+
+        assetsLoadLabel.textColor = .white
+
+        if vlm.modelLoadDidFail {
+            stopAssetsLoadChipAnimations()
+            assetsLoadLabel.isHidden = false
+            assetsLoadLabel.text = "Couldn't load"
+            assetsLoadLabel.textColor = UIColor.systemYellow
+            assetsLoadProgress.isHidden = true
+            return
+        }
+
+        switch vlm.modelBadgeState {
+        case .downloading(let p):
+            let pct = Int((p * 100).rounded(.down))
+            assetsLoadLabel.isHidden = false
+            assetsLoadLabel.text = pct > 0 ? "Downloading \(pct)%" : "Downloading…"
+            assetsLoadProgress.isHidden = false
+            assetsLoadProgress.setProgress(Float(p), animated: !wasHidden)
+            assetsLoadSpinner.stopAnimating()
+            setAssetsLoadChipProgressShimmer(true)
+        case .loadingIntoMemory:
+            assetsLoadLabel.text = nil
+            assetsLoadLabel.isHidden = true
+            assetsLoadProgress.isHidden = true
+            assetsLoadChip.layer.removeAnimation(forKey: "assetsLoadShimmer")
+            assetsLoadSpinner.startAnimating()
+        default:
+            assetsLoadLabel.isHidden = true
+            assetsLoadProgress.isHidden = true
+            assetsLoadChip.layer.removeAnimation(forKey: "assetsLoadShimmer")
+            assetsLoadSpinner.startAnimating()
+        }
     }
 
     private func applyMascotVerticalForSavedStripVisibility() {
@@ -283,6 +455,7 @@ final class HomeViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         refreshLastDrawingStrip()
+        refreshAssetsLoadOverlay()
     }
 
     private func installLastDrawingStrip() {
@@ -552,7 +725,7 @@ final class HomeViewController: UIViewController {
     private func presentPhotoAccessDeniedAlert() {
         let sheet = UIAlertController(
             title: "Photos access needed",
-            message: "Allow MagicBrushy to add photos in Settings so your coloring can be saved.",
+            message: "Allow Brushi to add photos in Settings so your coloring can be saved.",
             preferredStyle: .alert
         )
         sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
@@ -565,7 +738,7 @@ final class HomeViewController: UIViewController {
     }
 
     private func applyTitleAttributedText() {
-        let text = "Color with\nDrawy"
+        let text = "Color with\nBrushi"
         let font = FigmaTheme.titleFont(size: 44)
         let paragraph = NSMutableParagraphStyle()
         paragraph.alignment = .center

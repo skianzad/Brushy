@@ -625,9 +625,12 @@ final class ColoringViewController: UIViewController {
     private func makeEraserToolButton() -> UIButton {
         let b = UIButton(type: .custom)
         b.tag = 1
-        let fill = UIColor(red: 0.82, green: 0.75, blue: 0.62, alpha: 1)
-        let stroke = UIColor(red: 0.65, green: 0.57, blue: 0.44, alpha: 1)
-        styleChromeButton(b, fill: fill, border: stroke, cornerRadius: 14)
+        // Orange chrome (matches app palette; distinct from solid brush button).
+        let fill = UIColor(red: 1, green: 0.93, blue: 0.86, alpha: 1)
+        styleChromeButton(b, fill: fill, border: FigmaTheme.primaryOrangeBorder, cornerRadius: 14)
+        b.layer.borderWidth = 5
+        b.layer.shadowOpacity = 0.28
+        b.layer.shadowRadius = 5
         if let img = UIImage(named: "FigmaEraser") {
             let iv = UIImageView(image: img)
             iv.contentMode = .scaleAspectFit
@@ -769,7 +772,7 @@ final class ColoringViewController: UIViewController {
             strokeView.strokeWidth = 22
         }
         brushToolButton?.alpha = isEraserMode ? 0.55 : 1.0
-        eraserToolButton?.alpha = isEraserMode ? 1.0 : 0.6
+        eraserToolButton?.alpha = isEraserMode ? 1.0 : 0.95
     }
 
     deinit {
@@ -842,8 +845,8 @@ final class ColoringViewController: UIViewController {
         }
         FeedbackAlbaSpeech.stopSpeaking()
         FeedbackAlbaSpeech.mascotLipSync = nil
-        cancelFeedbackIdleTimer()
-        cancelPendingReactionWork()
+        // Cancel in-flight coach inference so the next screen / page starts clean (each `generate` uses a new conversation).
+        invalidateFeedbackSession()
         pollTimer?.invalidate()
         pollTimer = nil
     }
@@ -862,7 +865,6 @@ final class ColoringViewController: UIViewController {
     private func modelForInference() -> LeapVLMModel {
         vlm.onModelLoadPanelStateChanged = { [weak self] in
             DispatchQueue.main.async {
-                self?.refreshLoadOverlay()
                 self?.refreshModelStatusIndicator()
             }
         }
@@ -932,7 +934,6 @@ final class ColoringViewController: UIViewController {
 
     private func applyObservationSnapshot() {
         refreshModelStatusIndicator()
-        refreshLoadOverlay()
     }
 
     private func refreshModelStatusIndicator() {
@@ -951,12 +952,12 @@ final class ColoringViewController: UIViewController {
         case .downloading(let p):
             let pct = Int((p * 100).rounded(.down))
             modelStatusDot.backgroundColor = .systemBlue
-            modelStatusLabel.text = "AI: Download \(pct)%"
-            modelStatusStack.accessibilityLabel = "Downloading art coach model, \(pct) percent complete"
+            modelStatusLabel.text = "AI: Assets \(pct)%"
+            modelStatusStack.accessibilityLabel = "Loading and downloading assets, \(pct) percent complete"
         case .loadingIntoMemory:
             modelStatusDot.backgroundColor = .systemBlue
-            modelStatusLabel.text = "AI: Loading…"
-            modelStatusStack.accessibilityLabel = "Loading art coach model into memory"
+            modelStatusLabel.text = "AI: Preparing…"
+            modelStatusStack.accessibilityLabel = "Preparing assets"
         case .ready:
             modelStatusDot.backgroundColor = .systemGreen
             modelStatusLabel.text = "AI: Ready"
@@ -972,20 +973,10 @@ final class ColoringViewController: UIViewController {
         }
     }
 
+    /// Full-screen model download UI lives on `HomeViewController` only; keep chrome unobstructed here.
     private func refreshLoadOverlay() {
-        let show = vlm.isModelLoadPanelVisible
-        loadOverlay.isHidden = !show
-        loadOverlay.isUserInteractionEnabled = show
-        guard show else { return }
-
-        loadLabel.text = vlm.modelLoadStatusText
-        loadProgress.isHidden = false
-        loadProgress.progress = Float(vlm.modelDownloadProgressFraction)
-        if vlm.modelLoadDidFail {
-            loadLabel.textColor = UIColor.systemYellow
-        } else {
-            loadLabel.textColor = .white
-        }
+        loadOverlay.isHidden = true
+        loadOverlay.isUserInteractionEnabled = false
     }
 
     @objc private func pageChanged() {
@@ -1126,13 +1117,13 @@ final class ColoringViewController: UIViewController {
 
             let img = self.captureCanvasForVLM()
             let previewImage = model.prepareImageForModelPreview(img) ?? img
-            self.showVLMInputPreview(previewImage)
+            // self.showVLMInputPreview(previewImage) // off: hide debug thumbnail of model input for now
             let prompt = self.composeFeedbackPrompt()
 
             model.maxTokens = 120
             #if DEBUG
             print("""
-            [MagicBrushy][VLM][Feedback] image \(Int(img.size.width))x\(Int(img.size.height)), max tokens 96
+            [Brushi][VLM][Feedback] image \(Int(img.size.width))x\(Int(img.size.height)), max tokens 96
             \(prompt)
             """)
             #endif
@@ -1269,7 +1260,7 @@ final class ColoringViewController: UIViewController {
     private func presentPhotoAccessDeniedAlert() {
         let sheet = UIAlertController(
             title: "Photos access needed",
-            message: "Allow MagicBrushy to add photos in Settings so your coloring can be saved.",
+            message: "Allow Brushi to add photos in Settings so your coloring can be saved.",
             preferredStyle: .alert
         )
         sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
@@ -1282,6 +1273,9 @@ final class ColoringViewController: UIViewController {
     }
 
     private func showVLMInputPreview(_ image: UIImage) {
+        // On-screen VLM input preview disabled — uncomment body + call site in `runCoachFeedbackVLM` to restore.
+        _ = image
+        /*
         vlmInputPreviewImageView.image = image
         vlmInputPreviewLabel.text = "VLM input\n\(Int(image.size.width))×\(Int(image.size.height))"
         vlmInputPreviewImageView.alpha = 1
@@ -1298,6 +1292,7 @@ final class ColoringViewController: UIViewController {
             self.vlmInputPreviewImageView.alpha = 1
             self.vlmInputPreviewLabel.alpha = 1
         }
+        */
     }
 
     private func composeFeedbackPrompt() -> String {
@@ -1663,15 +1658,15 @@ final class EraserIconView: UIView {
         let w = bounds.width
         let h = bounds.height
         let body = UIBezierPath(roundedRect: CGRect(x: w * 0.12, y: h * 0.28, width: w * 0.76, height: h * 0.5), cornerRadius: h * 0.12)
-        ctx.setFillColor(UIColor(red: 0.96, green: 0.82, blue: 0.86, alpha: 1).cgColor)
+        ctx.setFillColor(FigmaTheme.primaryOrange.cgColor)
         ctx.addPath(body.cgPath)
         ctx.fillPath()
-        ctx.setStrokeColor(UIColor(white: 0.35, alpha: 0.35).cgColor)
-        ctx.setLineWidth(0.8)
+        ctx.setStrokeColor(FigmaTheme.primaryOrangeBorder.cgColor)
+        ctx.setLineWidth(max(1.2, h * 0.04))
         ctx.addPath(body.cgPath)
         ctx.strokePath()
         let strap = UIBezierPath(roundedRect: CGRect(x: w * 0.22, y: h * 0.15, width: w * 0.56, height: h * 0.18), cornerRadius: 2)
-        ctx.setFillColor(UIColor(white: 0.55, alpha: 1).cgColor)
+        ctx.setFillColor(FigmaTheme.primaryOrangeBorder.withAlphaComponent(0.92).cgColor)
         ctx.addPath(strap.cgPath)
         ctx.fillPath()
     }

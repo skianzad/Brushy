@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "A1B100000000000000000200"
-               BuildableName = "MagicBrushy.app"
+               BuildableName = "Brushi.app"
                BlueprintName = "MagicBrushy"
                ReferencedContainer = "container:MagicBrushy.xcodeproj">
             </BuildableReference>
@@ -44,7 +44,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "A1B100000000000000000200"
-            BuildableName = "MagicBrushy.app"
+            BuildableName = "Brushi.app"
             BlueprintName = "MagicBrushy"
             ReferencedContainer = "container:MagicBrushy.xcodeproj">
          </BuildableReference>
@@ -61,7 +61,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "A1B100000000000000000200"
-            BuildableName = "MagicBrushy.app"
+            BuildableName = "Brushi.app"
             BlueprintName = "MagicBrushy"
             ReferencedContainer = "container:MagicBrushy.xcodeproj">
          </BuildableReference>

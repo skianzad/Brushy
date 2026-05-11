@@ -9,6 +9,11 @@
 import Foundation
 import UIKit
 
+extension Notification.Name {
+    /// Posted when download / load panel visibility or progress changes (home screen shows the blocking overlay).
+    static let leapVLMLoadPanelStateDidChange = Notification.Name("LeapVLMModel.loadPanelStateDidChange")
+}
+
 #if targetEnvironment(simulator)
 
 @MainActor
@@ -56,6 +61,11 @@ final class LeapVLMModel {
 
     public init() {}
 
+    private func notifyLoadPanelStateChanged() {
+        onModelLoadPanelStateChanged?()
+        NotificationCenter.default.post(name: .leapVLMLoadPanelStateDidChange, object: self)
+    }
+
     public func prepareImageForModelPreview(_ image: UIImage) -> UIImage? {
         image
     }
@@ -80,7 +90,7 @@ final class LeapVLMModel {
 
         running = true
         currentTask?.cancel()
-        onModelLoadPanelStateChanged?()
+        notifyLoadPanelStateChanged()
 
         let task = Task { @MainActor in
             self.output = Self.simulatorMessage
@@ -97,7 +107,7 @@ final class LeapVLMModel {
         output = ""
         promptTime = ""
         evaluationState = .idle
-        onModelLoadPanelStateChanged?()
+        notifyLoadPanelStateChanged()
     }
 
     private func finishInferenceSession() async {
@@ -105,7 +115,7 @@ final class LeapVLMModel {
             evaluationState = .idle
         }
         running = false
-        onModelLoadPanelStateChanged?()
+        notifyLoadPanelStateChanged()
     }
 }
 
@@ -173,6 +183,11 @@ final class LeapVLMModel {
 
     public init() {}
 
+    private func notifyLoadPanelStateChanged() {
+        onModelLoadPanelStateChanged?()
+        NotificationCenter.default.post(name: .leapVLMLoadPanelStateDidChange, object: self)
+    }
+
     public func prepareImageForModelPreview(_ image: UIImage) -> UIImage? {
         Self.resizedImage(from: image, maxEdge: Self.maxImageEdge)
     }
@@ -183,7 +198,7 @@ final class LeapVLMModel {
         modelLoadStatusText = status
         modelLoadDidFail = failed
         modelInfo = status
-        onModelLoadPanelStateChanged?()
+        notifyLoadPanelStateChanged()
     }
 
     private func hideLoadPanelLoaded() {
@@ -192,7 +207,7 @@ final class LeapVLMModel {
         modelLoadDidFail = false
         modelLoadStatusText = ""
         modelInfo = "Loaded"
-        onModelLoadPanelStateChanged?()
+        notifyLoadPanelStateChanged()
     }
 
     private func _load() async throws {
@@ -213,7 +228,7 @@ final class LeapVLMModel {
         publishLoadPanel(
             visible: true,
             progress: 0,
-            status: "Downloading \(Self.modelName)…",
+            status: "Loading and downloading the assets…",
             failed: false)
 
         let task = Task<Void, Never> { @MainActor [weak self] in
@@ -230,13 +245,13 @@ final class LeapVLMModel {
                                 self.publishLoadPanel(
                                     visible: true,
                                     progress: Double(progress),
-                                    status: "Downloading \(Self.modelName)… \(pct)%",
+                                    status: "Loading and downloading the assets… \(pct)%",
                                     failed: false)
                             } else {
                                 self.publishLoadPanel(
                                     visible: true,
                                     progress: 1,
-                                    status: "Loading model into memory…",
+                                    status: "Preparing assets…",
                                     failed: false)
                             }
                         }
@@ -248,7 +263,7 @@ final class LeapVLMModel {
                 self.publishLoadPanel(
                     visible: true,
                     progress: 0,
-                    status: "Couldn’t load model: \(error.localizedDescription)",
+                    status: "Couldn’t load assets: \(error.localizedDescription)",
                     failed: true)
             }
             self.pendingLoadTask = nil
@@ -269,7 +284,7 @@ final class LeapVLMModel {
             publishLoadPanel(
                 visible: true,
                 progress: 0,
-                status: "Couldn’t load model: \(error.localizedDescription)",
+                status: "Couldn’t load assets: \(error.localizedDescription)",
                 failed: true)
         }
     }
@@ -279,7 +294,7 @@ final class LeapVLMModel {
             evaluationState = .idle
         }
         running = false
-        onModelLoadPanelStateChanged?()
+        notifyLoadPanelStateChanged()
     }
 
     public func generate(
@@ -294,7 +309,7 @@ final class LeapVLMModel {
 
         running = true
         currentTask?.cancel()
-        onModelLoadPanelStateChanged?()
+        notifyLoadPanelStateChanged()
 
         let tokenCap = maxOutputTokens.map { max(8, $0) } ?? maxTokens
         let charBudget = max(32, tokenCap * 5)
@@ -389,7 +404,7 @@ final class LeapVLMModel {
         output = ""
         promptTime = ""
         evaluationState = .idle
-        onModelLoadPanelStateChanged?()
+        notifyLoadPanelStateChanged()
     }
 
     private static func resizedJPEGData(from image: UIImage, maxEdge: CGFloat) -> Data? {
