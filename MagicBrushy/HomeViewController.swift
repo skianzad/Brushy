@@ -542,7 +542,7 @@ final class HomeViewController: UIViewController {
 
         let thumb = UIImageView(image: LastDrawingStore.loadThumbnail(id: record.id))
         thumb.translatesAutoresizingMaskIntoConstraints = false
-        thumb.contentMode = .scaleAspectFill
+        thumb.contentMode = .scaleAspectFit
         thumb.clipsToBounds = true
         thumb.layer.cornerRadius = 10
         thumb.backgroundColor = UIColor(white: 0.93, alpha: 1)
