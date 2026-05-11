@@ -352,27 +352,11 @@ final class LeapVLMModel {
                 )
 
                 let conversation = runner.createConversation(systemPrompt: nil)
-                // Slightly raised temperature + mild repetition penalty keeps feedback varied across runs.
-                let genOptions = GenerationOptions(
-                    temperature: 0.85,
-                    topP: nil,
-                    minP: nil,
-                    repetitionPenalty: 1.15,
-                    topK: nil,
-                    rngSeed: nil,
-                    jsonSchemaConstraint: nil,
-                    functionCallParser: nil,
-                    injectSchemaIntoPrompt: false,
-                    maxTokens: nil,
-                    inlineThinkingTags: false,
-                    enableThinking: false,
-                    extras: nil
-                )
                 var seenFirstToken = false
                 var accumulated = ""
                 var chunkIndex = 0
 
-                streaming: for try await resp in conversation.generateResponse(message: message, generationOptions: genOptions) {
+                streaming: for try await resp in conversation.generateResponse(message: message) {
                     if Task.isCancelled { break streaming }
 
                     switch onEnum(of: resp) {
