@@ -1402,7 +1402,7 @@ final class ColoringViewController: UIViewController {
 
         let work = DispatchWorkItem { [weak self] in
             guard let self else { return }
-            UIView.animate(withDuration: 0.35, options: [.curveEaseInOut]) {
+            UIView.animate(withDuration: 0.35, delay: 0, options: [.curveEaseInOut]) {
                 self.vlmInputPreviewImageView.alpha = 0
                 self.vlmInputPreviewLabel.alpha = 0
             } completion: { _ in
