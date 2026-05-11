@@ -1,0 +1,125 @@
+{
+  "object" : {
+    "artifacts" : [
+      {
+        "kind" : {
+          "xcframework" : {
+
+          }
+        },
+        "packageRef" : {
+          "identity" : "leap-sdk",
+          "kind" : "remoteSourceControl",
+          "location" : "https://github.com/Liquid4All/leap-sdk",
+          "name" : "LeapSDK"
+        },
+        "path" : "/Users/soheil/Documents/MagicPen/repo/MPen/Apps/MagicBrushy/.derivedData_ci/SourcePackages/artifacts/leap-sdk/LeapModelDownloader/LeapModelDownloader.xcframework",
+        "source" : {
+          "checksum" : "eeee13f4c464cad32c998865041932985fcbac515a77f95ad5460a6f2df74b1e",
+          "type" : "remote",
+          "url" : "https://github.com/Liquid4All/leap-sdk/releases/download/v0.10.4.5/LeapModelDownloader.xcframework.zip"
+        },
+        "targetName" : "LeapModelDownloader"
+      },
+      {
+        "kind" : {
+          "xcframework" : {
+
+          }
+        },
+        "packageRef" : {
+          "identity" : "leap-sdk",
+          "kind" : "remoteSourceControl",
+          "location" : "https://github.com/Liquid4All/leap-sdk",
+          "name" : "LeapSDK"
+        },
+        "path" : "/Users/soheil/Documents/MagicPen/repo/MPen/Apps/MagicBrushy/.derivedData_ci/SourcePackages/artifacts/leap-sdk/LeapOpenAIClient/LeapOpenAIClient.xcframework",
+        "source" : {
+          "checksum" : "b661059af8bfb086931099f8fac9f54e957272d5d6bbc9dd36e3e154fddf8222",
+          "type" : "remote",
+          "url" : "https://github.com/Liquid4All/leap-sdk/releases/download/v0.10.4.5/LeapOpenAIClient.xcframework.zip"
+        },
+        "targetName" : "LeapOpenAIClient"
+      },
+      {
+        "kind" : {
+          "xcframework" : {
+
+          }
+        },
+        "packageRef" : {
+          "identity" : "leap-sdk",
+          "kind" : "remoteSourceControl",
+          "location" : "https://github.com/Liquid4All/leap-sdk",
+          "name" : "LeapSDK"
+        },
+        "path" : "/Users/soheil/Documents/MagicPen/repo/MPen/Apps/MagicBrushy/.derivedData_ci/SourcePackages/artifacts/leap-sdk/LeapSDK/LeapSDK.xcframework",
+        "source" : {
+          "checksum" : "ae9ecddbe5dc226ddd4ec8fe42178b721faeab71a20b3f14efceaae5a2495b7e",
+          "type" : "remote",
+          "url" : "https://github.com/Liquid4All/leap-sdk/releases/download/v0.10.4.5/LeapSDK.xcframework.zip"
+        },
+        "targetName" : "LeapSDK"
+      },
+      {
+        "kind" : {
+          "xcframework" : {
+
+          }
+        },
+        "packageRef" : {
+          "identity" : "leap-sdk",
+          "kind" : "remoteSourceControl",
+          "location" : "https://github.com/Liquid4All/leap-sdk",
+          "name" : "LeapSDK"
+        },
+        "path" : "/Users/soheil/Documents/MagicPen/repo/MPen/Apps/MagicBrushy/.derivedData_ci/SourcePackages/artifacts/leap-sdk/LeapUi/LeapUi.xcframework",
+        "source" : {
+          "checksum" : "19a4dadff51caee252c87e4e9ecd9fe464dd06bba3d3f693a8fc8531017fa859",
+          "type" : "remote",
+          "url" : "https://github.com/Liquid4All/leap-sdk/releases/download/v0.10.4.5/LeapUi.xcframework.zip"
+        },
+        "targetName" : "LeapUi"
+      }
+    ],
+    "dependencies" : [
+      {
+        "basedOn" : null,
+        "packageRef" : {
+          "identity" : "leap-sdk",
+          "kind" : "remoteSourceControl",
+          "location" : "https://github.com/Liquid4All/leap-sdk",
+          "name" : "LeapSDK"
+        },
+        "state" : {
+          "checkoutState" : {
+            "revision" : "1cb9e1ec2538d5330ac11f33221e30dbc31817bf"
+          },
+          "name" : "sourceControlCheckout"
+        },
+        "subpath" : "leap-sdk"
+      },
+      {
+        "basedOn" : null,
+        "packageRef" : {
+          "identity" : "swift-syntax",
+          "kind" : "remoteSourceControl",
+          "location" : "https://github.com/swiftlang/swift-syntax.git",
+          "name" : "swift-syntax"
+        },
+        "state" : {
+          "checkoutState" : {
+            "revision" : "64889f0c732f210a935a0ad7cda38f77f876262d",
+            "version" : "509.1.1"
+          },
+          "name" : "sourceControlCheckout"
+        },
+        "subpath" : "swift-syntax"
+      }
+    ],
+    "prebuilts" : [
+
+    ]
+  },
+  "version" : 7
+}

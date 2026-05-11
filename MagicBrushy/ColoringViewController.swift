@@ -131,6 +131,10 @@ final class ColoringViewController: UIViewController {
     /// Bumped on page change / clear / undo only — **not** on every new stroke, so debounced mascot reactions can still apply after pen lift.
     private var reactionSession: UInt64 = 0
     private var vlmInputPreviewHideWork: DispatchWorkItem?
+    /// When set, auto-feedback is suppressed until this date (user tapped mascot to mute).
+    private var feedbackPausedUntil: Date?
+    /// Label floating over the mascot showing the pause countdown.
+    private let mascotPauseBadge = UILabel()
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -292,11 +296,31 @@ final class ColoringViewController: UIViewController {
         let mascotContainer = UIView()
         mascotContainer.translatesAutoresizingMaskIntoConstraints = false
         mascotContainer.addSubview(mascotImageView)
+
+        mascotPauseBadge.translatesAutoresizingMaskIntoConstraints = false
+        mascotPauseBadge.font = FigmaTheme.bodyFont(size: 13, weight: .bold)
+        mascotPauseBadge.textColor = .white
+        mascotPauseBadge.textAlignment = .center
+        mascotPauseBadge.backgroundColor = UIColor.black.withAlphaComponent(0.55)
+        mascotPauseBadge.layer.cornerRadius = 12
+        mascotPauseBadge.clipsToBounds = true
+        mascotPauseBadge.isHidden = true
+        mascotContainer.addSubview(mascotPauseBadge)
+
+        let mascotTap = UITapGestureRecognizer(target: self, action: #selector(mascotTapped))
+        mascotContainer.addGestureRecognizer(mascotTap)
+        mascotContainer.isUserInteractionEnabled = true
+
         NSLayoutConstraint.activate([
             mascotImageView.centerXAnchor.constraint(equalTo: mascotContainer.centerXAnchor),
             mascotImageView.topAnchor.constraint(equalTo: mascotContainer.topAnchor, constant: -4),
             mascotImageView.bottomAnchor.constraint(equalTo: mascotContainer.bottomAnchor, constant: 4),
-            mascotImageView.widthAnchor.constraint(lessThanOrEqualTo: mascotContainer.widthAnchor, multiplier: 0.98)
+            mascotImageView.widthAnchor.constraint(lessThanOrEqualTo: mascotContainer.widthAnchor, multiplier: 0.98),
+
+            mascotPauseBadge.centerXAnchor.constraint(equalTo: mascotContainer.centerXAnchor),
+            mascotPauseBadge.bottomAnchor.constraint(equalTo: mascotContainer.bottomAnchor, constant: -8),
+            mascotPauseBadge.widthAnchor.constraint(greaterThanOrEqualToConstant: 80),
+            mascotPauseBadge.heightAnchor.constraint(equalToConstant: 26),
         ])
 
         // ── Right panel ───────────────────────────────────────────────────────
@@ -881,6 +905,7 @@ final class ColoringViewController: UIViewController {
     deinit {
         pollTimer?.invalidate()
         cancelFeedbackIdleTimer()
+        pauseCountdownTimer?.invalidate()
         NotificationCenter.default.removeObserver(self)
     }
 
@@ -1027,14 +1052,68 @@ final class ColoringViewController: UIViewController {
     private func scheduleFeedbackIdleTimer() {
         cancelFeedbackIdleTimer()
         guard !strokeView.chronologicalStrokeColors.isEmpty else { return }
+        // Mascot-mute: skip auto-feedback while paused.
+        if let until = feedbackPausedUntil, Date() < until { return }
 
         let work = DispatchWorkItem { [weak self] in
             guard let self else { return }
             self.pendingAutoFeedbackWork = nil
+            // Re-check pause at fire time (user may have muted after stroke ended).
+            if let until = self.feedbackPausedUntil, Date() < until { return }
             self.runSpeechFeedbackPipeline()
         }
         pendingAutoFeedbackWork = work
         DispatchQueue.main.asyncAfter(deadline: .now() + Self.feedbackIdleTriggerDelay, execute: work)
+    }
+
+    private static let feedbackPauseDuration: TimeInterval = 60
+
+    @objc private func mascotTapped() {
+        let now = Date()
+        // If already paused and still within the window, tapping again cancels the pause early.
+        if let until = feedbackPausedUntil, now < until {
+            feedbackPausedUntil = nil
+            updateMascotPauseBadge()
+            applyMascotReaction(.hello)
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            return
+        }
+
+        feedbackPausedUntil = now.addingTimeInterval(Self.feedbackPauseDuration)
+        cancelFeedbackIdleTimer()
+        cancelPendingReactionWork()
+        vlm.cancel()
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        applyMascotReaction(.sleepy)
+        updateMascotPauseBadge()
+        scheduleMascotPauseCountdown()
+    }
+
+    private var pauseCountdownTimer: Timer?
+
+    private func scheduleMascotPauseCountdown() {
+        pauseCountdownTimer?.invalidate()
+        pauseCountdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] t in
+            guard let self else { t.invalidate(); return }
+            self.updateMascotPauseBadge()
+            if self.feedbackPausedUntil == nil || Date() >= (self.feedbackPausedUntil ?? Date()) {
+                self.feedbackPausedUntil = nil
+                self.updateMascotPauseBadge()
+                self.applyMascotReaction(.hello)
+                t.invalidate()
+                self.pauseCountdownTimer = nil
+            }
+        }
+    }
+
+    private func updateMascotPauseBadge() {
+        guard let until = feedbackPausedUntil, Date() < until else {
+            mascotPauseBadge.isHidden = true
+            return
+        }
+        let secs = max(0, Int(until.timeIntervalSinceNow.rounded(.up)))
+        mascotPauseBadge.text = "🤫 \(secs)s"
+        mascotPauseBadge.isHidden = false
     }
 
     private func applyObservationSnapshot() {
@@ -1502,9 +1581,9 @@ final class ColoringViewController: UIViewController {
 
 \(paletteHintBlock)
 
-Your job: say one cheery thing that names the color they just added, in simple kid words. If the photo makes it obvious what they colored (sun, fish, flower, shirt, etc.), name that thing too—only when you are fairly sure; do not guess random objects. Do not use map directions (no left, right, top, bottom, or “in the corner”).
+Your job: say one cheery thing that names the color they just added, in simple kid words. If the photo makes it obvious what they colored, name that thing too—only when you are fairly sure; do not guess random objects. Do not use map directions (no left, right, top, bottom, or “in the corner”).
 
-Speak to THEM: one or two very short sentences, easy words, use "you" or "your". Sound warm. You may add a tiny color-feeling phrase (happy, cozy, bold) that fits that color—avoid repeating the same opening every time (do not always start with “You are so bright”).
+Speak to THEM: one or two very short sentences, easy words, use "you" or "your". Start with compliment inspired by the color. Sound warm. You may add a tiny color-feeling phrase that fits that color—avoid repeating the same opening every time (do not always start with “You are so bright”).
 
 IMPORTANT: Reply with ONLY the words you say aloud—no rules, no quotes about yourself, no repeating this text, no bullets, no markdown, no symbols like <>. Never mention AI, robots, computers, phones, apps, or internet.
 

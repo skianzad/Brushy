@@ -1,0 +1,2017 @@
+// swift-interface-format-version: 1.0
+// swift-compiler-version: Apple Swift version 6.2.3 effective-5.10 (swiftlang-6.2.3.3.21 clang-1700.6.3.2)
+// swift-module-flags: -target arm64-apple-ios14.0 -enable-objc-interop -enable-library-evolution -swift-version 5 -O -module-name LeapSDK
+// swift-module-flags-ignorable:  -formal-cxx-interoperability-mode=off -interface-compiler-version 6.2.3
+import Foundation
+@_exported import LeapSDK
+import Swift
+import UIKit
+import _Concurrency
+import _StringProcessing
+import _SwiftConcurrencyShims
+extension LeapSDK.ChatMessageContent {
+  public static func text(_ text: Swift.String) -> LeapSDK.ChatMessageContent
+  public static func fromJPEGData(_ jpegData: Foundation.Data) -> LeapSDK.ChatMessageContent.Image
+  public static func fromWAVData(_ wavData: Foundation.Data) -> LeapSDK.ChatMessageContent.Audio
+  public static func image(url: Swift.String) -> LeapSDK.ChatMessageContent.Image
+  public static func audio(data: Foundation.Data, format: Swift.String = "wav") -> LeapSDK.ChatMessageContent.Audio
+}
+extension LeapSDK.ChatMessageContent {
+  public static func fromUIImage(_ image: UIKit.UIImage) throws -> LeapSDK.ChatMessageContent
+}
+public typealias LeapError = LeapSDK.LeapException
+extension LeapSDK.GenerationOptions {
+  convenience public init()
+}
+extension LeapSDK.GenerationOptions {
+  @discardableResult
+  public func with(temperature: Swift.Float) -> LeapSDK.GenerationOptions
+  @discardableResult
+  public func with(topP: Swift.Float) -> LeapSDK.GenerationOptions
+  @discardableResult
+  public func with(minP: Swift.Float) -> LeapSDK.GenerationOptions
+  @discardableResult
+  public func with(repetitionPenalty: Swift.Float) -> LeapSDK.GenerationOptions
+  @discardableResult
+  public func with(topK: Swift.Int32) -> LeapSDK.GenerationOptions
+  @discardableResult
+  public func with(rngSeed: Swift.Int64) -> LeapSDK.GenerationOptions
+  @discardableResult
+  public func with(jsonSchema: Swift.String) -> LeapSDK.GenerationOptions
+  @discardableResult
+  public func with(maxTokens: Swift.Int32) -> LeapSDK.GenerationOptions
+  @discardableResult
+  public func with(injectSchemaIntoPrompt: Swift.Bool) -> LeapSDK.GenerationOptions
+  @discardableResult
+  public func with(inlineThinkingTags: Swift.Bool) -> LeapSDK.GenerationOptions
+  @discardableResult
+  public func with(enableThinking: Swift.Bool) -> LeapSDK.GenerationOptions
+}
+extension LeapSDK.GenerationOptionsCompat {
+  @discardableResult
+  public func with(temperature: Swift.Float) -> LeapSDK.GenerationOptionsCompat
+  @discardableResult
+  public func with(topP: Swift.Float) -> LeapSDK.GenerationOptionsCompat
+  @discardableResult
+  public func with(minP: Swift.Float) -> LeapSDK.GenerationOptionsCompat
+  @discardableResult
+  public func with(repetitionPenalty: Swift.Float) -> LeapSDK.GenerationOptionsCompat
+  @discardableResult
+  public func with(topK: Swift.Int32) -> LeapSDK.GenerationOptionsCompat
+  @discardableResult
+  public func with(rngSeed: Swift.UInt64) -> LeapSDK.GenerationOptionsCompat
+  @discardableResult
+  public func with(jsonSchema: Swift.String) -> LeapSDK.GenerationOptionsCompat
+  @discardableResult
+  public func with(enableThinking: Swift.Bool) -> LeapSDK.GenerationOptionsCompat
+  @discardableResult
+  public func with(inlineThinkingTags: Swift.Bool) -> LeapSDK.GenerationOptionsCompat
+  @discardableResult
+  public func with(sequenceLength: Swift.UInt32) -> LeapSDK.GenerationOptionsCompat
+  @discardableResult
+  public func with(maxOutputTokens: Swift.UInt32) -> LeapSDK.GenerationOptionsCompat
+}
+extension LeapSDK.LiquidInferenceEngineOptions {
+  @discardableResult
+  public func with(cpuThreads: Swift.UInt32) -> LeapSDK.LiquidInferenceEngineOptions
+  @discardableResult
+  public func with(contextSize: Swift.UInt32) -> LeapSDK.LiquidInferenceEngineOptions
+  @discardableResult
+  public func with(nGpuLayers: Swift.UInt32) -> LeapSDK.LiquidInferenceEngineOptions
+  #if compiler(>=5.3) && $NonescapableTypes
+  @discardableResult
+  public func with(chatTemplate: Swift.String?) -> LeapSDK.LiquidInferenceEngineOptions
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  @discardableResult
+  public func with(cacheOptions: LeapSDK.LiquidCacheOptions?) -> LeapSDK.LiquidInferenceEngineOptions
+  #endif
+}
+extension LeapSDK.LiquidInferenceEngineManifestOptions {
+  @discardableResult
+  public func with(cpuThreads: Swift.UInt32) -> LeapSDK.LiquidInferenceEngineManifestOptions
+  @discardableResult
+  public func with(contextSize: Swift.UInt32) -> LeapSDK.LiquidInferenceEngineManifestOptions
+  @discardableResult
+  public func with(nGpuLayers: Swift.UInt32) -> LeapSDK.LiquidInferenceEngineManifestOptions
+  #if compiler(>=5.3) && $NonescapableTypes
+  @discardableResult
+  public func with(chatTemplate: Swift.String?) -> LeapSDK.LiquidInferenceEngineManifestOptions
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  @discardableResult
+  public func with(cacheOptions: LeapSDK.LiquidCacheOptions?) -> LeapSDK.LiquidInferenceEngineManifestOptions
+  #endif
+}
+extension LeapSDK.LiquidInferenceEngineManifestOptions {
+  #if compiler(>=5.3) && $NonescapableTypes
+  convenience public init(cacheOptions: LeapSDK.LiquidCacheOptions? = nil, contextSize: Swift.UInt32? = nil, cpuThreads: Swift.UInt32? = nil, nGpuLayers: Swift.UInt32? = nil, audioDecoderUseGpu: Swift.Bool = false, chatTemplate: Swift.String? = nil, extras: Swift.String? = nil)
+  #endif
+}
+extension LeapSDK.LiquidCacheOptions {
+  public static func enabled(path: Swift.String, maxEntriesDisk: Swift.Int32 = 40, maxEntriesMemory: Swift.Int32 = 256, maxBytesMemory: Swift.Int64 = 512 * 1024 * 1024, diskDisabled: Swift.Bool = false) -> LeapSDK.LiquidCacheOptions
+}
+extension LeapSDK.Conversation {
+  public func generateResponse(message: LeapSDK.ChatMessage) -> LeapSDK.SkieSwiftFlow<any LeapSDK.MessageResponse>
+}
+extension LeapSDK.Leap {
+  #if compiler(>=5.3) && $NonescapableTypes
+  public func load(model: Swift.String, quantization: Swift.String, downloadProgressHandler: ((LeapSDK.KotlinDouble, LeapSDK.KotlinLong) -> Swift.Void)? = nil) async throws -> any LeapSDK.ModelRunner
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public func load(model: Swift.String, quantization: Swift.String, options: LeapSDK.LiquidInferenceEngineManifestOptions? = nil, progress: ((Swift.Double, Swift.Int64) -> Swift.Void)? = nil) async throws -> any LeapSDK.ModelRunner
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public func load(manifestUrl: Foundation.URL, options: LeapSDK.LiquidInferenceEngineManifestOptions? = nil, progress: ((Swift.Double, Swift.Int64) -> Swift.Void)? = nil) async throws -> any LeapSDK.ModelRunner
+  #endif
+}
+extension LeapSDK.ChatMessageContent {
+  public static func fromFloatSamples(_ samples: [Swift.Float], sampleRate: Swift.Int, channelCount: Swift.Int = 1) -> LeapSDK.ChatMessageContent.Audio
+}
+extension LeapSDK.KotlinByteArray {
+  public func toData() -> Foundation.Data
+}
+extension LeapSDK.KotlinFloatArray {
+  public func toFloatArray() -> [Swift.Float]
+}
+public enum Skie {
+  public enum RuntimeKotlin {
+    public enum SkieColdFlowIterator {
+      public typealias __Kotlin = LeapSDK.SkieColdFlowIterator
+    }
+    public enum SkieKotlinFlow {
+      public typealias __Kotlin = LeapSDK.SkieKotlinFlow
+    }
+    public enum SkieKotlinMutableSharedFlow {
+      public typealias __Kotlin = LeapSDK.SkieKotlinMutableSharedFlow
+    }
+    public enum SkieKotlinMutableStateFlow {
+      public typealias __Kotlin = LeapSDK.SkieKotlinMutableStateFlow
+    }
+    public enum SkieKotlinOptionalFlow {
+      public typealias __Kotlin = LeapSDK.SkieKotlinOptionalFlow
+    }
+    public enum SkieKotlinOptionalMutableSharedFlow {
+      public typealias __Kotlin = LeapSDK.SkieKotlinOptionalMutableSharedFlow
+    }
+    public enum SkieKotlinOptionalMutableStateFlow {
+      public typealias __Kotlin = LeapSDK.SkieKotlinOptionalMutableStateFlow
+    }
+    public enum SkieKotlinOptionalSharedFlow {
+      public typealias __Kotlin = LeapSDK.SkieKotlinOptionalSharedFlow
+    }
+    public enum SkieKotlinOptionalStateFlow {
+      public typealias __Kotlin = LeapSDK.SkieKotlinOptionalStateFlow
+    }
+    public enum SkieKotlinSharedFlow {
+      public typealias __Kotlin = LeapSDK.SkieKotlinSharedFlow
+    }
+    public enum SkieKotlinStateFlow {
+      public typealias __Kotlin = LeapSDK.SkieKotlinStateFlow
+    }
+    public enum Skie_CancellationHandler {
+      public typealias __Kotlin = LeapSDK.Skie_CancellationHandler
+    }
+    public enum Skie_DispatcherDelegate {
+      public typealias __Kotlin = LeapSDK.Skie_DispatcherDelegate
+    }
+    public enum Skie_SuspendHandler {
+      public typealias __Kotlin = LeapSDK.Skie_SuspendHandler
+    }
+    public enum Skie_SuspendResult {
+      public typealias __Kotlin = LeapSDK.Skie_SuspendResult
+      public enum Success {
+        public typealias __Kotlin = LeapSDK.Skie_SuspendResult.Success
+      }
+      public enum Error {
+        public typealias __Kotlin = LeapSDK.Skie_SuspendResult.Error
+      }
+      public enum Canceled {
+        public typealias __Kotlin = LeapSDK.Skie_SuspendResult.Canceled
+      }
+    }
+  }
+  public typealias co_touchlab_skie__runtime_kotlin = LeapSDK.Skie.RuntimeKotlin
+  public enum KotlinxCoroutinesCore {
+    public enum Flow {
+      public typealias __Kotlin = LeapSDK.Kotlinx_coroutines_coreFlow
+    }
+    public enum StateFlow {
+      public typealias __Kotlin = LeapSDK.Kotlinx_coroutines_coreStateFlow
+    }
+    public enum SharedFlow {
+      public typealias __Kotlin = LeapSDK.Kotlinx_coroutines_coreSharedFlow
+    }
+    public enum MutableSharedFlow {
+      public typealias __Kotlin = LeapSDK.Kotlinx_coroutines_coreMutableSharedFlow
+    }
+    public enum MutableStateFlow {
+      public typealias __Kotlin = LeapSDK.Kotlinx_coroutines_coreMutableStateFlow
+    }
+    public enum Runnable {
+      public typealias __Kotlin = LeapSDK.Kotlinx_coroutines_coreRunnable
+    }
+    public enum SelectClause2 {
+    }
+    public enum SelectClause {
+    }
+    public enum SelectInstance {
+    }
+    public enum SelectClause0 {
+    }
+    public enum SelectClause1 {
+    }
+  }
+  public typealias org_jetbrains_kotlinx__kotlinx_coroutines_core = LeapSDK.Skie.KotlinxCoroutinesCore
+  public enum KtorUtils {
+    public enum Pipeline {
+    }
+  }
+  public typealias io_ktor__ktor_utils = LeapSDK.Skie.KtorUtils
+  public enum LeapSdk {
+    public enum LeapFunctionParameterType {
+    }
+    public enum ChatMessageContent {
+    }
+    public enum MessageResponse {
+    }
+    public enum LoadTimeParameters {
+    }
+    public enum LiquidMessageResponse {
+    }
+    public enum FunctionArg {
+    }
+    public enum LeapNum {
+    }
+    public enum LeapFunctionParameterTypeDto {
+    }
+  }
+  public typealias ai_liquid_leap__leap_sdk = LeapSDK.Skie.LeapSdk
+  public enum KotlinxSerializationJson {
+    public enum JsonElement {
+    }
+    public enum Json {
+    }
+    public enum JsonPrimitive {
+    }
+  }
+  public typealias org_jetbrains_kotlinx__kotlinx_serialization_json = LeapSDK.Skie.KotlinxSerializationJson
+  public enum KotlinxSerializationCore {
+    public enum SerialKind {
+    }
+    public enum SerializersModule {
+    }
+    public enum PolymorphicKind {
+    }
+    public enum PrimitiveKind {
+    }
+    public enum StructureKind {
+    }
+  }
+  public typealias org_jetbrains_kotlinx__kotlinx_serialization_core = LeapSDK.Skie.KotlinxSerializationCore
+  public enum KotlinxIoCore {
+    public enum Source {
+    }
+    public enum Sink {
+    }
+    public enum FileSystem {
+    }
+  }
+  public typealias org_jetbrains_kotlinx__kotlinx_io_core = LeapSDK.Skie.KotlinxIoCore
+  public enum KtorHttp {
+    public enum OutgoingContent {
+    }
+  }
+  public typealias io_ktor__ktor_http = LeapSDK.Skie.KtorHttp
+}
+@_hasMissingDesignatedInitializers public class SkieSwiftFlowIterator<T> : _Concurrency.AsyncIteratorProtocol {
+  #if compiler(>=5.3) && $NonescapableTypes
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func next() async -> T?
+  #endif
+  @objc deinit
+  public typealias Element = T
+  @available(iOS 18.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, macOS 15.0, *)
+  @_implements(_Concurrency.AsyncIteratorProtocol, Failure) public typealias __AsyncIteratorProtocol_Failure = Swift.Never
+}
+public protocol SkieSwiftFlowProtocol<Element> : _Concurrency.AsyncSequence {
+  associatedtype Element
+  associatedtype Delegate : LeapSDK.Kotlinx_coroutines_coreFlow
+}
+@_hasMissingDesignatedInitializers final public class SkieSwiftFlow<T> : LeapSDK.SkieSwiftFlowProtocol, Swift._ObjectiveCBridgeable {
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _forceBridgeFromObjectiveC(_ source: LeapSDK.SkieKotlinFlow<Swift.AnyObject>, result: inout LeapSDK.SkieSwiftFlow<T>?)
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _conditionallyBridgeFromObjectiveC(_ source: LeapSDK.SkieKotlinFlow<Swift.AnyObject>, result: inout LeapSDK.SkieSwiftFlow<T>?) -> Swift.Bool
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _unconditionallyBridgeFromObjectiveC(_ source: LeapSDK.SkieKotlinFlow<Swift.AnyObject>?) -> Self
+  #endif
+  final public func _bridgeToObjectiveC() -> LeapSDK.SkieKotlinFlow<Swift.AnyObject>
+  final public func makeAsyncIterator() -> LeapSDK.SkieSwiftFlowIterator<T>
+  public typealias AsyncIterator = LeapSDK.SkieSwiftFlowIterator<T>
+  public typealias Element = T
+  public typealias _ObjectiveCType = LeapSDK.SkieKotlinFlow<Swift.AnyObject>
+  public typealias Delegate = any LeapSDK.Kotlinx_coroutines_coreFlow
+  @available(iOS 18.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, macOS 15.0, *)
+  @_implements(_Concurrency.AsyncSequence, Failure) public typealias __AsyncSequence_Failure = Swift.Never
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers final public class SkieSwiftOptionalFlow<T> : LeapSDK.SkieSwiftFlowProtocol, Swift._ObjectiveCBridgeable {
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _forceBridgeFromObjectiveC(_ source: LeapSDK.SkieKotlinOptionalFlow<Swift.AnyObject>, result: inout LeapSDK.SkieSwiftOptionalFlow<T>?)
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _conditionallyBridgeFromObjectiveC(_ source: LeapSDK.SkieKotlinOptionalFlow<Swift.AnyObject>, result: inout LeapSDK.SkieSwiftOptionalFlow<T>?) -> Swift.Bool
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _unconditionallyBridgeFromObjectiveC(_ source: LeapSDK.SkieKotlinOptionalFlow<Swift.AnyObject>?) -> Self
+  #endif
+  final public func _bridgeToObjectiveC() -> LeapSDK.SkieKotlinOptionalFlow<Swift.AnyObject>
+  #if compiler(>=5.3) && $NonescapableTypes
+  final public func makeAsyncIterator() -> LeapSDK.SkieSwiftFlowIterator<T?>
+  #endif
+  public typealias AsyncIterator = LeapSDK.SkieSwiftFlowIterator<T?>
+  public typealias Element = T?
+  public typealias _ObjectiveCType = LeapSDK.SkieKotlinOptionalFlow<Swift.AnyObject>
+  public typealias Delegate = any LeapSDK.Kotlinx_coroutines_coreFlow
+  @available(iOS 18.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, macOS 15.0, *)
+  @_implements(_Concurrency.AsyncSequence, Failure) public typealias __AsyncSequence_Failure = Swift.Never
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers final public class SkieSwiftSharedFlow<T> : LeapSDK.SkieSwiftFlowProtocol, Swift._ObjectiveCBridgeable {
+  final public var replayCache: [T] {
+    get
+  }
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _forceBridgeFromObjectiveC(_ source: LeapSDK.SkieKotlinSharedFlow<Swift.AnyObject>, result: inout LeapSDK.SkieSwiftSharedFlow<T>?)
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _conditionallyBridgeFromObjectiveC(_ source: LeapSDK.SkieKotlinSharedFlow<Swift.AnyObject>, result: inout LeapSDK.SkieSwiftSharedFlow<T>?) -> Swift.Bool
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _unconditionallyBridgeFromObjectiveC(_ source: LeapSDK.SkieKotlinSharedFlow<Swift.AnyObject>?) -> Self
+  #endif
+  final public func _bridgeToObjectiveC() -> LeapSDK.SkieKotlinSharedFlow<Swift.AnyObject>
+  final public func makeAsyncIterator() -> LeapSDK.SkieSwiftFlowIterator<T>
+  public typealias AsyncIterator = LeapSDK.SkieSwiftFlowIterator<T>
+  public typealias Element = T
+  public typealias _ObjectiveCType = LeapSDK.SkieKotlinSharedFlow<Swift.AnyObject>
+  public typealias Delegate = any LeapSDK.Kotlinx_coroutines_coreSharedFlow
+  @available(iOS 18.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, macOS 15.0, *)
+  @_implements(_Concurrency.AsyncSequence, Failure) public typealias __AsyncSequence_Failure = Swift.Never
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers final public class SkieSwiftOptionalSharedFlow<T> : LeapSDK.SkieSwiftFlowProtocol, Swift._ObjectiveCBridgeable {
+  #if compiler(>=5.3) && $NonescapableTypes
+  final public var replayCache: [T?] {
+    get
+  }
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _forceBridgeFromObjectiveC(_ source: LeapSDK.SkieKotlinOptionalSharedFlow<Swift.AnyObject>, result: inout LeapSDK.SkieSwiftOptionalSharedFlow<T>?)
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _conditionallyBridgeFromObjectiveC(_ source: LeapSDK.SkieKotlinOptionalSharedFlow<Swift.AnyObject>, result: inout LeapSDK.SkieSwiftOptionalSharedFlow<T>?) -> Swift.Bool
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _unconditionallyBridgeFromObjectiveC(_ source: LeapSDK.SkieKotlinOptionalSharedFlow<Swift.AnyObject>?) -> Self
+  #endif
+  final public func _bridgeToObjectiveC() -> LeapSDK.SkieKotlinOptionalSharedFlow<Swift.AnyObject>
+  #if compiler(>=5.3) && $NonescapableTypes
+  final public func makeAsyncIterator() -> LeapSDK.SkieSwiftFlowIterator<T?>
+  #endif
+  public typealias AsyncIterator = LeapSDK.SkieSwiftFlowIterator<T?>
+  public typealias Element = T?
+  public typealias _ObjectiveCType = LeapSDK.SkieKotlinOptionalSharedFlow<Swift.AnyObject>
+  public typealias Delegate = any LeapSDK.Kotlinx_coroutines_coreSharedFlow
+  @available(iOS 18.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, macOS 15.0, *)
+  @_implements(_Concurrency.AsyncSequence, Failure) public typealias __AsyncSequence_Failure = Swift.Never
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers final public class SkieSwiftMutableSharedFlow<T> : LeapSDK.SkieSwiftFlowProtocol, Swift._ObjectiveCBridgeable {
+  final public var subscriptionCount: LeapSDK.SkieSwiftStateFlow<LeapSDK.KotlinInt> {
+    get
+  }
+  final public var replayCache: [T] {
+    get
+  }
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  final public func emit(value: T) async throws
+  final public func tryEmit(value: T) -> Swift.Bool
+  final public func resetReplayCache()
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _forceBridgeFromObjectiveC(_ source: LeapSDK.SkieKotlinMutableSharedFlow<Swift.AnyObject>, result: inout LeapSDK.SkieSwiftMutableSharedFlow<T>?)
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _conditionallyBridgeFromObjectiveC(_ source: LeapSDK.SkieKotlinMutableSharedFlow<Swift.AnyObject>, result: inout LeapSDK.SkieSwiftMutableSharedFlow<T>?) -> Swift.Bool
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _unconditionallyBridgeFromObjectiveC(_ source: LeapSDK.SkieKotlinMutableSharedFlow<Swift.AnyObject>?) -> Self
+  #endif
+  final public func _bridgeToObjectiveC() -> LeapSDK.SkieKotlinMutableSharedFlow<Swift.AnyObject>
+  final public func makeAsyncIterator() -> LeapSDK.SkieSwiftFlowIterator<T>
+  public typealias AsyncIterator = LeapSDK.SkieSwiftFlowIterator<T>
+  public typealias Element = T
+  public typealias _ObjectiveCType = LeapSDK.SkieKotlinMutableSharedFlow<Swift.AnyObject>
+  public typealias Delegate = any LeapSDK.Kotlinx_coroutines_coreMutableSharedFlow
+  @available(iOS 18.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, macOS 15.0, *)
+  @_implements(_Concurrency.AsyncSequence, Failure) public typealias __AsyncSequence_Failure = Swift.Never
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers final public class SkieSwiftOptionalMutableSharedFlow<T> : LeapSDK.SkieSwiftFlowProtocol, Swift._ObjectiveCBridgeable {
+  final public var subscriptionCount: LeapSDK.SkieSwiftStateFlow<LeapSDK.KotlinInt> {
+    get
+  }
+  #if compiler(>=5.3) && $NonescapableTypes
+  final public var replayCache: [T?] {
+    get
+  }
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  final public func emit(value: T?) async throws
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  final public func tryEmit(value: T?) -> Swift.Bool
+  #endif
+  final public func resetReplayCache()
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _forceBridgeFromObjectiveC(_ source: LeapSDK.SkieKotlinOptionalMutableSharedFlow<Swift.AnyObject>, result: inout LeapSDK.SkieSwiftOptionalMutableSharedFlow<T>?)
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _conditionallyBridgeFromObjectiveC(_ source: LeapSDK.SkieKotlinOptionalMutableSharedFlow<Swift.AnyObject>, result: inout LeapSDK.SkieSwiftOptionalMutableSharedFlow<T>?) -> Swift.Bool
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _unconditionallyBridgeFromObjectiveC(_ source: LeapSDK.SkieKotlinOptionalMutableSharedFlow<Swift.AnyObject>?) -> Self
+  #endif
+  final public func _bridgeToObjectiveC() -> LeapSDK.SkieKotlinOptionalMutableSharedFlow<Swift.AnyObject>
+  #if compiler(>=5.3) && $NonescapableTypes
+  final public func makeAsyncIterator() -> LeapSDK.SkieSwiftFlowIterator<T?>
+  #endif
+  public typealias AsyncIterator = LeapSDK.SkieSwiftFlowIterator<T?>
+  public typealias Element = T?
+  public typealias _ObjectiveCType = LeapSDK.SkieKotlinOptionalMutableSharedFlow<Swift.AnyObject>
+  public typealias Delegate = any LeapSDK.Kotlinx_coroutines_coreMutableSharedFlow
+  @available(iOS 18.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, macOS 15.0, *)
+  @_implements(_Concurrency.AsyncSequence, Failure) public typealias __AsyncSequence_Failure = Swift.Never
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers final public class SkieSwiftStateFlow<T> : LeapSDK.SkieSwiftFlowProtocol, Swift._ObjectiveCBridgeable {
+  final public var value: T {
+    get
+  }
+  final public var replayCache: [T] {
+    get
+  }
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _forceBridgeFromObjectiveC(_ source: LeapSDK.SkieKotlinStateFlow<Swift.AnyObject>, result: inout LeapSDK.SkieSwiftStateFlow<T>?)
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _conditionallyBridgeFromObjectiveC(_ source: LeapSDK.SkieKotlinStateFlow<Swift.AnyObject>, result: inout LeapSDK.SkieSwiftStateFlow<T>?) -> Swift.Bool
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _unconditionallyBridgeFromObjectiveC(_ source: LeapSDK.SkieKotlinStateFlow<Swift.AnyObject>?) -> Self
+  #endif
+  final public func _bridgeToObjectiveC() -> LeapSDK.SkieKotlinStateFlow<Swift.AnyObject>
+  final public func makeAsyncIterator() -> LeapSDK.SkieSwiftFlowIterator<T>
+  public typealias AsyncIterator = LeapSDK.SkieSwiftFlowIterator<T>
+  public typealias Element = T
+  public typealias _ObjectiveCType = LeapSDK.SkieKotlinStateFlow<Swift.AnyObject>
+  public typealias Delegate = any LeapSDK.Kotlinx_coroutines_coreStateFlow
+  @available(iOS 18.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, macOS 15.0, *)
+  @_implements(_Concurrency.AsyncSequence, Failure) public typealias __AsyncSequence_Failure = Swift.Never
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers final public class SkieSwiftOptionalStateFlow<T> : LeapSDK.SkieSwiftFlowProtocol, Swift._ObjectiveCBridgeable {
+  #if compiler(>=5.3) && $NonescapableTypes
+  final public var value: T? {
+    get
+  }
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  final public var replayCache: [T?] {
+    get
+  }
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _forceBridgeFromObjectiveC(_ source: LeapSDK.SkieKotlinOptionalStateFlow<Swift.AnyObject>, result: inout LeapSDK.SkieSwiftOptionalStateFlow<T>?)
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _conditionallyBridgeFromObjectiveC(_ source: LeapSDK.SkieKotlinOptionalStateFlow<Swift.AnyObject>, result: inout LeapSDK.SkieSwiftOptionalStateFlow<T>?) -> Swift.Bool
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _unconditionallyBridgeFromObjectiveC(_ source: LeapSDK.SkieKotlinOptionalStateFlow<Swift.AnyObject>?) -> Self
+  #endif
+  final public func _bridgeToObjectiveC() -> LeapSDK.SkieKotlinOptionalStateFlow<Swift.AnyObject>
+  #if compiler(>=5.3) && $NonescapableTypes
+  final public func makeAsyncIterator() -> LeapSDK.SkieSwiftFlowIterator<T?>
+  #endif
+  public typealias AsyncIterator = LeapSDK.SkieSwiftFlowIterator<T?>
+  public typealias Element = T?
+  public typealias _ObjectiveCType = LeapSDK.SkieKotlinOptionalStateFlow<Swift.AnyObject>
+  public typealias Delegate = any LeapSDK.Kotlinx_coroutines_coreStateFlow
+  @available(iOS 18.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, macOS 15.0, *)
+  @_implements(_Concurrency.AsyncSequence, Failure) public typealias __AsyncSequence_Failure = Swift.Never
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers final public class SkieSwiftMutableStateFlow<T> : LeapSDK.SkieSwiftFlowProtocol, Swift._ObjectiveCBridgeable {
+  final public var value: T {
+    get
+    set(value)
+  }
+  final public var replayCache: [T] {
+    get
+  }
+  final public var subscriptionCount: LeapSDK.SkieSwiftStateFlow<LeapSDK.KotlinInt> {
+    get
+  }
+  final public func compareAndSet(expect: T, update: T) -> Swift.Bool
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  final public func emit(value: T) async throws
+  final public func tryEmit(value: T) -> Swift.Bool
+  final public func resetReplayCache()
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _forceBridgeFromObjectiveC(_ source: LeapSDK.SkieKotlinMutableStateFlow<Swift.AnyObject>, result: inout LeapSDK.SkieSwiftMutableStateFlow<T>?)
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _conditionallyBridgeFromObjectiveC(_ source: LeapSDK.SkieKotlinMutableStateFlow<Swift.AnyObject>, result: inout LeapSDK.SkieSwiftMutableStateFlow<T>?) -> Swift.Bool
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _unconditionallyBridgeFromObjectiveC(_ source: LeapSDK.SkieKotlinMutableStateFlow<Swift.AnyObject>?) -> Self
+  #endif
+  final public func _bridgeToObjectiveC() -> LeapSDK.SkieKotlinMutableStateFlow<Swift.AnyObject>
+  final public func makeAsyncIterator() -> LeapSDK.SkieSwiftFlowIterator<T>
+  public typealias AsyncIterator = LeapSDK.SkieSwiftFlowIterator<T>
+  public typealias Element = T
+  public typealias _ObjectiveCType = LeapSDK.SkieKotlinMutableStateFlow<Swift.AnyObject>
+  public typealias Delegate = any LeapSDK.Kotlinx_coroutines_coreMutableStateFlow
+  @available(iOS 18.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, macOS 15.0, *)
+  @_implements(_Concurrency.AsyncSequence, Failure) public typealias __AsyncSequence_Failure = Swift.Never
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers final public class SkieSwiftOptionalMutableStateFlow<T> : LeapSDK.SkieSwiftFlowProtocol, Swift._ObjectiveCBridgeable {
+  #if compiler(>=5.3) && $NonescapableTypes
+  final public var value: T? {
+    get
+    set(value)
+  }
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  final public var replayCache: [T?] {
+    get
+  }
+  #endif
+  final public var subscriptionCount: LeapSDK.SkieSwiftStateFlow<LeapSDK.KotlinInt> {
+    get
+  }
+  #if compiler(>=5.3) && $NonescapableTypes
+  final public func compareAndSet(expect: T?, update: T?) -> Swift.Bool
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  final public func emit(value: T?) async throws
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  final public func tryEmit(value: T?) -> Swift.Bool
+  #endif
+  final public func resetReplayCache()
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _forceBridgeFromObjectiveC(_ source: LeapSDK.SkieKotlinOptionalMutableStateFlow<Swift.AnyObject>, result: inout LeapSDK.SkieSwiftOptionalMutableStateFlow<T>?)
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _conditionallyBridgeFromObjectiveC(_ source: LeapSDK.SkieKotlinOptionalMutableStateFlow<Swift.AnyObject>, result: inout LeapSDK.SkieSwiftOptionalMutableStateFlow<T>?) -> Swift.Bool
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _unconditionallyBridgeFromObjectiveC(_ source: LeapSDK.SkieKotlinOptionalMutableStateFlow<Swift.AnyObject>?) -> Self
+  #endif
+  final public func _bridgeToObjectiveC() -> LeapSDK.SkieKotlinOptionalMutableStateFlow<Swift.AnyObject>
+  #if compiler(>=5.3) && $NonescapableTypes
+  final public func makeAsyncIterator() -> LeapSDK.SkieSwiftFlowIterator<T?>
+  #endif
+  public typealias AsyncIterator = LeapSDK.SkieSwiftFlowIterator<T?>
+  public typealias Element = T?
+  public typealias _ObjectiveCType = LeapSDK.SkieKotlinOptionalMutableStateFlow<Swift.AnyObject>
+  public typealias Delegate = any LeapSDK.Kotlinx_coroutines_coreMutableStateFlow
+  @available(iOS 18.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, macOS 15.0, *)
+  @_implements(_Concurrency.AsyncSequence, Failure) public typealias __AsyncSequence_Failure = Swift.Never
+  @objc deinit
+}
+extension LeapSDK.Skie.RuntimeKotlin.SkieColdFlowIterator {
+  public struct __Suspend<E> where E : AnyObject {
+    public let __kotlinObject: LeapSDK.SkieColdFlowIterator<E>
+    public init(_ __kotlinObject: LeapSDK.SkieColdFlowIterator<E>)
+  }
+}
+public func skie<E>(_ kotlinObject: LeapSDK.SkieColdFlowIterator<E>) -> LeapSDK.Skie.RuntimeKotlin.SkieColdFlowIterator.__Suspend<E> where E : AnyObject
+extension LeapSDK.Skie.RuntimeKotlin.SkieColdFlowIterator.__Suspend {
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func hasNext() async throws -> LeapSDK.KotlinBoolean
+}
+extension LeapSDK.Kotlinx_coroutines_coreFlow {
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func collect(collector: any LeapSDK.Kotlinx_coroutines_coreFlowCollector) async throws
+}
+extension LeapSDK.Kotlinx_coroutines_coreFlowCollector {
+  #if compiler(>=5.3) && $NonescapableTypes
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func emit(value: Any?) async throws
+  #endif
+}
+extension LeapSDK.ModelRunner {
+  #if compiler(>=5.3) && $NonescapableTypes
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func generateFromConversation(conversation: any LeapSDK.Conversation, callback: any LeapSDK.ModelRunnerGenerationCallback, generationOptions: LeapSDK.GenerationOptions?) async throws -> any LeapSDK.ModelRunnerGenerationHandler
+  #endif
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func getPromptTokensSize(messages: [LeapSDK.ChatMessage], addBosToken: Swift.Bool) async throws -> LeapSDK.KotlinInt
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func unload() async throws
+}
+extension LeapSDK.Kotlinx_coroutines_coreMutex {
+  #if compiler(>=5.3) && $NonescapableTypes
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func lock(owner: Any?) async throws
+  #endif
+}
+extension LeapSDK.LeapClient {
+  #if compiler(>=5.3) && $NonescapableTypes
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func loadModel(modelPath: Swift.String, options: LeapSDK.ModelLoadingOptions?) async throws -> any LeapSDK.ModelRunner
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func loadModel(modelPath: Swift.String, mmprojPath: Swift.String, options: LeapSDK.ModelLoadingOptions?) async throws -> any LeapSDK.ModelRunner
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func loadModel(model: LeapSDK.AudioGenerationModelDescriptor, options: LeapSDK.ModelLoadingOptions?) async throws -> any LeapSDK.ModelRunner
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func loadModel(params: any LeapSDK.LoadTimeParameters, generationParams: LeapSDK.GenerationTimeParameters?, options: LeapSDK.ModelLoadingOptions?) async throws -> any LeapSDK.ModelRunner
+  #endif
+}
+extension LeapSDK.LeapInferenceEngine {
+  #if compiler(>=5.3) && $NonescapableTypes
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func loadModel(modelPath: Swift.String, mmprojPath: Swift.String?, audioDecoderPath: Swift.String?, audioTokenizerPath: Swift.String?, options: LeapSDK.ModelLoadingOptions?, generationTimeParameters: LeapSDK.GenerationTimeParameters?) async throws -> any LeapSDK.ModelRunner
+  #endif
+}
+extension LeapSDK.Leap {
+  #if compiler(>=5.3) && $NonescapableTypes
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func load(url: Foundation.URL, contextSize: LeapSDK.KotlinUInt?, cpuThreads: LeapSDK.KotlinUInt?, autoDetectCompanionFiles: Swift.Bool) async throws -> any LeapSDK.ModelRunner
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func load(url: Foundation.URL, options: LeapSDK.LiquidInferenceEngineOptions?, generationTimeParameters: LeapSDK.GenerationTimeParameters?, autoDetectCompanionFiles: Swift.Bool) async throws -> any LeapSDK.ModelRunner
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func load(manifestUrl: Foundation.URL, options: LeapSDK.LiquidInferenceEngineManifestOptions?, downloadProgressHandler: ((LeapSDK.KotlinDouble, LeapSDK.KotlinLong) -> Swift.Void)?) async throws -> any LeapSDK.ModelRunner
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func load(model: Swift.String, quantization: Swift.String, options: LeapSDK.LiquidInferenceEngineManifestOptions?, downloadProgressHandler: ((LeapSDK.KotlinDouble, LeapSDK.KotlinLong) -> Swift.Void)?) async throws -> any LeapSDK.ModelRunner
+  #endif
+}
+extension LeapSDK.LiquidEngineRunner {
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func getPromptTokensSize(messages: [LeapSDK.ChatMessage], addBosToken: Swift.Bool) async throws -> LeapSDK.KotlinInt
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func unload() async throws
+}
+extension LeapSDK.LiquidInferenceEngineRunner {
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func getPromptTokensSize(messages: [LeapSDK.ChatMessage], addBosToken: Swift.Bool) async throws -> LeapSDK.KotlinInt
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func unload() async throws
+}
+extension LeapSDK.LiquidInferenceEngineRunner.Companion {
+  #if compiler(>=5.3) && $NonescapableTypes
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func create(url: Foundation.URL, options: LeapSDK.LiquidInferenceEngineOptions?, generationTimeParameters: LeapSDK.GenerationTimeParameters?, autoDetectCompanionFiles: Swift.Bool) async throws -> LeapSDK.LiquidInferenceEngineRunner
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func create(options: LeapSDK.LiquidInferenceEngineOptions, generationTimeParameters: LeapSDK.GenerationTimeParameters?) async throws -> LeapSDK.LiquidInferenceEngineRunner
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func create(model: Swift.String, quantization: Swift.String, generationTimeParameters: LeapSDK.GenerationTimeParameters?) async throws -> LeapSDK.LiquidInferenceEngineRunner
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func create(model: Swift.String, quantization: Swift.String, options: LeapSDK.LiquidInferenceEngineManifestOptions?, downloadProgressHandler: ((LeapSDK.KotlinDouble, LeapSDK.KotlinLong) -> Swift.Void)?) async throws -> LeapSDK.LiquidInferenceEngineRunner
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func create(manifestUrl: Foundation.URL, options: LeapSDK.LiquidInferenceEngineManifestOptions?, downloadProgressHandler: ((LeapSDK.KotlinDouble, LeapSDK.KotlinLong) -> Swift.Void)?) async throws -> LeapSDK.LiquidInferenceEngineRunner
+  #endif
+}
+extension LeapSDK.LiquidEngine.Companion {
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func invoke(modelURL: Foundation.URL) async throws -> LeapSDK.LiquidEngine
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func invoke(modelURL: Foundation.URL, model: Swift.String, quantization: Swift.String) async throws -> LeapSDK.LiquidEngine
+}
+extension LeapSDK.Kotlinx_coroutines_coreJob {
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func join() async throws
+}
+extension LeapSDK.Skie.KtorUtils.Pipeline {
+  public struct __Suspend<TSubject, TContext> where TSubject : AnyObject, TContext : AnyObject {
+    public let __kotlinObject: LeapSDK.Ktor_utilsPipeline<TSubject, TContext>
+    public init(_ __kotlinObject: LeapSDK.Ktor_utilsPipeline<TSubject, TContext>)
+  }
+}
+public func skie<TSubject, TContext>(_ kotlinObject: LeapSDK.Ktor_utilsPipeline<TSubject, TContext>) -> LeapSDK.Skie.KtorUtils.Pipeline.__Suspend<TSubject, TContext> where TSubject : AnyObject, TContext : AnyObject
+extension LeapSDK.Skie.KtorUtils.Pipeline.__Suspend {
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func execute(context: TContext, subject: TSubject) async throws -> TSubject
+}
+extension LeapSDK.KotlinSuspendFunction2 {
+  #if compiler(>=5.3) && $NonescapableTypes
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func invoke(p1: Any?, p2: Any?) async throws -> Any?
+  #endif
+}
+extension LeapSDK.Ktor_client_coreHttpClientCall {
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func body(info: LeapSDK.Ktor_utilsTypeInfo) async throws -> Any
+  #if compiler(>=5.3) && $NonescapableTypes
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func bodyNullable(info: LeapSDK.Ktor_utilsTypeInfo) async throws -> Any?
+  #endif
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func getResponseContent() async throws -> any LeapSDK.Ktor_ioByteReadChannel
+}
+extension LeapSDK.Ktor_ioByteReadChannel {
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func awaitContent(min: Swift.Int32) async throws -> LeapSDK.KotlinBoolean
+}
+extension LeapSDK.Ktor_client_coreHttpClientEngine {
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func execute(data: LeapSDK.Ktor_client_coreHttpRequestData) async throws -> LeapSDK.Ktor_client_coreHttpResponseData
+}
+extension LeapSDK.LeapDownloader {
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func deleteModelFile(modelUrl: Swift.String, modelName: Swift.String, quantizationSlug: Swift.String) async throws
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func deleteModelFromManifestUrl(manifestUrl: Swift.String) async throws
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func deleteModelResources(modelName: Swift.String, quantizationSlug: Swift.String) async throws
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func downloadModel(modelName: Swift.String, quantizationSlug: Swift.String, progress: @escaping (LeapSDK.ProgressData) -> Swift.Void) async throws -> LeapSDK.Manifest
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func downloadModelFromManifestUrl(manifestUrl: Swift.String, progress: @escaping (LeapSDK.ProgressData) -> Swift.Void) async throws -> LeapSDK.Manifest
+  #if compiler(>=5.3) && $NonescapableTypes
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func getCachedManifest(modelName: Swift.String, quantizationSlug: Swift.String) async throws -> LeapSDK.Manifest?
+  #endif
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func getModelSize(modelName: Swift.String, quantizationSlug: Swift.String) async throws -> LeapSDK.KotlinLong
+  #if compiler(>=5.3) && $NonescapableTypes
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func loadModel(modelName: Swift.String, quantizationSlug: Swift.String, modelLoadingOptions: LeapSDK.ModelLoadingOptions?, generationTimeParameters: LeapSDK.GenerationTimeParameters?, forceDownload: Swift.Bool, isRetry: Swift.Bool, progress: @escaping (LeapSDK.ProgressData) -> Swift.Void) async throws -> any LeapSDK.ModelRunner
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func loadModelFromManifestUrl(manifestUrl: Swift.String, modelLoadingOptions: LeapSDK.ModelLoadingOptions?, generationTimeParameters: LeapSDK.GenerationTimeParameters?, progress: @escaping (LeapSDK.ProgressData) -> Swift.Void) async throws -> any LeapSDK.ModelRunner
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func loadSimpleModel(model: LeapSDK.ModelSource, modelLoadingOptions: LeapSDK.ModelLoadingOptions?, generationTimeParameters: LeapSDK.GenerationTimeParameters?, isRetry: Swift.Bool, progress: @escaping (LeapSDK.ProgressData) -> Swift.Void) async throws -> any LeapSDK.ModelRunner
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func resolve(modelName: Swift.String, quantizationSlug: Swift.String) async throws -> LeapSDK.Manifest?
+  #endif
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func resolveDownloadPlan(modelName: Swift.String, quantizationSlug: Swift.String) async throws -> LeapSDK.LeapDownloader.ResolvedManifest
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func resolveDownloadPlanFromManifestUrl(manifestUrl: Swift.String) async throws -> LeapSDK.LeapDownloader.ResolvedManifest
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func saveManifestToDisk(manifest: LeapSDK.Manifest, modelName: Swift.String, quantizationSlug: Swift.String) async throws -> LeapSDK.Manifest
+}
+extension LeapSDK.LeapModelsApi {
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func fetchAvailableModels(inferenceEngine: Swift.String) async throws -> [LeapSDK.LeapApiModel]
+}
+extension LeapSDK.Ktor_httpOutgoingContent.ProtocolUpgrade {
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func upgrade(input: any LeapSDK.Ktor_ioByteReadChannel, output: any LeapSDK.Ktor_ioByteWriteChannel, engineContext: any LeapSDK.KotlinCoroutineContext, userContext: any LeapSDK.KotlinCoroutineContext) async throws -> any LeapSDK.Kotlinx_coroutines_coreJob
+}
+extension LeapSDK.Ktor_ioByteWriteChannel {
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func flush() async throws
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func flushAndClose() async throws
+}
+extension LeapSDK.Ktor_httpOutgoingContent.WriteChannelContent {
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func writeTo(channel: any LeapSDK.Ktor_ioByteWriteChannel) async throws
+}
+public func SkieKotlinFlow<T>(_ flow: LeapSDK.SkieSwiftFlow<T>) -> LeapSDK.SkieKotlinFlow<T> where T : AnyObject
+public func SkieKotlinFlow<T>(_ flow: LeapSDK.SkieSwiftSharedFlow<T>) -> LeapSDK.SkieKotlinFlow<T> where T : AnyObject
+public func SkieKotlinFlow<T>(_ flow: LeapSDK.SkieSwiftMutableSharedFlow<T>) -> LeapSDK.SkieKotlinFlow<T> where T : AnyObject
+public func SkieKotlinFlow<T>(_ flow: LeapSDK.SkieSwiftStateFlow<T>) -> LeapSDK.SkieKotlinFlow<T> where T : AnyObject
+public func SkieKotlinFlow<T>(_ flow: LeapSDK.SkieSwiftMutableStateFlow<T>) -> LeapSDK.SkieKotlinFlow<T> where T : AnyObject
+public func SkieKotlinFlow<T>(_ flow: LeapSDK.SkieSwiftFlow<T>) -> LeapSDK.SkieKotlinFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinFlow<T>(_ flow: LeapSDK.SkieSwiftSharedFlow<T>) -> LeapSDK.SkieKotlinFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinFlow<T>(_ flow: LeapSDK.SkieSwiftMutableSharedFlow<T>) -> LeapSDK.SkieKotlinFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinFlow<T>(_ flow: LeapSDK.SkieSwiftStateFlow<T>) -> LeapSDK.SkieKotlinFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinFlow<T>(_ flow: LeapSDK.SkieSwiftMutableStateFlow<T>) -> LeapSDK.SkieKotlinFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+extension LeapSDK.SkieSwiftFlow where T : AnyObject {
+  convenience public init(_ flow: LeapSDK.SkieKotlinFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinSharedFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinMutableStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftSharedFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftMutableStateFlow<T>)
+}
+extension LeapSDK.SkieSwiftFlow where T : Swift._ObjectiveCBridgeable {
+  convenience public init(_ flow: LeapSDK.SkieKotlinFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinMutableSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftMutableSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftSharedFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftMutableStateFlow<T>)
+}
+public func SkieKotlinOptionalFlow<T>(_ flow: LeapSDK.SkieSwiftFlow<T>) -> LeapSDK.SkieKotlinOptionalFlow<T> where T : AnyObject
+public func SkieKotlinOptionalFlow<T>(_ flow: LeapSDK.SkieSwiftOptionalFlow<T>) -> LeapSDK.SkieKotlinOptionalFlow<T> where T : AnyObject
+public func SkieKotlinOptionalFlow<T>(_ flow: LeapSDK.SkieSwiftSharedFlow<T>) -> LeapSDK.SkieKotlinOptionalFlow<T> where T : AnyObject
+public func SkieKotlinOptionalFlow<T>(_ flow: LeapSDK.SkieSwiftOptionalSharedFlow<T>) -> LeapSDK.SkieKotlinOptionalFlow<T> where T : AnyObject
+public func SkieKotlinOptionalFlow<T>(_ flow: LeapSDK.SkieSwiftMutableSharedFlow<T>) -> LeapSDK.SkieKotlinOptionalFlow<T> where T : AnyObject
+public func SkieKotlinOptionalFlow<T>(_ flow: LeapSDK.SkieSwiftOptionalMutableSharedFlow<T>) -> LeapSDK.SkieKotlinOptionalFlow<T> where T : AnyObject
+public func SkieKotlinOptionalFlow<T>(_ flow: LeapSDK.SkieSwiftStateFlow<T>) -> LeapSDK.SkieKotlinOptionalFlow<T> where T : AnyObject
+public func SkieKotlinOptionalFlow<T>(_ flow: LeapSDK.SkieSwiftOptionalStateFlow<T>) -> LeapSDK.SkieKotlinOptionalFlow<T> where T : AnyObject
+public func SkieKotlinOptionalFlow<T>(_ flow: LeapSDK.SkieSwiftMutableStateFlow<T>) -> LeapSDK.SkieKotlinOptionalFlow<T> where T : AnyObject
+public func SkieKotlinOptionalFlow<T>(_ flow: LeapSDK.SkieSwiftOptionalMutableStateFlow<T>) -> LeapSDK.SkieKotlinOptionalFlow<T> where T : AnyObject
+public func SkieKotlinOptionalFlow<T>(_ flow: LeapSDK.SkieSwiftFlow<T>) -> LeapSDK.SkieKotlinOptionalFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinOptionalFlow<T>(_ flow: LeapSDK.SkieSwiftOptionalFlow<T>) -> LeapSDK.SkieKotlinOptionalFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinOptionalFlow<T>(_ flow: LeapSDK.SkieSwiftSharedFlow<T>) -> LeapSDK.SkieKotlinOptionalFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinOptionalFlow<T>(_ flow: LeapSDK.SkieSwiftOptionalSharedFlow<T>) -> LeapSDK.SkieKotlinOptionalFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinOptionalFlow<T>(_ flow: LeapSDK.SkieSwiftMutableSharedFlow<T>) -> LeapSDK.SkieKotlinOptionalFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinOptionalFlow<T>(_ flow: LeapSDK.SkieSwiftOptionalMutableSharedFlow<T>) -> LeapSDK.SkieKotlinOptionalFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinOptionalFlow<T>(_ flow: LeapSDK.SkieSwiftStateFlow<T>) -> LeapSDK.SkieKotlinOptionalFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinOptionalFlow<T>(_ flow: LeapSDK.SkieSwiftOptionalStateFlow<T>) -> LeapSDK.SkieKotlinOptionalFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinOptionalFlow<T>(_ flow: LeapSDK.SkieSwiftMutableStateFlow<T>) -> LeapSDK.SkieKotlinOptionalFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinOptionalFlow<T>(_ flow: LeapSDK.SkieSwiftOptionalMutableStateFlow<T>) -> LeapSDK.SkieKotlinOptionalFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+extension LeapSDK.SkieSwiftOptionalFlow where T : AnyObject {
+  convenience public init(_ flow: LeapSDK.SkieKotlinFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinOptionalFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinSharedFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinOptionalSharedFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinOptionalMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinOptionalStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinMutableStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinOptionalMutableStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftOptionalFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftSharedFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftOptionalSharedFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftOptionalMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftOptionalStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftMutableStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftOptionalMutableStateFlow<T>)
+}
+extension LeapSDK.SkieSwiftOptionalFlow where T : Swift._ObjectiveCBridgeable {
+  convenience public init(_ flow: LeapSDK.SkieKotlinFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinOptionalFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinOptionalSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinMutableSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinOptionalMutableSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinOptionalStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinOptionalMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftOptionalFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftOptionalSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftMutableSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftOptionalMutableSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftOptionalStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftOptionalMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftOptionalFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftSharedFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftOptionalSharedFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftOptionalMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftOptionalStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftMutableStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftOptionalMutableStateFlow<T>)
+}
+public func SkieKotlinSharedFlow<T>(_ flow: LeapSDK.SkieSwiftSharedFlow<T>) -> LeapSDK.SkieKotlinSharedFlow<T> where T : AnyObject
+public func SkieKotlinSharedFlow<T>(_ flow: LeapSDK.SkieSwiftMutableSharedFlow<T>) -> LeapSDK.SkieKotlinSharedFlow<T> where T : AnyObject
+public func SkieKotlinSharedFlow<T>(_ flow: LeapSDK.SkieSwiftStateFlow<T>) -> LeapSDK.SkieKotlinSharedFlow<T> where T : AnyObject
+public func SkieKotlinSharedFlow<T>(_ flow: LeapSDK.SkieSwiftMutableStateFlow<T>) -> LeapSDK.SkieKotlinSharedFlow<T> where T : AnyObject
+public func SkieKotlinSharedFlow<T>(_ flow: LeapSDK.SkieSwiftSharedFlow<T>) -> LeapSDK.SkieKotlinSharedFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinSharedFlow<T>(_ flow: LeapSDK.SkieSwiftMutableSharedFlow<T>) -> LeapSDK.SkieKotlinSharedFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinSharedFlow<T>(_ flow: LeapSDK.SkieSwiftStateFlow<T>) -> LeapSDK.SkieKotlinSharedFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinSharedFlow<T>(_ flow: LeapSDK.SkieSwiftMutableStateFlow<T>) -> LeapSDK.SkieKotlinSharedFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+extension LeapSDK.SkieSwiftSharedFlow where T : AnyObject {
+  convenience public init(_ flow: LeapSDK.SkieKotlinSharedFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinMutableStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftSharedFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftMutableStateFlow<T>)
+}
+extension LeapSDK.SkieSwiftSharedFlow where T : Swift._ObjectiveCBridgeable {
+  convenience public init(_ flow: LeapSDK.SkieKotlinSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinMutableSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftMutableSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftSharedFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftMutableStateFlow<T>)
+}
+public func SkieKotlinOptionalSharedFlow<T>(_ flow: LeapSDK.SkieSwiftSharedFlow<T>) -> LeapSDK.SkieKotlinOptionalSharedFlow<T> where T : AnyObject
+public func SkieKotlinOptionalSharedFlow<T>(_ flow: LeapSDK.SkieSwiftOptionalSharedFlow<T>) -> LeapSDK.SkieKotlinOptionalSharedFlow<T> where T : AnyObject
+public func SkieKotlinOptionalSharedFlow<T>(_ flow: LeapSDK.SkieSwiftMutableSharedFlow<T>) -> LeapSDK.SkieKotlinOptionalSharedFlow<T> where T : AnyObject
+public func SkieKotlinOptionalSharedFlow<T>(_ flow: LeapSDK.SkieSwiftOptionalMutableSharedFlow<T>) -> LeapSDK.SkieKotlinOptionalSharedFlow<T> where T : AnyObject
+public func SkieKotlinOptionalSharedFlow<T>(_ flow: LeapSDK.SkieSwiftStateFlow<T>) -> LeapSDK.SkieKotlinOptionalSharedFlow<T> where T : AnyObject
+public func SkieKotlinOptionalSharedFlow<T>(_ flow: LeapSDK.SkieSwiftOptionalStateFlow<T>) -> LeapSDK.SkieKotlinOptionalSharedFlow<T> where T : AnyObject
+public func SkieKotlinOptionalSharedFlow<T>(_ flow: LeapSDK.SkieSwiftMutableStateFlow<T>) -> LeapSDK.SkieKotlinOptionalSharedFlow<T> where T : AnyObject
+public func SkieKotlinOptionalSharedFlow<T>(_ flow: LeapSDK.SkieSwiftOptionalMutableStateFlow<T>) -> LeapSDK.SkieKotlinOptionalSharedFlow<T> where T : AnyObject
+public func SkieKotlinOptionalSharedFlow<T>(_ flow: LeapSDK.SkieSwiftSharedFlow<T>) -> LeapSDK.SkieKotlinOptionalSharedFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinOptionalSharedFlow<T>(_ flow: LeapSDK.SkieSwiftOptionalSharedFlow<T>) -> LeapSDK.SkieKotlinOptionalSharedFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinOptionalSharedFlow<T>(_ flow: LeapSDK.SkieSwiftMutableSharedFlow<T>) -> LeapSDK.SkieKotlinOptionalSharedFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinOptionalSharedFlow<T>(_ flow: LeapSDK.SkieSwiftOptionalMutableSharedFlow<T>) -> LeapSDK.SkieKotlinOptionalSharedFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinOptionalSharedFlow<T>(_ flow: LeapSDK.SkieSwiftStateFlow<T>) -> LeapSDK.SkieKotlinOptionalSharedFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinOptionalSharedFlow<T>(_ flow: LeapSDK.SkieSwiftOptionalStateFlow<T>) -> LeapSDK.SkieKotlinOptionalSharedFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinOptionalSharedFlow<T>(_ flow: LeapSDK.SkieSwiftMutableStateFlow<T>) -> LeapSDK.SkieKotlinOptionalSharedFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinOptionalSharedFlow<T>(_ flow: LeapSDK.SkieSwiftOptionalMutableStateFlow<T>) -> LeapSDK.SkieKotlinOptionalSharedFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+extension LeapSDK.SkieSwiftOptionalSharedFlow where T : AnyObject {
+  convenience public init(_ flow: LeapSDK.SkieKotlinSharedFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinOptionalSharedFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinOptionalMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinOptionalStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinMutableStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinOptionalMutableStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftSharedFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftOptionalSharedFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftOptionalMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftOptionalStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftMutableStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftOptionalMutableStateFlow<T>)
+}
+extension LeapSDK.SkieSwiftOptionalSharedFlow where T : Swift._ObjectiveCBridgeable {
+  convenience public init(_ flow: LeapSDK.SkieKotlinSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinOptionalSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinMutableSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinOptionalMutableSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinOptionalStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinOptionalMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftOptionalSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftMutableSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftOptionalMutableSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftOptionalStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftOptionalMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftSharedFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftOptionalSharedFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftOptionalMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftOptionalStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftMutableStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftOptionalMutableStateFlow<T>)
+}
+public func SkieKotlinMutableSharedFlow<T>(_ flow: LeapSDK.SkieSwiftMutableSharedFlow<T>) -> LeapSDK.SkieKotlinMutableSharedFlow<T> where T : AnyObject
+public func SkieKotlinMutableSharedFlow<T>(_ flow: LeapSDK.SkieSwiftMutableSharedFlow<T>) -> LeapSDK.SkieKotlinMutableSharedFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+extension LeapSDK.SkieSwiftMutableSharedFlow where T : AnyObject {
+  convenience public init(_ flow: LeapSDK.SkieKotlinMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftMutableSharedFlow<T>)
+}
+extension LeapSDK.SkieSwiftMutableSharedFlow where T : Swift._ObjectiveCBridgeable {
+  convenience public init(_ flow: LeapSDK.SkieKotlinMutableSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftMutableSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftMutableSharedFlow<T>)
+}
+public func SkieKotlinOptionalMutableSharedFlow<T>(_ flow: LeapSDK.SkieSwiftMutableSharedFlow<T>) -> LeapSDK.SkieKotlinOptionalMutableSharedFlow<T> where T : AnyObject
+public func SkieKotlinOptionalMutableSharedFlow<T>(_ flow: LeapSDK.SkieSwiftOptionalMutableSharedFlow<T>) -> LeapSDK.SkieKotlinOptionalMutableSharedFlow<T> where T : AnyObject
+public func SkieKotlinOptionalMutableSharedFlow<T>(_ flow: LeapSDK.SkieSwiftMutableSharedFlow<T>) -> LeapSDK.SkieKotlinOptionalMutableSharedFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinOptionalMutableSharedFlow<T>(_ flow: LeapSDK.SkieSwiftOptionalMutableSharedFlow<T>) -> LeapSDK.SkieKotlinOptionalMutableSharedFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+extension LeapSDK.SkieSwiftOptionalMutableSharedFlow where T : AnyObject {
+  convenience public init(_ flow: LeapSDK.SkieKotlinMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinOptionalMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftOptionalMutableSharedFlow<T>)
+}
+extension LeapSDK.SkieSwiftOptionalMutableSharedFlow where T : Swift._ObjectiveCBridgeable {
+  convenience public init(_ flow: LeapSDK.SkieKotlinMutableSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinOptionalMutableSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftMutableSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftOptionalMutableSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftOptionalMutableSharedFlow<T>)
+}
+public func SkieKotlinStateFlow<T>(_ flow: LeapSDK.SkieSwiftStateFlow<T>) -> LeapSDK.SkieKotlinStateFlow<T> where T : AnyObject
+public func SkieKotlinStateFlow<T>(_ flow: LeapSDK.SkieSwiftMutableStateFlow<T>) -> LeapSDK.SkieKotlinStateFlow<T> where T : AnyObject
+public func SkieKotlinStateFlow<T>(_ flow: LeapSDK.SkieSwiftStateFlow<T>) -> LeapSDK.SkieKotlinStateFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinStateFlow<T>(_ flow: LeapSDK.SkieSwiftMutableStateFlow<T>) -> LeapSDK.SkieKotlinStateFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+extension LeapSDK.SkieSwiftStateFlow where T : AnyObject {
+  convenience public init(_ flow: LeapSDK.SkieKotlinStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinMutableStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftMutableStateFlow<T>)
+}
+extension LeapSDK.SkieSwiftStateFlow where T : Swift._ObjectiveCBridgeable {
+  convenience public init(_ flow: LeapSDK.SkieKotlinStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftMutableStateFlow<T>)
+}
+public func SkieKotlinOptionalStateFlow<T>(_ flow: LeapSDK.SkieSwiftStateFlow<T>) -> LeapSDK.SkieKotlinOptionalStateFlow<T> where T : AnyObject
+public func SkieKotlinOptionalStateFlow<T>(_ flow: LeapSDK.SkieSwiftOptionalStateFlow<T>) -> LeapSDK.SkieKotlinOptionalStateFlow<T> where T : AnyObject
+public func SkieKotlinOptionalStateFlow<T>(_ flow: LeapSDK.SkieSwiftMutableStateFlow<T>) -> LeapSDK.SkieKotlinOptionalStateFlow<T> where T : AnyObject
+public func SkieKotlinOptionalStateFlow<T>(_ flow: LeapSDK.SkieSwiftOptionalMutableStateFlow<T>) -> LeapSDK.SkieKotlinOptionalStateFlow<T> where T : AnyObject
+public func SkieKotlinOptionalStateFlow<T>(_ flow: LeapSDK.SkieSwiftStateFlow<T>) -> LeapSDK.SkieKotlinOptionalStateFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinOptionalStateFlow<T>(_ flow: LeapSDK.SkieSwiftOptionalStateFlow<T>) -> LeapSDK.SkieKotlinOptionalStateFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinOptionalStateFlow<T>(_ flow: LeapSDK.SkieSwiftMutableStateFlow<T>) -> LeapSDK.SkieKotlinOptionalStateFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinOptionalStateFlow<T>(_ flow: LeapSDK.SkieSwiftOptionalMutableStateFlow<T>) -> LeapSDK.SkieKotlinOptionalStateFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+extension LeapSDK.SkieSwiftOptionalStateFlow where T : AnyObject {
+  convenience public init(_ flow: LeapSDK.SkieKotlinStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinOptionalStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinMutableStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinOptionalMutableStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftOptionalStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftMutableStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftOptionalMutableStateFlow<T>)
+}
+extension LeapSDK.SkieSwiftOptionalStateFlow where T : Swift._ObjectiveCBridgeable {
+  convenience public init(_ flow: LeapSDK.SkieKotlinStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinOptionalStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinOptionalMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftOptionalStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftOptionalMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftOptionalStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftMutableStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftOptionalMutableStateFlow<T>)
+}
+public func SkieKotlinMutableStateFlow<T>(_ flow: LeapSDK.SkieSwiftMutableStateFlow<T>) -> LeapSDK.SkieKotlinMutableStateFlow<T> where T : AnyObject
+public func SkieKotlinMutableStateFlow<T>(_ flow: LeapSDK.SkieSwiftMutableStateFlow<T>) -> LeapSDK.SkieKotlinMutableStateFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+extension LeapSDK.SkieSwiftMutableStateFlow where T : AnyObject {
+  convenience public init(_ flow: LeapSDK.SkieKotlinMutableStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftMutableStateFlow<T>)
+}
+extension LeapSDK.SkieSwiftMutableStateFlow where T : Swift._ObjectiveCBridgeable {
+  convenience public init(_ flow: LeapSDK.SkieKotlinMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftMutableStateFlow<T>)
+}
+public func SkieKotlinOptionalMutableStateFlow<T>(_ flow: LeapSDK.SkieSwiftMutableStateFlow<T>) -> LeapSDK.SkieKotlinOptionalMutableStateFlow<T> where T : AnyObject
+public func SkieKotlinOptionalMutableStateFlow<T>(_ flow: LeapSDK.SkieSwiftOptionalMutableStateFlow<T>) -> LeapSDK.SkieKotlinOptionalMutableStateFlow<T> where T : AnyObject
+public func SkieKotlinOptionalMutableStateFlow<T>(_ flow: LeapSDK.SkieSwiftMutableStateFlow<T>) -> LeapSDK.SkieKotlinOptionalMutableStateFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinOptionalMutableStateFlow<T>(_ flow: LeapSDK.SkieSwiftOptionalMutableStateFlow<T>) -> LeapSDK.SkieKotlinOptionalMutableStateFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+extension LeapSDK.SkieSwiftOptionalMutableStateFlow where T : AnyObject {
+  convenience public init(_ flow: LeapSDK.SkieKotlinMutableStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinOptionalMutableStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftMutableStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftOptionalMutableStateFlow<T>)
+}
+extension LeapSDK.SkieSwiftOptionalMutableStateFlow where T : Swift._ObjectiveCBridgeable {
+  convenience public init(_ flow: LeapSDK.SkieKotlinMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieKotlinOptionalMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftOptionalMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftMutableStateFlow<T>)
+  convenience public init(_ flow: LeapSDK.SkieSwiftOptionalMutableStateFlow<T>)
+}
+@frozen public enum KotlinKVariance : Swift.Hashable, Swift.CaseIterable, Swift._ObjectiveCBridgeable {
+  case invariant
+  case `in`
+  case out
+  public var name: Swift.String {
+    get
+  }
+  public var ordinal: Swift.Int32 {
+    get
+  }
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _forceBridgeFromObjectiveC(_ source: LeapSDK.__KotlinKVariance, result: inout LeapSDK.KotlinKVariance?)
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _conditionallyBridgeFromObjectiveC(_ source: LeapSDK.__KotlinKVariance, result: inout LeapSDK.KotlinKVariance?) -> Swift.Bool
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _unconditionallyBridgeFromObjectiveC(_ source: LeapSDK.__KotlinKVariance?) -> LeapSDK.KotlinKVariance
+  #endif
+  public func _bridgeToObjectiveC() -> LeapSDK.__KotlinKVariance
+  public typealias _ObjectiveCType = LeapSDK.__KotlinKVariance
+  public static func == (a: LeapSDK.KotlinKVariance, b: LeapSDK.KotlinKVariance) -> Swift.Bool
+  public typealias AllCases = [LeapSDK.KotlinKVariance]
+  nonisolated public static var allCases: [LeapSDK.KotlinKVariance] {
+    get
+  }
+  public func hash(into hasher: inout Swift.Hasher)
+  public var hashValue: Swift.Int {
+    get
+  }
+}
+extension LeapSDK.KotlinKVariance {
+  public func toKotlinEnum() -> LeapSDK.__KotlinKVariance
+}
+extension LeapSDK.__KotlinKVariance {
+  public func toSwiftEnum() -> LeapSDK.KotlinKVariance
+}
+extension LeapSDK.ChatMessage {
+  public typealias Role = LeapSDK.__Bridge__ChatMessage_Role
+}
+extension LeapSDK.__Bridge__ChatMessage_Role {
+  public func toKotlinEnum() -> LeapSDK.ChatMessage.__Role
+}
+extension LeapSDK.ChatMessage.__Role {
+  public func toSwiftEnum() -> LeapSDK.ChatMessage.Role
+}
+@frozen public enum __Bridge__ChatMessage_Role : Swift.Hashable, Swift.CaseIterable, Swift._ObjectiveCBridgeable {
+  case system
+  case user
+  case assistant
+  case tool
+  public var name: Swift.String {
+    get
+  }
+  public var ordinal: Swift.Int32 {
+    get
+  }
+  public var type: Swift.String {
+    get
+  }
+  public static var companion: LeapSDK.ChatMessage.RoleCompanion {
+    get
+  }
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _forceBridgeFromObjectiveC(_ source: LeapSDK.ChatMessage.__Role, result: inout LeapSDK.ChatMessage.Role?)
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _conditionallyBridgeFromObjectiveC(_ source: LeapSDK.ChatMessage.__Role, result: inout LeapSDK.ChatMessage.Role?) -> Swift.Bool
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _unconditionallyBridgeFromObjectiveC(_ source: LeapSDK.ChatMessage.__Role?) -> LeapSDK.__Bridge__ChatMessage_Role
+  #endif
+  public func _bridgeToObjectiveC() -> LeapSDK.ChatMessage.__Role
+  public typealias _ObjectiveCType = LeapSDK.ChatMessage.__Role
+  public static func == (a: LeapSDK.__Bridge__ChatMessage_Role, b: LeapSDK.__Bridge__ChatMessage_Role) -> Swift.Bool
+  public typealias AllCases = [LeapSDK.__Bridge__ChatMessage_Role]
+  nonisolated public static var allCases: [LeapSDK.__Bridge__ChatMessage_Role] {
+    get
+  }
+  public func hash(into hasher: inout Swift.Hasher)
+  public var hashValue: Swift.Int {
+    get
+  }
+}
+@frozen public enum CacheControlPolicy : Swift.Hashable, Swift.CaseIterable, Swift._ObjectiveCBridgeable {
+  case cache
+  case noCache
+  public var name: Swift.String {
+    get
+  }
+  public var ordinal: Swift.Int32 {
+    get
+  }
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _forceBridgeFromObjectiveC(_ source: LeapSDK.__CacheControlPolicy, result: inout LeapSDK.CacheControlPolicy?)
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _conditionallyBridgeFromObjectiveC(_ source: LeapSDK.__CacheControlPolicy, result: inout LeapSDK.CacheControlPolicy?) -> Swift.Bool
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _unconditionallyBridgeFromObjectiveC(_ source: LeapSDK.__CacheControlPolicy?) -> LeapSDK.CacheControlPolicy
+  #endif
+  public func _bridgeToObjectiveC() -> LeapSDK.__CacheControlPolicy
+  public typealias _ObjectiveCType = LeapSDK.__CacheControlPolicy
+  public static func == (a: LeapSDK.CacheControlPolicy, b: LeapSDK.CacheControlPolicy) -> Swift.Bool
+  public typealias AllCases = [LeapSDK.CacheControlPolicy]
+  nonisolated public static var allCases: [LeapSDK.CacheControlPolicy] {
+    get
+  }
+  public func hash(into hasher: inout Swift.Hasher)
+  public var hashValue: Swift.Int {
+    get
+  }
+}
+extension LeapSDK.CacheControlPolicy {
+  public func toKotlinEnum() -> LeapSDK.__CacheControlPolicy
+}
+extension LeapSDK.__CacheControlPolicy {
+  public func toSwiftEnum() -> LeapSDK.CacheControlPolicy
+}
+@frozen public enum GenerationFinishReason : Swift.Hashable, Swift.CaseIterable, Swift._ObjectiveCBridgeable {
+  case stop
+  case exceedContext
+  case interrupted
+  case constraint
+  case error
+  public var name: Swift.String {
+    get
+  }
+  public var ordinal: Swift.Int32 {
+    get
+  }
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _forceBridgeFromObjectiveC(_ source: LeapSDK.__GenerationFinishReason, result: inout LeapSDK.GenerationFinishReason?)
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _conditionallyBridgeFromObjectiveC(_ source: LeapSDK.__GenerationFinishReason, result: inout LeapSDK.GenerationFinishReason?) -> Swift.Bool
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _unconditionallyBridgeFromObjectiveC(_ source: LeapSDK.__GenerationFinishReason?) -> LeapSDK.GenerationFinishReason
+  #endif
+  public func _bridgeToObjectiveC() -> LeapSDK.__GenerationFinishReason
+  public typealias _ObjectiveCType = LeapSDK.__GenerationFinishReason
+  public static func == (a: LeapSDK.GenerationFinishReason, b: LeapSDK.GenerationFinishReason) -> Swift.Bool
+  public typealias AllCases = [LeapSDK.GenerationFinishReason]
+  nonisolated public static var allCases: [LeapSDK.GenerationFinishReason] {
+    get
+  }
+  public func hash(into hasher: inout Swift.Hasher)
+  public var hashValue: Swift.Int {
+    get
+  }
+}
+extension LeapSDK.GenerationFinishReason {
+  public func toKotlinEnum() -> LeapSDK.__GenerationFinishReason
+}
+extension LeapSDK.__GenerationFinishReason {
+  public func toSwiftEnum() -> LeapSDK.GenerationFinishReason
+}
+@frozen public enum PythonicTokenName : Swift.Hashable, Swift.CaseIterable, Swift._ObjectiveCBridgeable {
+  case leftSquareBracket
+  case rightSquareBracket
+  case leftParentheses
+  case rightParentheses
+  case leftCurlyBracket
+  case rightCurlyBracket
+  case colon
+  case comma
+  case equal
+  case identifier
+  case numberLiteral
+  case stringLiteral
+  case space
+  public var name: Swift.String {
+    get
+  }
+  public var ordinal: Swift.Int32 {
+    get
+  }
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _forceBridgeFromObjectiveC(_ source: LeapSDK.__PythonicTokenName, result: inout LeapSDK.PythonicTokenName?)
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _conditionallyBridgeFromObjectiveC(_ source: LeapSDK.__PythonicTokenName, result: inout LeapSDK.PythonicTokenName?) -> Swift.Bool
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _unconditionallyBridgeFromObjectiveC(_ source: LeapSDK.__PythonicTokenName?) -> LeapSDK.PythonicTokenName
+  #endif
+  public func _bridgeToObjectiveC() -> LeapSDK.__PythonicTokenName
+  public typealias _ObjectiveCType = LeapSDK.__PythonicTokenName
+  public static func == (a: LeapSDK.PythonicTokenName, b: LeapSDK.PythonicTokenName) -> Swift.Bool
+  public typealias AllCases = [LeapSDK.PythonicTokenName]
+  nonisolated public static var allCases: [LeapSDK.PythonicTokenName] {
+    get
+  }
+  public func hash(into hasher: inout Swift.Hasher)
+  public var hashValue: Swift.Int {
+    get
+  }
+}
+extension LeapSDK.PythonicTokenName {
+  public func toKotlinEnum() -> LeapSDK.__PythonicTokenName
+}
+extension LeapSDK.__PythonicTokenName {
+  public func toSwiftEnum() -> LeapSDK.PythonicTokenName
+}
+@frozen public enum GenerationStopReason : Swift.Hashable, Swift.CaseIterable, Swift._ObjectiveCBridgeable {
+  case finished
+  case interrupted
+  case outOfContext
+  case unknown
+  public var name: Swift.String {
+    get
+  }
+  public var ordinal: Swift.Int32 {
+    get
+  }
+  public static var companion: LeapSDK.__GenerationStopReason.Companion {
+    get
+  }
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _forceBridgeFromObjectiveC(_ source: LeapSDK.__GenerationStopReason, result: inout LeapSDK.GenerationStopReason?)
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _conditionallyBridgeFromObjectiveC(_ source: LeapSDK.__GenerationStopReason, result: inout LeapSDK.GenerationStopReason?) -> Swift.Bool
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _unconditionallyBridgeFromObjectiveC(_ source: LeapSDK.__GenerationStopReason?) -> LeapSDK.GenerationStopReason
+  #endif
+  public func _bridgeToObjectiveC() -> LeapSDK.__GenerationStopReason
+  public typealias _ObjectiveCType = LeapSDK.__GenerationStopReason
+  public typealias Companion = LeapSDK.__GenerationStopReason.Companion
+  public static func == (a: LeapSDK.GenerationStopReason, b: LeapSDK.GenerationStopReason) -> Swift.Bool
+  public typealias AllCases = [LeapSDK.GenerationStopReason]
+  nonisolated public static var allCases: [LeapSDK.GenerationStopReason] {
+    get
+  }
+  public func hash(into hasher: inout Swift.Hasher)
+  public var hashValue: Swift.Int {
+    get
+  }
+}
+extension LeapSDK.GenerationStopReason {
+  public func toKotlinEnum() -> LeapSDK.__GenerationStopReason
+}
+extension LeapSDK.__GenerationStopReason {
+  public func toSwiftEnum() -> LeapSDK.GenerationStopReason
+}
+@frozen public enum Kotlinx_serialization_jsonClassDiscriminatorMode : Swift.Hashable, Swift.CaseIterable, Swift._ObjectiveCBridgeable {
+  case none
+  case allJsonObjects
+  case polymorphic
+  public var name: Swift.String {
+    get
+  }
+  public var ordinal: Swift.Int32 {
+    get
+  }
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _forceBridgeFromObjectiveC(_ source: LeapSDK.__Kotlinx_serialization_jsonClassDiscriminatorMode, result: inout LeapSDK.Kotlinx_serialization_jsonClassDiscriminatorMode?)
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _conditionallyBridgeFromObjectiveC(_ source: LeapSDK.__Kotlinx_serialization_jsonClassDiscriminatorMode, result: inout LeapSDK.Kotlinx_serialization_jsonClassDiscriminatorMode?) -> Swift.Bool
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _unconditionallyBridgeFromObjectiveC(_ source: LeapSDK.__Kotlinx_serialization_jsonClassDiscriminatorMode?) -> LeapSDK.Kotlinx_serialization_jsonClassDiscriminatorMode
+  #endif
+  public func _bridgeToObjectiveC() -> LeapSDK.__Kotlinx_serialization_jsonClassDiscriminatorMode
+  public typealias _ObjectiveCType = LeapSDK.__Kotlinx_serialization_jsonClassDiscriminatorMode
+  public static func == (a: LeapSDK.Kotlinx_serialization_jsonClassDiscriminatorMode, b: LeapSDK.Kotlinx_serialization_jsonClassDiscriminatorMode) -> Swift.Bool
+  public typealias AllCases = [LeapSDK.Kotlinx_serialization_jsonClassDiscriminatorMode]
+  nonisolated public static var allCases: [LeapSDK.Kotlinx_serialization_jsonClassDiscriminatorMode] {
+    get
+  }
+  public func hash(into hasher: inout Swift.Hasher)
+  public var hashValue: Swift.Int {
+    get
+  }
+}
+extension LeapSDK.Kotlinx_serialization_jsonClassDiscriminatorMode {
+  public func toKotlinEnum() -> LeapSDK.__Kotlinx_serialization_jsonClassDiscriminatorMode
+}
+extension LeapSDK.__Kotlinx_serialization_jsonClassDiscriminatorMode {
+  public func toSwiftEnum() -> LeapSDK.Kotlinx_serialization_jsonClassDiscriminatorMode
+}
+@frozen public enum Ktor_utilsMonth : Swift.Hashable, Swift.CaseIterable, Swift._ObjectiveCBridgeable {
+  case january
+  case february
+  case march
+  case april
+  case may
+  case june
+  case july
+  case august
+  case september
+  case october
+  case november
+  case december
+  public var name: Swift.String {
+    get
+  }
+  public var ordinal: Swift.Int32 {
+    get
+  }
+  public var value: Swift.String {
+    get
+  }
+  public static var companion: LeapSDK.__Ktor_utilsMonth.Companion {
+    get
+  }
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _forceBridgeFromObjectiveC(_ source: LeapSDK.__Ktor_utilsMonth, result: inout LeapSDK.Ktor_utilsMonth?)
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _conditionallyBridgeFromObjectiveC(_ source: LeapSDK.__Ktor_utilsMonth, result: inout LeapSDK.Ktor_utilsMonth?) -> Swift.Bool
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _unconditionallyBridgeFromObjectiveC(_ source: LeapSDK.__Ktor_utilsMonth?) -> LeapSDK.Ktor_utilsMonth
+  #endif
+  public func _bridgeToObjectiveC() -> LeapSDK.__Ktor_utilsMonth
+  public typealias _ObjectiveCType = LeapSDK.__Ktor_utilsMonth
+  public typealias Companion = LeapSDK.__Ktor_utilsMonth.Companion
+  public static func == (a: LeapSDK.Ktor_utilsMonth, b: LeapSDK.Ktor_utilsMonth) -> Swift.Bool
+  public typealias AllCases = [LeapSDK.Ktor_utilsMonth]
+  nonisolated public static var allCases: [LeapSDK.Ktor_utilsMonth] {
+    get
+  }
+  public func hash(into hasher: inout Swift.Hasher)
+  public var hashValue: Swift.Int {
+    get
+  }
+}
+extension LeapSDK.Ktor_utilsMonth {
+  public func toKotlinEnum() -> LeapSDK.__Ktor_utilsMonth
+}
+extension LeapSDK.__Ktor_utilsMonth {
+  public func toSwiftEnum() -> LeapSDK.Ktor_utilsMonth
+}
+@frozen public enum Ktor_utilsWeekDay : Swift.Hashable, Swift.CaseIterable, Swift._ObjectiveCBridgeable {
+  case monday
+  case tuesday
+  case wednesday
+  case thursday
+  case friday
+  case saturday
+  case sunday
+  public var name: Swift.String {
+    get
+  }
+  public var ordinal: Swift.Int32 {
+    get
+  }
+  public var value: Swift.String {
+    get
+  }
+  public static var companion: LeapSDK.__Ktor_utilsWeekDay.Companion {
+    get
+  }
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _forceBridgeFromObjectiveC(_ source: LeapSDK.__Ktor_utilsWeekDay, result: inout LeapSDK.Ktor_utilsWeekDay?)
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _conditionallyBridgeFromObjectiveC(_ source: LeapSDK.__Ktor_utilsWeekDay, result: inout LeapSDK.Ktor_utilsWeekDay?) -> Swift.Bool
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _unconditionallyBridgeFromObjectiveC(_ source: LeapSDK.__Ktor_utilsWeekDay?) -> LeapSDK.Ktor_utilsWeekDay
+  #endif
+  public func _bridgeToObjectiveC() -> LeapSDK.__Ktor_utilsWeekDay
+  public typealias _ObjectiveCType = LeapSDK.__Ktor_utilsWeekDay
+  public typealias Companion = LeapSDK.__Ktor_utilsWeekDay.Companion
+  public static func == (a: LeapSDK.Ktor_utilsWeekDay, b: LeapSDK.Ktor_utilsWeekDay) -> Swift.Bool
+  public typealias AllCases = [LeapSDK.Ktor_utilsWeekDay]
+  nonisolated public static var allCases: [LeapSDK.Ktor_utilsWeekDay] {
+    get
+  }
+  public func hash(into hasher: inout Swift.Hasher)
+  public var hashValue: Swift.Int {
+    get
+  }
+}
+extension LeapSDK.Ktor_utilsWeekDay {
+  public func toKotlinEnum() -> LeapSDK.__Ktor_utilsWeekDay
+}
+extension LeapSDK.__Ktor_utilsWeekDay {
+  public func toSwiftEnum() -> LeapSDK.Ktor_utilsWeekDay
+}
+extension LeapSDK.Skie.RuntimeKotlin.Skie_SuspendResult {
+  @frozen public enum __Sealed : Swift.Hashable {
+    case canceled(LeapSDK.Skie_SuspendResult.Canceled)
+    case error(LeapSDK.Skie_SuspendResult.Error)
+    case success(LeapSDK.Skie_SuspendResult.Success)
+    public static func == (a: LeapSDK.Skie.RuntimeKotlin.Skie_SuspendResult.__Sealed, b: LeapSDK.Skie.RuntimeKotlin.Skie_SuspendResult.__Sealed) -> Swift.Bool
+    public func hash(into hasher: inout Swift.Hasher)
+    public var hashValue: Swift.Int {
+      get
+    }
+  }
+}
+public func onEnum<__Sealed>(of sealed: __Sealed) -> LeapSDK.Skie.RuntimeKotlin.Skie_SuspendResult.__Sealed where __Sealed : LeapSDK.Skie_SuspendResult
+#if compiler(>=5.3) && $NonescapableTypes
+@_disfavoredOverload public func onEnum<__Sealed>(of sealed: __Sealed?) -> LeapSDK.Skie.RuntimeKotlin.Skie_SuspendResult.__Sealed? where __Sealed : LeapSDK.Skie_SuspendResult
+#endif
+extension LeapSDK.Skie.KotlinxCoroutinesCore.SelectClause2 {
+  @frozen public enum __Sealed : Swift.Hashable {
+    case `else`
+    public static func == (a: LeapSDK.Skie.KotlinxCoroutinesCore.SelectClause2.__Sealed, b: LeapSDK.Skie.KotlinxCoroutinesCore.SelectClause2.__Sealed) -> Swift.Bool
+    public func hash(into hasher: inout Swift.Hasher)
+    public var hashValue: Swift.Int {
+      get
+    }
+  }
+}
+public func onEnum<__Sealed>(of sealed: __Sealed) -> LeapSDK.Skie.KotlinxCoroutinesCore.SelectClause2.__Sealed where __Sealed : LeapSDK.Kotlinx_coroutines_coreSelectClause2
+#if compiler(>=5.3) && $NonescapableTypes
+@_disfavoredOverload public func onEnum<__Sealed>(of sealed: __Sealed?) -> LeapSDK.Skie.KotlinxCoroutinesCore.SelectClause2.__Sealed? where __Sealed : LeapSDK.Kotlinx_coroutines_coreSelectClause2
+#endif
+extension LeapSDK.Skie.KotlinxCoroutinesCore.SelectClause {
+  @frozen public enum __Sealed {
+    case selectClause0(any LeapSDK.Kotlinx_coroutines_coreSelectClause0)
+    case selectClause1(any LeapSDK.Kotlinx_coroutines_coreSelectClause1)
+    case selectClause2(any LeapSDK.Kotlinx_coroutines_coreSelectClause2)
+  }
+}
+public func onEnum<__Sealed>(of sealed: __Sealed) -> LeapSDK.Skie.KotlinxCoroutinesCore.SelectClause.__Sealed where __Sealed : LeapSDK.Kotlinx_coroutines_coreSelectClause
+#if compiler(>=5.3) && $NonescapableTypes
+@_disfavoredOverload public func onEnum<__Sealed>(of sealed: __Sealed?) -> LeapSDK.Skie.KotlinxCoroutinesCore.SelectClause.__Sealed? where __Sealed : LeapSDK.Kotlinx_coroutines_coreSelectClause
+#endif
+extension LeapSDK.Skie.KotlinxCoroutinesCore.SelectInstance {
+  @frozen public enum __Sealed : Swift.Hashable {
+    case `else`
+    public static func == (a: LeapSDK.Skie.KotlinxCoroutinesCore.SelectInstance.__Sealed, b: LeapSDK.Skie.KotlinxCoroutinesCore.SelectInstance.__Sealed) -> Swift.Bool
+    public func hash(into hasher: inout Swift.Hasher)
+    public var hashValue: Swift.Int {
+      get
+    }
+  }
+}
+public func onEnum<__Sealed>(of sealed: __Sealed) -> LeapSDK.Skie.KotlinxCoroutinesCore.SelectInstance.__Sealed where __Sealed : LeapSDK.Kotlinx_coroutines_coreSelectInstance
+#if compiler(>=5.3) && $NonescapableTypes
+@_disfavoredOverload public func onEnum<__Sealed>(of sealed: __Sealed?) -> LeapSDK.Skie.KotlinxCoroutinesCore.SelectInstance.__Sealed? where __Sealed : LeapSDK.Kotlinx_coroutines_coreSelectInstance
+#endif
+extension LeapSDK.Skie.KotlinxCoroutinesCore.SelectClause0 {
+  @frozen public enum __Sealed : Swift.Hashable {
+    case `else`
+    public static func == (a: LeapSDK.Skie.KotlinxCoroutinesCore.SelectClause0.__Sealed, b: LeapSDK.Skie.KotlinxCoroutinesCore.SelectClause0.__Sealed) -> Swift.Bool
+    public func hash(into hasher: inout Swift.Hasher)
+    public var hashValue: Swift.Int {
+      get
+    }
+  }
+}
+public func onEnum<__Sealed>(of sealed: __Sealed) -> LeapSDK.Skie.KotlinxCoroutinesCore.SelectClause0.__Sealed where __Sealed : LeapSDK.Kotlinx_coroutines_coreSelectClause0
+#if compiler(>=5.3) && $NonescapableTypes
+@_disfavoredOverload public func onEnum<__Sealed>(of sealed: __Sealed?) -> LeapSDK.Skie.KotlinxCoroutinesCore.SelectClause0.__Sealed? where __Sealed : LeapSDK.Kotlinx_coroutines_coreSelectClause0
+#endif
+extension LeapSDK.Skie.KotlinxCoroutinesCore.SelectClause1 {
+  @frozen public enum __Sealed : Swift.Hashable {
+    case `else`
+    public static func == (a: LeapSDK.Skie.KotlinxCoroutinesCore.SelectClause1.__Sealed, b: LeapSDK.Skie.KotlinxCoroutinesCore.SelectClause1.__Sealed) -> Swift.Bool
+    public func hash(into hasher: inout Swift.Hasher)
+    public var hashValue: Swift.Int {
+      get
+    }
+  }
+}
+public func onEnum<__Sealed>(of sealed: __Sealed) -> LeapSDK.Skie.KotlinxCoroutinesCore.SelectClause1.__Sealed where __Sealed : LeapSDK.Kotlinx_coroutines_coreSelectClause1
+#if compiler(>=5.3) && $NonescapableTypes
+@_disfavoredOverload public func onEnum<__Sealed>(of sealed: __Sealed?) -> LeapSDK.Skie.KotlinxCoroutinesCore.SelectClause1.__Sealed? where __Sealed : LeapSDK.Kotlinx_coroutines_coreSelectClause1
+#endif
+extension LeapSDK.Skie.LeapSdk.LeapFunctionParameterType {
+  @frozen public enum __Sealed : Swift.Hashable {
+    case leapArr(LeapSDK.LeapFunctionParameterType.LeapArr)
+    case leapBool(LeapSDK.LeapFunctionParameterType.LeapBool)
+    case leapInt(LeapSDK.LeapFunctionParameterType.LeapInt)
+    case leapNull(LeapSDK.LeapFunctionParameterType.LeapNull)
+    case leapNum(LeapSDK.LeapFunctionParameterType.LeapNum)
+    case leapObj(LeapSDK.LeapFunctionParameterType.LeapObj)
+    case leapStr(LeapSDK.LeapFunctionParameterType.LeapStr)
+    public static func == (a: LeapSDK.Skie.LeapSdk.LeapFunctionParameterType.__Sealed, b: LeapSDK.Skie.LeapSdk.LeapFunctionParameterType.__Sealed) -> Swift.Bool
+    public func hash(into hasher: inout Swift.Hasher)
+    public var hashValue: Swift.Int {
+      get
+    }
+  }
+}
+public func onEnum<__Sealed>(of sealed: __Sealed) -> LeapSDK.Skie.LeapSdk.LeapFunctionParameterType.__Sealed where __Sealed : LeapSDK.LeapFunctionParameterType
+#if compiler(>=5.3) && $NonescapableTypes
+@_disfavoredOverload public func onEnum<__Sealed>(of sealed: __Sealed?) -> LeapSDK.Skie.LeapSdk.LeapFunctionParameterType.__Sealed? where __Sealed : LeapSDK.LeapFunctionParameterType
+#endif
+extension LeapSDK.Skie.LeapSdk.ChatMessageContent {
+  @frozen public enum __Sealed : Swift.Hashable {
+    case audio(LeapSDK.ChatMessageContent.Audio)
+    case audioPcmF32(LeapSDK.ChatMessageContent.AudioPcmF32)
+    case image(LeapSDK.ChatMessageContent.Image)
+    case text(LeapSDK.ChatMessageContent.Text)
+    public static func == (a: LeapSDK.Skie.LeapSdk.ChatMessageContent.__Sealed, b: LeapSDK.Skie.LeapSdk.ChatMessageContent.__Sealed) -> Swift.Bool
+    public func hash(into hasher: inout Swift.Hasher)
+    public var hashValue: Swift.Int {
+      get
+    }
+  }
+}
+public func onEnum<__Sealed>(of sealed: __Sealed) -> LeapSDK.Skie.LeapSdk.ChatMessageContent.__Sealed where __Sealed : LeapSDK.ChatMessageContent
+#if compiler(>=5.3) && $NonescapableTypes
+@_disfavoredOverload public func onEnum<__Sealed>(of sealed: __Sealed?) -> LeapSDK.Skie.LeapSdk.ChatMessageContent.__Sealed? where __Sealed : LeapSDK.ChatMessageContent
+#endif
+extension LeapSDK.Skie.LeapSdk.MessageResponse {
+  @frozen public enum __Sealed : Swift.Hashable {
+    case audioSample(LeapSDK.MessageResponseAudioSample)
+    case chunk(LeapSDK.MessageResponseChunk)
+    case complete(LeapSDK.MessageResponseComplete)
+    case functionCalls(LeapSDK.MessageResponseFunctionCalls)
+    case reasoningChunk(LeapSDK.MessageResponseReasoningChunk)
+    public static func == (a: LeapSDK.Skie.LeapSdk.MessageResponse.__Sealed, b: LeapSDK.Skie.LeapSdk.MessageResponse.__Sealed) -> Swift.Bool
+    public func hash(into hasher: inout Swift.Hasher)
+    public var hashValue: Swift.Int {
+      get
+    }
+  }
+}
+public func onEnum<__Sealed>(of sealed: __Sealed) -> LeapSDK.Skie.LeapSdk.MessageResponse.__Sealed where __Sealed : LeapSDK.MessageResponse
+#if compiler(>=5.3) && $NonescapableTypes
+@_disfavoredOverload public func onEnum<__Sealed>(of sealed: __Sealed?) -> LeapSDK.Skie.LeapSdk.MessageResponse.__Sealed? where __Sealed : LeapSDK.MessageResponse
+#endif
+extension LeapSDK.Skie.LeapSdk.LoadTimeParameters {
+  @frozen public enum __Sealed : Swift.Hashable {
+    case imageToTextLoadParams(LeapSDK.ImageToTextLoadParams)
+    case lfm2AudioV1LoadParams(LeapSDK.Lfm2AudioV1LoadParams)
+    case textToTextLoadParams(LeapSDK.TextToTextLoadParams)
+    public static func == (a: LeapSDK.Skie.LeapSdk.LoadTimeParameters.__Sealed, b: LeapSDK.Skie.LeapSdk.LoadTimeParameters.__Sealed) -> Swift.Bool
+    public func hash(into hasher: inout Swift.Hasher)
+    public var hashValue: Swift.Int {
+      get
+    }
+  }
+}
+public func onEnum<__Sealed>(of sealed: __Sealed) -> LeapSDK.Skie.LeapSdk.LoadTimeParameters.__Sealed where __Sealed : LeapSDK.LoadTimeParameters
+#if compiler(>=5.3) && $NonescapableTypes
+@_disfavoredOverload public func onEnum<__Sealed>(of sealed: __Sealed?) -> LeapSDK.Skie.LeapSdk.LoadTimeParameters.__Sealed? where __Sealed : LeapSDK.LoadTimeParameters
+#endif
+extension LeapSDK.Skie.LeapSdk.LiquidMessageResponse {
+  @frozen public enum __Sealed : Swift.Hashable {
+    case audioSample(LeapSDK.LiquidMessageResponse.AudioSample)
+    case chunk(LeapSDK.LiquidMessageResponse.Chunk)
+    case complete(LeapSDK.LiquidMessageResponse.Complete)
+    case functionCall(LeapSDK.LiquidMessageResponse.FunctionCall)
+    case reasoningChunk(LeapSDK.LiquidMessageResponse.ReasoningChunk)
+    public static func == (a: LeapSDK.Skie.LeapSdk.LiquidMessageResponse.__Sealed, b: LeapSDK.Skie.LeapSdk.LiquidMessageResponse.__Sealed) -> Swift.Bool
+    public func hash(into hasher: inout Swift.Hasher)
+    public var hashValue: Swift.Int {
+      get
+    }
+  }
+}
+public func onEnum<__Sealed>(of sealed: __Sealed) -> LeapSDK.Skie.LeapSdk.LiquidMessageResponse.__Sealed where __Sealed : LeapSDK.LiquidMessageResponse
+#if compiler(>=5.3) && $NonescapableTypes
+@_disfavoredOverload public func onEnum<__Sealed>(of sealed: __Sealed?) -> LeapSDK.Skie.LeapSdk.LiquidMessageResponse.__Sealed? where __Sealed : LeapSDK.LiquidMessageResponse
+#endif
+extension LeapSDK.Skie.LeapSdk.FunctionArg {
+  @frozen public enum __Sealed : Swift.Hashable {
+    case leapArr(LeapSDK.LeapArr)
+    case leapBool(LeapSDK.LeapBool)
+    case leapNull(LeapSDK.LeapNull)
+    case leapNum(LeapSDK.LeapNum)
+    case leapObj(LeapSDK.LeapObj)
+    case leapStr(LeapSDK.LeapStr)
+    public static func == (a: LeapSDK.Skie.LeapSdk.FunctionArg.__Sealed, b: LeapSDK.Skie.LeapSdk.FunctionArg.__Sealed) -> Swift.Bool
+    public func hash(into hasher: inout Swift.Hasher)
+    public var hashValue: Swift.Int {
+      get
+    }
+  }
+}
+public func onEnum<__Sealed>(of sealed: __Sealed) -> LeapSDK.Skie.LeapSdk.FunctionArg.__Sealed where __Sealed : LeapSDK.FunctionArg
+#if compiler(>=5.3) && $NonescapableTypes
+@_disfavoredOverload public func onEnum<__Sealed>(of sealed: __Sealed?) -> LeapSDK.Skie.LeapSdk.FunctionArg.__Sealed? where __Sealed : LeapSDK.FunctionArg
+#endif
+extension LeapSDK.Skie.LeapSdk.LeapNum {
+  @frozen public enum __Sealed : Swift.Hashable {
+    case doubleNum(LeapSDK.LeapNum.DoubleNum)
+    case intNum(LeapSDK.LeapNum.IntNum)
+    case longNum(LeapSDK.LeapNum.LongNum)
+    public static func == (a: LeapSDK.Skie.LeapSdk.LeapNum.__Sealed, b: LeapSDK.Skie.LeapSdk.LeapNum.__Sealed) -> Swift.Bool
+    public func hash(into hasher: inout Swift.Hasher)
+    public var hashValue: Swift.Int {
+      get
+    }
+  }
+}
+public func onEnum<__Sealed>(of sealed: __Sealed) -> LeapSDK.Skie.LeapSdk.LeapNum.__Sealed where __Sealed : LeapSDK.LeapNum
+#if compiler(>=5.3) && $NonescapableTypes
+@_disfavoredOverload public func onEnum<__Sealed>(of sealed: __Sealed?) -> LeapSDK.Skie.LeapSdk.LeapNum.__Sealed? where __Sealed : LeapSDK.LeapNum
+#endif
+extension LeapSDK.Skie.LeapSdk.LeapFunctionParameterTypeDto {
+  @frozen public enum __Sealed : Swift.Hashable {
+    case arr(LeapSDK.LeapFunctionParameterTypeDto.Arr)
+    case bool(LeapSDK.LeapFunctionParameterTypeDto.Bool)
+    case intType(LeapSDK.LeapFunctionParameterTypeDto.IntType)
+    case nullType(LeapSDK.LeapFunctionParameterTypeDto.NullType)
+    case num(LeapSDK.LeapFunctionParameterTypeDto.Num)
+    case obj(LeapSDK.LeapFunctionParameterTypeDto.Obj)
+    case str(LeapSDK.LeapFunctionParameterTypeDto.Str)
+    public static func == (a: LeapSDK.Skie.LeapSdk.LeapFunctionParameterTypeDto.__Sealed, b: LeapSDK.Skie.LeapSdk.LeapFunctionParameterTypeDto.__Sealed) -> Swift.Bool
+    public func hash(into hasher: inout Swift.Hasher)
+    public var hashValue: Swift.Int {
+      get
+    }
+  }
+}
+public func onEnum<__Sealed>(of sealed: __Sealed) -> LeapSDK.Skie.LeapSdk.LeapFunctionParameterTypeDto.__Sealed where __Sealed : LeapSDK.LeapFunctionParameterTypeDto
+#if compiler(>=5.3) && $NonescapableTypes
+@_disfavoredOverload public func onEnum<__Sealed>(of sealed: __Sealed?) -> LeapSDK.Skie.LeapSdk.LeapFunctionParameterTypeDto.__Sealed? where __Sealed : LeapSDK.LeapFunctionParameterTypeDto
+#endif
+extension LeapSDK.Skie.KotlinxSerializationJson.JsonElement {
+  @frozen public enum __Sealed : Swift.Hashable {
+    case jsonPrimitive(LeapSDK.Kotlinx_serialization_jsonJsonPrimitive)
+    case `else`
+    public static func == (a: LeapSDK.Skie.KotlinxSerializationJson.JsonElement.__Sealed, b: LeapSDK.Skie.KotlinxSerializationJson.JsonElement.__Sealed) -> Swift.Bool
+    public func hash(into hasher: inout Swift.Hasher)
+    public var hashValue: Swift.Int {
+      get
+    }
+  }
+}
+public func onEnum<__Sealed>(of sealed: __Sealed) -> LeapSDK.Skie.KotlinxSerializationJson.JsonElement.__Sealed where __Sealed : LeapSDK.Kotlinx_serialization_jsonJsonElement
+#if compiler(>=5.3) && $NonescapableTypes
+@_disfavoredOverload public func onEnum<__Sealed>(of sealed: __Sealed?) -> LeapSDK.Skie.KotlinxSerializationJson.JsonElement.__Sealed? where __Sealed : LeapSDK.Kotlinx_serialization_jsonJsonElement
+#endif
+extension LeapSDK.Skie.KotlinxSerializationJson.Json {
+  @frozen public enum __Sealed : Swift.Hashable {
+    case `default`(LeapSDK.Kotlinx_serialization_jsonJson.Default)
+    case `else`
+    public static func == (a: LeapSDK.Skie.KotlinxSerializationJson.Json.__Sealed, b: LeapSDK.Skie.KotlinxSerializationJson.Json.__Sealed) -> Swift.Bool
+    public func hash(into hasher: inout Swift.Hasher)
+    public var hashValue: Swift.Int {
+      get
+    }
+  }
+}
+public func onEnum<__Sealed>(of sealed: __Sealed) -> LeapSDK.Skie.KotlinxSerializationJson.Json.__Sealed where __Sealed : LeapSDK.Kotlinx_serialization_jsonJson
+#if compiler(>=5.3) && $NonescapableTypes
+@_disfavoredOverload public func onEnum<__Sealed>(of sealed: __Sealed?) -> LeapSDK.Skie.KotlinxSerializationJson.Json.__Sealed? where __Sealed : LeapSDK.Kotlinx_serialization_jsonJson
+#endif
+extension LeapSDK.Skie.KotlinxSerializationJson.JsonPrimitive {
+  @frozen public enum __Sealed : Swift.Hashable {
+    case jsonNull(LeapSDK.Kotlinx_serialization_jsonJsonNull)
+    case `else`
+    public static func == (a: LeapSDK.Skie.KotlinxSerializationJson.JsonPrimitive.__Sealed, b: LeapSDK.Skie.KotlinxSerializationJson.JsonPrimitive.__Sealed) -> Swift.Bool
+    public func hash(into hasher: inout Swift.Hasher)
+    public var hashValue: Swift.Int {
+      get
+    }
+  }
+}
+public func onEnum<__Sealed>(of sealed: __Sealed) -> LeapSDK.Skie.KotlinxSerializationJson.JsonPrimitive.__Sealed where __Sealed : LeapSDK.Kotlinx_serialization_jsonJsonPrimitive
+#if compiler(>=5.3) && $NonescapableTypes
+@_disfavoredOverload public func onEnum<__Sealed>(of sealed: __Sealed?) -> LeapSDK.Skie.KotlinxSerializationJson.JsonPrimitive.__Sealed? where __Sealed : LeapSDK.Kotlinx_serialization_jsonJsonPrimitive
+#endif
+extension LeapSDK.Skie.KotlinxSerializationCore.SerialKind {
+  @frozen public enum __Sealed : Swift.Hashable {
+    case polymorphicKind(LeapSDK.Kotlinx_serialization_corePolymorphicKind)
+    case primitiveKind(LeapSDK.Kotlinx_serialization_corePrimitiveKind)
+    case cONTEXTUAL(LeapSDK.Kotlinx_serialization_coreSerialKind.CONTEXTUAL)
+    case eNUM(LeapSDK.Kotlinx_serialization_coreSerialKind.ENUM)
+    case structureKind(LeapSDK.Kotlinx_serialization_coreStructureKind)
+    public static func == (a: LeapSDK.Skie.KotlinxSerializationCore.SerialKind.__Sealed, b: LeapSDK.Skie.KotlinxSerializationCore.SerialKind.__Sealed) -> Swift.Bool
+    public func hash(into hasher: inout Swift.Hasher)
+    public var hashValue: Swift.Int {
+      get
+    }
+  }
+}
+public func onEnum<__Sealed>(of sealed: __Sealed) -> LeapSDK.Skie.KotlinxSerializationCore.SerialKind.__Sealed where __Sealed : LeapSDK.Kotlinx_serialization_coreSerialKind
+#if compiler(>=5.3) && $NonescapableTypes
+@_disfavoredOverload public func onEnum<__Sealed>(of sealed: __Sealed?) -> LeapSDK.Skie.KotlinxSerializationCore.SerialKind.__Sealed? where __Sealed : LeapSDK.Kotlinx_serialization_coreSerialKind
+#endif
+extension LeapSDK.Skie.KotlinxSerializationCore.SerializersModule {
+  @frozen public enum __Sealed : Swift.Hashable {
+    case `else`
+    public static func == (a: LeapSDK.Skie.KotlinxSerializationCore.SerializersModule.__Sealed, b: LeapSDK.Skie.KotlinxSerializationCore.SerializersModule.__Sealed) -> Swift.Bool
+    public func hash(into hasher: inout Swift.Hasher)
+    public var hashValue: Swift.Int {
+      get
+    }
+  }
+}
+public func onEnum<__Sealed>(of sealed: __Sealed) -> LeapSDK.Skie.KotlinxSerializationCore.SerializersModule.__Sealed where __Sealed : LeapSDK.Kotlinx_serialization_coreSerializersModule
+#if compiler(>=5.3) && $NonescapableTypes
+@_disfavoredOverload public func onEnum<__Sealed>(of sealed: __Sealed?) -> LeapSDK.Skie.KotlinxSerializationCore.SerializersModule.__Sealed? where __Sealed : LeapSDK.Kotlinx_serialization_coreSerializersModule
+#endif
+extension LeapSDK.Skie.KotlinxSerializationCore.PolymorphicKind {
+  @frozen public enum __Sealed : Swift.Hashable {
+    case oPEN(LeapSDK.Kotlinx_serialization_corePolymorphicKind.OPEN)
+    case sEALED(LeapSDK.Kotlinx_serialization_corePolymorphicKind.SEALED)
+    public static func == (a: LeapSDK.Skie.KotlinxSerializationCore.PolymorphicKind.__Sealed, b: LeapSDK.Skie.KotlinxSerializationCore.PolymorphicKind.__Sealed) -> Swift.Bool
+    public func hash(into hasher: inout Swift.Hasher)
+    public var hashValue: Swift.Int {
+      get
+    }
+  }
+}
+public func onEnum<__Sealed>(of sealed: __Sealed) -> LeapSDK.Skie.KotlinxSerializationCore.PolymorphicKind.__Sealed where __Sealed : LeapSDK.Kotlinx_serialization_corePolymorphicKind
+#if compiler(>=5.3) && $NonescapableTypes
+@_disfavoredOverload public func onEnum<__Sealed>(of sealed: __Sealed?) -> LeapSDK.Skie.KotlinxSerializationCore.PolymorphicKind.__Sealed? where __Sealed : LeapSDK.Kotlinx_serialization_corePolymorphicKind
+#endif
+extension LeapSDK.Skie.KotlinxSerializationCore.PrimitiveKind {
+  @frozen public enum __Sealed : Swift.Hashable {
+    case bOOLEAN(LeapSDK.Kotlinx_serialization_corePrimitiveKind.BOOLEAN)
+    case bYTE(LeapSDK.Kotlinx_serialization_corePrimitiveKind.BYTE)
+    case cHAR(LeapSDK.Kotlinx_serialization_corePrimitiveKind.CHAR)
+    case dOUBLE(LeapSDK.Kotlinx_serialization_corePrimitiveKind.DOUBLE)
+    case fLOAT(LeapSDK.Kotlinx_serialization_corePrimitiveKind.FLOAT)
+    case iNT(LeapSDK.Kotlinx_serialization_corePrimitiveKind.INT)
+    case lONG(LeapSDK.Kotlinx_serialization_corePrimitiveKind.LONG)
+    case sHORT(LeapSDK.Kotlinx_serialization_corePrimitiveKind.SHORT)
+    case sTRING(LeapSDK.Kotlinx_serialization_corePrimitiveKind.STRING)
+    public static func == (a: LeapSDK.Skie.KotlinxSerializationCore.PrimitiveKind.__Sealed, b: LeapSDK.Skie.KotlinxSerializationCore.PrimitiveKind.__Sealed) -> Swift.Bool
+    public func hash(into hasher: inout Swift.Hasher)
+    public var hashValue: Swift.Int {
+      get
+    }
+  }
+}
+public func onEnum<__Sealed>(of sealed: __Sealed) -> LeapSDK.Skie.KotlinxSerializationCore.PrimitiveKind.__Sealed where __Sealed : LeapSDK.Kotlinx_serialization_corePrimitiveKind
+#if compiler(>=5.3) && $NonescapableTypes
+@_disfavoredOverload public func onEnum<__Sealed>(of sealed: __Sealed?) -> LeapSDK.Skie.KotlinxSerializationCore.PrimitiveKind.__Sealed? where __Sealed : LeapSDK.Kotlinx_serialization_corePrimitiveKind
+#endif
+extension LeapSDK.Skie.KotlinxSerializationCore.StructureKind {
+  @frozen public enum __Sealed : Swift.Hashable {
+    case cLASS(LeapSDK.Kotlinx_serialization_coreStructureKind.CLASS)
+    case lIST(LeapSDK.Kotlinx_serialization_coreStructureKind.LIST)
+    case mAP(LeapSDK.Kotlinx_serialization_coreStructureKind.MAP)
+    case oBJECT(LeapSDK.Kotlinx_serialization_coreStructureKind.OBJECT)
+    public static func == (a: LeapSDK.Skie.KotlinxSerializationCore.StructureKind.__Sealed, b: LeapSDK.Skie.KotlinxSerializationCore.StructureKind.__Sealed) -> Swift.Bool
+    public func hash(into hasher: inout Swift.Hasher)
+    public var hashValue: Swift.Int {
+      get
+    }
+  }
+}
+public func onEnum<__Sealed>(of sealed: __Sealed) -> LeapSDK.Skie.KotlinxSerializationCore.StructureKind.__Sealed where __Sealed : LeapSDK.Kotlinx_serialization_coreStructureKind
+#if compiler(>=5.3) && $NonescapableTypes
+@_disfavoredOverload public func onEnum<__Sealed>(of sealed: __Sealed?) -> LeapSDK.Skie.KotlinxSerializationCore.StructureKind.__Sealed? where __Sealed : LeapSDK.Kotlinx_serialization_coreStructureKind
+#endif
+extension LeapSDK.Skie.KotlinxIoCore.Source {
+  @frozen public enum __Sealed : Swift.Hashable {
+    case buffer(LeapSDK.Kotlinx_io_coreBuffer)
+    case `else`
+    public static func == (a: LeapSDK.Skie.KotlinxIoCore.Source.__Sealed, b: LeapSDK.Skie.KotlinxIoCore.Source.__Sealed) -> Swift.Bool
+    public func hash(into hasher: inout Swift.Hasher)
+    public var hashValue: Swift.Int {
+      get
+    }
+  }
+}
+public func onEnum<__Sealed>(of sealed: __Sealed) -> LeapSDK.Skie.KotlinxIoCore.Source.__Sealed where __Sealed : LeapSDK.Kotlinx_io_coreSource
+#if compiler(>=5.3) && $NonescapableTypes
+@_disfavoredOverload public func onEnum<__Sealed>(of sealed: __Sealed?) -> LeapSDK.Skie.KotlinxIoCore.Source.__Sealed? where __Sealed : LeapSDK.Kotlinx_io_coreSource
+#endif
+extension LeapSDK.Skie.KotlinxIoCore.Sink {
+  @frozen public enum __Sealed : Swift.Hashable {
+    case buffer(LeapSDK.Kotlinx_io_coreBuffer)
+    case `else`
+    public static func == (a: LeapSDK.Skie.KotlinxIoCore.Sink.__Sealed, b: LeapSDK.Skie.KotlinxIoCore.Sink.__Sealed) -> Swift.Bool
+    public func hash(into hasher: inout Swift.Hasher)
+    public var hashValue: Swift.Int {
+      get
+    }
+  }
+}
+public func onEnum<__Sealed>(of sealed: __Sealed) -> LeapSDK.Skie.KotlinxIoCore.Sink.__Sealed where __Sealed : LeapSDK.Kotlinx_io_coreSink
+#if compiler(>=5.3) && $NonescapableTypes
+@_disfavoredOverload public func onEnum<__Sealed>(of sealed: __Sealed?) -> LeapSDK.Skie.KotlinxIoCore.Sink.__Sealed? where __Sealed : LeapSDK.Kotlinx_io_coreSink
+#endif
+extension LeapSDK.Skie.KotlinxIoCore.FileSystem {
+  @frozen public enum __Sealed : Swift.Hashable {
+    case `else`
+    public static func == (a: LeapSDK.Skie.KotlinxIoCore.FileSystem.__Sealed, b: LeapSDK.Skie.KotlinxIoCore.FileSystem.__Sealed) -> Swift.Bool
+    public func hash(into hasher: inout Swift.Hasher)
+    public var hashValue: Swift.Int {
+      get
+    }
+  }
+}
+public func onEnum<__Sealed>(of sealed: __Sealed) -> LeapSDK.Skie.KotlinxIoCore.FileSystem.__Sealed where __Sealed : LeapSDK.Kotlinx_io_coreFileSystem
+#if compiler(>=5.3) && $NonescapableTypes
+@_disfavoredOverload public func onEnum<__Sealed>(of sealed: __Sealed?) -> LeapSDK.Skie.KotlinxIoCore.FileSystem.__Sealed? where __Sealed : LeapSDK.Kotlinx_io_coreFileSystem
+#endif
+extension LeapSDK.Kotlinx_io_coreFileSystem {
+  public func deleteRecursively(path: LeapSDK.Kotlinx_io_corePath, mustExist: Swift.Bool)
+}
+extension LeapSDK.Skie.KtorHttp.OutgoingContent {
+  @frozen public enum __Sealed : Swift.Hashable {
+    case byteArrayContent(LeapSDK.Ktor_httpOutgoingContent.ByteArrayContent)
+    case contentWrapper(LeapSDK.Ktor_httpOutgoingContent.ContentWrapper)
+    case noContent(LeapSDK.Ktor_httpOutgoingContent.NoContent)
+    case protocolUpgrade(LeapSDK.Ktor_httpOutgoingContent.ProtocolUpgrade)
+    case readChannelContent(LeapSDK.Ktor_httpOutgoingContent.ReadChannelContent)
+    case writeChannelContent(LeapSDK.Ktor_httpOutgoingContent.WriteChannelContent)
+    public static func == (a: LeapSDK.Skie.KtorHttp.OutgoingContent.__Sealed, b: LeapSDK.Skie.KtorHttp.OutgoingContent.__Sealed) -> Swift.Bool
+    public func hash(into hasher: inout Swift.Hasher)
+    public var hashValue: Swift.Int {
+      get
+    }
+  }
+}
+public func onEnum<__Sealed>(of sealed: __Sealed) -> LeapSDK.Skie.KtorHttp.OutgoingContent.__Sealed where __Sealed : LeapSDK.Ktor_httpOutgoingContent
+#if compiler(>=5.3) && $NonescapableTypes
+@_disfavoredOverload public func onEnum<__Sealed>(of sealed: __Sealed?) -> LeapSDK.Skie.KtorHttp.OutgoingContent.__Sealed? where __Sealed : LeapSDK.Ktor_httpOutgoingContent
+#endif
+public var LeapJson: LeapSDK.Kotlinx_serialization_jsonJson {
+  get
+}
+public var LeapJsonPretty: LeapSDK.Kotlinx_serialization_jsonJson {
+  get
+}
+public func byteArrayToNSData(array: LeapSDK.KotlinByteArray) -> Foundation.Data
+public func floatArrayToNSData(array: LeapSDK.KotlinFloatArray) -> Foundation.Data
+public func nsDataToFloatArray(data: Foundation.Data) -> LeapSDK.KotlinFloatArray
+public func Conversation(modelRunner: any LeapSDK.ModelRunner, history: [LeapSDK.ChatMessage]) -> any LeapSDK.Conversation
+extension LeapSDK.Conversation {
+  public func exportToJSON() -> Swift.String
+}
+public func ChatMessageContent_fromUIImage(image: UIKit.UIImage) -> LeapSDK.ChatMessageContent
+public func ChatMessageContent_text(text: Swift.String) -> LeapSDK.ChatMessageContent
+public func ChatMessage_withArray(role: LeapSDK.ChatMessage.Role, content: [LeapSDK.ChatMessageContent]) -> LeapSDK.ChatMessage
+public var CACHE_OPTIONS_DEFAULT_MAX_BYTES_MEMORY: Swift.Int64 {
+  get
+}
+public var CACHE_OPTIONS_DEFAULT_MAX_ENTRIES_DISK: Swift.Int32 {
+  get
+}
+public var CACHE_OPTIONS_DEFAULT_MAX_ENTRIES_MEMORY: Swift.Int32 {
+  get
+}
+public func buildHttpClient(json: LeapSDK.Kotlinx_serialization_jsonJson, installCache: Swift.Bool, followRedirects: Swift.Bool, expectSuccess: Swift.Bool, disableSslValidation: Swift.Bool, connectTimeoutMillis: Swift.Int64, socketTimeoutMillis: Swift.Int64, requestTimeoutMillis: Swift.Int64) -> LeapSDK.Ktor_client_coreHttpClient
+public func defaultClient(json: LeapSDK.Kotlinx_serialization_jsonJson, config: LeapSDK.LeapDownloaderConfig) -> LeapSDK.Ktor_client_coreHttpClient
+public func defaultClientCache(json: LeapSDK.Kotlinx_serialization_jsonJson, config: LeapSDK.LeapDownloaderConfig) -> LeapSDK.Ktor_client_coreHttpClient
+public func defaultNoRedirectClient(json: LeapSDK.Kotlinx_serialization_jsonJson, config: LeapSDK.LeapDownloaderConfig) -> LeapSDK.Ktor_client_coreHttpClient
+public func manifestFilename(modelName: Swift.String, quantizationSlug: Swift.String) -> Swift.String
+public func manifestUrl(modelName: Swift.String, quantizationSlug: Swift.String, baseUrl: Swift.String) -> Swift.String
+extension LeapSDK.Kotlinx_io_coreRawSink {
+  public func withProgressListener(progressListener: @escaping (LeapSDK.KotlinLong) -> Swift.Void) -> any LeapSDK.Kotlinx_io_coreRawSink
+}
+extension LeapSDK.Kotlinx_io_coreRawSource {
+  public func withProgressListener(progressListener: @escaping (LeapSDK.KotlinLong) -> Swift.Void) -> any LeapSDK.Kotlinx_io_coreRawSource
+}
+#if compiler(>=5.3) && $NonescapableTypes
+public func runCatchingCancellable(block: @escaping () -> Any?) -> Any?
+#endif
+extension Swift.String {
+  public func extractBaseUrl() -> Swift.String
+  public func extractFilename() -> Swift.String
+  public func extractHfFileName(keepExtension: Swift.Bool) -> Swift.String
+  public func fixRelativeUrl(sourceUrl: Swift.String) -> Swift.String
+  public func getResourceFolder(manifestUrl: Swift.String) -> Swift.String
+  public func removeQuotes() -> Swift.String
+}
+extension LeapSDK.KotlinKVariance : Swift.Sendable {}
+extension LeapSDK.KotlinKVariance : Swift.BitwiseCopyable {}
+extension LeapSDK.__Bridge__ChatMessage_Role : Swift.Sendable {}
+extension LeapSDK.__Bridge__ChatMessage_Role : Swift.BitwiseCopyable {}
+extension LeapSDK.CacheControlPolicy : Swift.Sendable {}
+extension LeapSDK.CacheControlPolicy : Swift.BitwiseCopyable {}
+extension LeapSDK.GenerationFinishReason : Swift.Sendable {}
+extension LeapSDK.GenerationFinishReason : Swift.BitwiseCopyable {}
+extension LeapSDK.PythonicTokenName : Swift.Sendable {}
+extension LeapSDK.PythonicTokenName : Swift.BitwiseCopyable {}
+extension LeapSDK.GenerationStopReason : Swift.Sendable {}
+extension LeapSDK.GenerationStopReason : Swift.BitwiseCopyable {}
+extension LeapSDK.Kotlinx_serialization_jsonClassDiscriminatorMode : Swift.Sendable {}
+extension LeapSDK.Kotlinx_serialization_jsonClassDiscriminatorMode : Swift.BitwiseCopyable {}
+extension LeapSDK.Ktor_utilsMonth : Swift.Sendable {}
+extension LeapSDK.Ktor_utilsMonth : Swift.BitwiseCopyable {}
+extension LeapSDK.Ktor_utilsWeekDay : Swift.Sendable {}
+extension LeapSDK.Ktor_utilsWeekDay : Swift.BitwiseCopyable {}
+extension LeapSDK.Skie.KotlinxCoroutinesCore.SelectClause2.__Sealed : Swift.Sendable {}
+extension LeapSDK.Skie.KotlinxCoroutinesCore.SelectClause2.__Sealed : Swift.BitwiseCopyable {}
+extension LeapSDK.Skie.KotlinxCoroutinesCore.SelectInstance.__Sealed : Swift.Sendable {}
+extension LeapSDK.Skie.KotlinxCoroutinesCore.SelectInstance.__Sealed : Swift.BitwiseCopyable {}
+extension LeapSDK.Skie.KotlinxCoroutinesCore.SelectClause0.__Sealed : Swift.Sendable {}
+extension LeapSDK.Skie.KotlinxCoroutinesCore.SelectClause0.__Sealed : Swift.BitwiseCopyable {}
+extension LeapSDK.Skie.KotlinxCoroutinesCore.SelectClause1.__Sealed : Swift.Sendable {}
+extension LeapSDK.Skie.KotlinxCoroutinesCore.SelectClause1.__Sealed : Swift.BitwiseCopyable {}
+extension LeapSDK.Skie.KotlinxSerializationCore.SerializersModule.__Sealed : Swift.Sendable {}
+extension LeapSDK.Skie.KotlinxSerializationCore.SerializersModule.__Sealed : Swift.BitwiseCopyable {}
+extension LeapSDK.Skie.KotlinxIoCore.FileSystem.__Sealed : Swift.Sendable {}
+extension LeapSDK.Skie.KotlinxIoCore.FileSystem.__Sealed : Swift.BitwiseCopyable {}

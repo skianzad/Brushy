@@ -1,0 +1,918 @@
+// swift-interface-format-version: 1.0
+// swift-compiler-version: Apple Swift version 6.2.3 effective-5.10 (swiftlang-6.2.3.3.21 clang-1700.6.3.2)
+// swift-module-flags: -target arm64-apple-ios14.0 -enable-objc-interop -enable-library-evolution -swift-version 5 -O -module-name LeapUi
+// swift-module-flags-ignorable:  -formal-cxx-interoperability-mode=off -interface-compiler-version 6.2.3
+import AVFoundation
+import AudioToolbox
+import Foundation
+@_exported import LeapUi
+import Swift
+import UIKit
+import _Concurrency
+import _StringProcessing
+import _SwiftConcurrencyShims
+final public class AppleAudioRecorder : LeapUi.VoiceAudioRecorder {
+  public init()
+  @objc deinit
+  @objc final public var amplitude: Swift.Float
+  @objc final public var nativeSampleRate: Swift.Int32 {
+    @objc get
+  }
+  @objc final public func start() -> Swift.Bool
+  #if compiler(>=5.3) && $NonescapableTypes
+  @objc final public func __stop(completionHandler: @escaping @Sendable (LeapUi.KotlinFloatArray?, (any Swift.Error)?) -> Swift.Void)
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  @objc final public func __cancel(completionHandler: @escaping @Sendable ((any Swift.Error)?) -> Swift.Void)
+  #endif
+}
+final public class AppleAudioPlayer : LeapUi.VoiceAudioPlayer {
+  public init()
+  @objc final public var amplitude: Swift.Float
+  @objc final public func enqueue(samples: LeapUi.KotlinFloatArray, sampleRate: Swift.Int32)
+  #if compiler(>=5.3) && $NonescapableTypes
+  @objc final public func __waitForPlayback(completionHandler: @escaping @Sendable ((any Swift.Error)?) -> Swift.Void)
+  #endif
+  @objc final public func stop()
+  @objc deinit
+}
+extension LeapUi.VoiceAssistantStore {
+  public static func makeForApple(recorder: any LeapUi.VoiceAudioRecorder = AppleAudioRecorder(), player: any LeapUi.VoiceAudioPlayer = AppleAudioPlayer(), smoothingAlpha: Swift.Float = 0.3, playbackTimeoutMs: Swift.Int64 = 0, interruptToSpeak: Swift.Bool = true) -> LeapUi.VoiceAssistantStore
+}
+public enum Skie {
+  public enum RuntimeKotlin {
+    public enum SkieColdFlowIterator {
+      public typealias __Kotlin = LeapUi.SkieColdFlowIterator
+    }
+    public enum SkieKotlinFlow {
+      public typealias __Kotlin = LeapUi.SkieKotlinFlow
+    }
+    public enum SkieKotlinMutableSharedFlow {
+      public typealias __Kotlin = LeapUi.SkieKotlinMutableSharedFlow
+    }
+    public enum SkieKotlinMutableStateFlow {
+      public typealias __Kotlin = LeapUi.SkieKotlinMutableStateFlow
+    }
+    public enum SkieKotlinOptionalFlow {
+      public typealias __Kotlin = LeapUi.SkieKotlinOptionalFlow
+    }
+    public enum SkieKotlinOptionalMutableSharedFlow {
+      public typealias __Kotlin = LeapUi.SkieKotlinOptionalMutableSharedFlow
+    }
+    public enum SkieKotlinOptionalMutableStateFlow {
+      public typealias __Kotlin = LeapUi.SkieKotlinOptionalMutableStateFlow
+    }
+    public enum SkieKotlinOptionalSharedFlow {
+      public typealias __Kotlin = LeapUi.SkieKotlinOptionalSharedFlow
+    }
+    public enum SkieKotlinOptionalStateFlow {
+      public typealias __Kotlin = LeapUi.SkieKotlinOptionalStateFlow
+    }
+    public enum SkieKotlinSharedFlow {
+      public typealias __Kotlin = LeapUi.SkieKotlinSharedFlow
+    }
+    public enum SkieKotlinStateFlow {
+      public typealias __Kotlin = LeapUi.SkieKotlinStateFlow
+    }
+    public enum Skie_CancellationHandler {
+      public typealias __Kotlin = LeapUi.Skie_CancellationHandler
+    }
+    public enum Skie_DispatcherDelegate {
+      public typealias __Kotlin = LeapUi.Skie_DispatcherDelegate
+    }
+    public enum Skie_SuspendHandler {
+      public typealias __Kotlin = LeapUi.Skie_SuspendHandler
+    }
+    public enum Skie_SuspendResult {
+      public typealias __Kotlin = LeapUi.Skie_SuspendResult
+      public enum Success {
+        public typealias __Kotlin = LeapUi.Skie_SuspendResult.Success
+      }
+      public enum Error {
+        public typealias __Kotlin = LeapUi.Skie_SuspendResult.Error
+      }
+      public enum Canceled {
+        public typealias __Kotlin = LeapUi.Skie_SuspendResult.Canceled
+      }
+    }
+  }
+  public typealias co_touchlab_skie__runtime_kotlin = LeapUi.Skie.RuntimeKotlin
+  public enum KotlinxCoroutinesCore {
+    public enum Flow {
+      public typealias __Kotlin = LeapUi.Kotlinx_coroutines_coreFlow
+    }
+    public enum StateFlow {
+      public typealias __Kotlin = LeapUi.Kotlinx_coroutines_coreStateFlow
+    }
+    public enum SharedFlow {
+      public typealias __Kotlin = LeapUi.Kotlinx_coroutines_coreSharedFlow
+    }
+    public enum MutableSharedFlow {
+      public typealias __Kotlin = LeapUi.Kotlinx_coroutines_coreMutableSharedFlow
+    }
+    public enum MutableStateFlow {
+      public typealias __Kotlin = LeapUi.Kotlinx_coroutines_coreMutableStateFlow
+    }
+    public enum Runnable {
+      public typealias __Kotlin = LeapUi.Kotlinx_coroutines_coreRunnable
+    }
+  }
+  public typealias org_jetbrains_kotlinx__kotlinx_coroutines_core = LeapUi.Skie.KotlinxCoroutinesCore
+  public enum ai_liquid_leap__leap_ui {
+    public enum VoiceAssistantIntent {
+    }
+  }
+  public typealias ai_liquid_leap__leap_ui_ = LeapUi.Skie.ai_liquid_leap__leap_ui
+}
+@_hasMissingDesignatedInitializers public class SkieSwiftFlowIterator<T> : _Concurrency.AsyncIteratorProtocol {
+  #if compiler(>=5.3) && $NonescapableTypes
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func next() async -> T?
+  #endif
+  @objc deinit
+  public typealias Element = T
+  @available(iOS 18.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, macOS 15.0, *)
+  @_implements(_Concurrency.AsyncIteratorProtocol, Failure) public typealias __AsyncIteratorProtocol_Failure = Swift.Never
+}
+public protocol SkieSwiftFlowProtocol<Element> : _Concurrency.AsyncSequence {
+  associatedtype Element
+  associatedtype Delegate : LeapUi.Kotlinx_coroutines_coreFlow
+  @_spi(SKIE) var delegate: Self.Delegate { get }
+}
+@_hasMissingDesignatedInitializers final public class SkieSwiftFlow<T> : LeapUi.SkieSwiftFlowProtocol, Swift._ObjectiveCBridgeable {
+  @_spi(SKIE) final public let delegate: any LeapUi.Kotlinx_coroutines_coreFlow
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _forceBridgeFromObjectiveC(_ source: LeapUi.SkieKotlinFlow<Swift.AnyObject>, result: inout LeapUi.SkieSwiftFlow<T>?)
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _conditionallyBridgeFromObjectiveC(_ source: LeapUi.SkieKotlinFlow<Swift.AnyObject>, result: inout LeapUi.SkieSwiftFlow<T>?) -> Swift.Bool
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _unconditionallyBridgeFromObjectiveC(_ source: LeapUi.SkieKotlinFlow<Swift.AnyObject>?) -> Self
+  #endif
+  final public func _bridgeToObjectiveC() -> LeapUi.SkieKotlinFlow<Swift.AnyObject>
+  final public func makeAsyncIterator() -> LeapUi.SkieSwiftFlowIterator<T>
+  public typealias AsyncIterator = LeapUi.SkieSwiftFlowIterator<T>
+  public typealias Element = T
+  public typealias _ObjectiveCType = LeapUi.SkieKotlinFlow<Swift.AnyObject>
+  public typealias Delegate = any LeapUi.Kotlinx_coroutines_coreFlow
+  @available(iOS 18.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, macOS 15.0, *)
+  @_implements(_Concurrency.AsyncSequence, Failure) public typealias __AsyncSequence_Failure = Swift.Never
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers final public class SkieSwiftOptionalFlow<T> : LeapUi.SkieSwiftFlowProtocol, Swift._ObjectiveCBridgeable {
+  @_spi(SKIE) final public let delegate: any LeapUi.Kotlinx_coroutines_coreFlow
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _forceBridgeFromObjectiveC(_ source: LeapUi.SkieKotlinOptionalFlow<Swift.AnyObject>, result: inout LeapUi.SkieSwiftOptionalFlow<T>?)
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _conditionallyBridgeFromObjectiveC(_ source: LeapUi.SkieKotlinOptionalFlow<Swift.AnyObject>, result: inout LeapUi.SkieSwiftOptionalFlow<T>?) -> Swift.Bool
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _unconditionallyBridgeFromObjectiveC(_ source: LeapUi.SkieKotlinOptionalFlow<Swift.AnyObject>?) -> Self
+  #endif
+  final public func _bridgeToObjectiveC() -> LeapUi.SkieKotlinOptionalFlow<Swift.AnyObject>
+  #if compiler(>=5.3) && $NonescapableTypes
+  final public func makeAsyncIterator() -> LeapUi.SkieSwiftFlowIterator<T?>
+  #endif
+  public typealias AsyncIterator = LeapUi.SkieSwiftFlowIterator<T?>
+  public typealias Element = T?
+  public typealias _ObjectiveCType = LeapUi.SkieKotlinOptionalFlow<Swift.AnyObject>
+  public typealias Delegate = any LeapUi.Kotlinx_coroutines_coreFlow
+  @available(iOS 18.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, macOS 15.0, *)
+  @_implements(_Concurrency.AsyncSequence, Failure) public typealias __AsyncSequence_Failure = Swift.Never
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers final public class SkieSwiftSharedFlow<T> : LeapUi.SkieSwiftFlowProtocol, Swift._ObjectiveCBridgeable {
+  @_spi(SKIE) final public let delegate: any LeapUi.Kotlinx_coroutines_coreSharedFlow
+  final public var replayCache: [T] {
+    get
+  }
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _forceBridgeFromObjectiveC(_ source: LeapUi.SkieKotlinSharedFlow<Swift.AnyObject>, result: inout LeapUi.SkieSwiftSharedFlow<T>?)
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _conditionallyBridgeFromObjectiveC(_ source: LeapUi.SkieKotlinSharedFlow<Swift.AnyObject>, result: inout LeapUi.SkieSwiftSharedFlow<T>?) -> Swift.Bool
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _unconditionallyBridgeFromObjectiveC(_ source: LeapUi.SkieKotlinSharedFlow<Swift.AnyObject>?) -> Self
+  #endif
+  final public func _bridgeToObjectiveC() -> LeapUi.SkieKotlinSharedFlow<Swift.AnyObject>
+  final public func makeAsyncIterator() -> LeapUi.SkieSwiftFlowIterator<T>
+  public typealias AsyncIterator = LeapUi.SkieSwiftFlowIterator<T>
+  public typealias Element = T
+  public typealias _ObjectiveCType = LeapUi.SkieKotlinSharedFlow<Swift.AnyObject>
+  public typealias Delegate = any LeapUi.Kotlinx_coroutines_coreSharedFlow
+  @available(iOS 18.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, macOS 15.0, *)
+  @_implements(_Concurrency.AsyncSequence, Failure) public typealias __AsyncSequence_Failure = Swift.Never
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers final public class SkieSwiftOptionalSharedFlow<T> : LeapUi.SkieSwiftFlowProtocol, Swift._ObjectiveCBridgeable {
+  @_spi(SKIE) final public let delegate: any LeapUi.Kotlinx_coroutines_coreSharedFlow
+  #if compiler(>=5.3) && $NonescapableTypes
+  final public var replayCache: [T?] {
+    get
+  }
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _forceBridgeFromObjectiveC(_ source: LeapUi.SkieKotlinOptionalSharedFlow<Swift.AnyObject>, result: inout LeapUi.SkieSwiftOptionalSharedFlow<T>?)
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _conditionallyBridgeFromObjectiveC(_ source: LeapUi.SkieKotlinOptionalSharedFlow<Swift.AnyObject>, result: inout LeapUi.SkieSwiftOptionalSharedFlow<T>?) -> Swift.Bool
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _unconditionallyBridgeFromObjectiveC(_ source: LeapUi.SkieKotlinOptionalSharedFlow<Swift.AnyObject>?) -> Self
+  #endif
+  final public func _bridgeToObjectiveC() -> LeapUi.SkieKotlinOptionalSharedFlow<Swift.AnyObject>
+  #if compiler(>=5.3) && $NonescapableTypes
+  final public func makeAsyncIterator() -> LeapUi.SkieSwiftFlowIterator<T?>
+  #endif
+  public typealias AsyncIterator = LeapUi.SkieSwiftFlowIterator<T?>
+  public typealias Element = T?
+  public typealias _ObjectiveCType = LeapUi.SkieKotlinOptionalSharedFlow<Swift.AnyObject>
+  public typealias Delegate = any LeapUi.Kotlinx_coroutines_coreSharedFlow
+  @available(iOS 18.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, macOS 15.0, *)
+  @_implements(_Concurrency.AsyncSequence, Failure) public typealias __AsyncSequence_Failure = Swift.Never
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers final public class SkieSwiftMutableSharedFlow<T> : LeapUi.SkieSwiftFlowProtocol, Swift._ObjectiveCBridgeable {
+  @_spi(SKIE) final public let delegate: any LeapUi.Kotlinx_coroutines_coreMutableSharedFlow
+  final public var subscriptionCount: LeapUi.SkieSwiftStateFlow<LeapUi.KotlinInt> {
+    get
+  }
+  final public var replayCache: [T] {
+    get
+  }
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  final public func emit(value: T) async throws
+  final public func tryEmit(value: T) -> Swift.Bool
+  final public func resetReplayCache()
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _forceBridgeFromObjectiveC(_ source: LeapUi.SkieKotlinMutableSharedFlow<Swift.AnyObject>, result: inout LeapUi.SkieSwiftMutableSharedFlow<T>?)
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _conditionallyBridgeFromObjectiveC(_ source: LeapUi.SkieKotlinMutableSharedFlow<Swift.AnyObject>, result: inout LeapUi.SkieSwiftMutableSharedFlow<T>?) -> Swift.Bool
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _unconditionallyBridgeFromObjectiveC(_ source: LeapUi.SkieKotlinMutableSharedFlow<Swift.AnyObject>?) -> Self
+  #endif
+  final public func _bridgeToObjectiveC() -> LeapUi.SkieKotlinMutableSharedFlow<Swift.AnyObject>
+  final public func makeAsyncIterator() -> LeapUi.SkieSwiftFlowIterator<T>
+  public typealias AsyncIterator = LeapUi.SkieSwiftFlowIterator<T>
+  public typealias Element = T
+  public typealias _ObjectiveCType = LeapUi.SkieKotlinMutableSharedFlow<Swift.AnyObject>
+  public typealias Delegate = any LeapUi.Kotlinx_coroutines_coreMutableSharedFlow
+  @available(iOS 18.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, macOS 15.0, *)
+  @_implements(_Concurrency.AsyncSequence, Failure) public typealias __AsyncSequence_Failure = Swift.Never
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers final public class SkieSwiftOptionalMutableSharedFlow<T> : LeapUi.SkieSwiftFlowProtocol, Swift._ObjectiveCBridgeable {
+  @_spi(SKIE) final public let delegate: any LeapUi.Kotlinx_coroutines_coreMutableSharedFlow
+  final public var subscriptionCount: LeapUi.SkieSwiftStateFlow<LeapUi.KotlinInt> {
+    get
+  }
+  #if compiler(>=5.3) && $NonescapableTypes
+  final public var replayCache: [T?] {
+    get
+  }
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  final public func emit(value: T?) async throws
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  final public func tryEmit(value: T?) -> Swift.Bool
+  #endif
+  final public func resetReplayCache()
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _forceBridgeFromObjectiveC(_ source: LeapUi.SkieKotlinOptionalMutableSharedFlow<Swift.AnyObject>, result: inout LeapUi.SkieSwiftOptionalMutableSharedFlow<T>?)
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _conditionallyBridgeFromObjectiveC(_ source: LeapUi.SkieKotlinOptionalMutableSharedFlow<Swift.AnyObject>, result: inout LeapUi.SkieSwiftOptionalMutableSharedFlow<T>?) -> Swift.Bool
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _unconditionallyBridgeFromObjectiveC(_ source: LeapUi.SkieKotlinOptionalMutableSharedFlow<Swift.AnyObject>?) -> Self
+  #endif
+  final public func _bridgeToObjectiveC() -> LeapUi.SkieKotlinOptionalMutableSharedFlow<Swift.AnyObject>
+  #if compiler(>=5.3) && $NonescapableTypes
+  final public func makeAsyncIterator() -> LeapUi.SkieSwiftFlowIterator<T?>
+  #endif
+  public typealias AsyncIterator = LeapUi.SkieSwiftFlowIterator<T?>
+  public typealias Element = T?
+  public typealias _ObjectiveCType = LeapUi.SkieKotlinOptionalMutableSharedFlow<Swift.AnyObject>
+  public typealias Delegate = any LeapUi.Kotlinx_coroutines_coreMutableSharedFlow
+  @available(iOS 18.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, macOS 15.0, *)
+  @_implements(_Concurrency.AsyncSequence, Failure) public typealias __AsyncSequence_Failure = Swift.Never
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers final public class SkieSwiftStateFlow<T> : LeapUi.SkieSwiftFlowProtocol, Swift._ObjectiveCBridgeable {
+  @_spi(SKIE) final public let delegate: any LeapUi.Kotlinx_coroutines_coreStateFlow
+  final public var value: T {
+    get
+  }
+  final public var replayCache: [T] {
+    get
+  }
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _forceBridgeFromObjectiveC(_ source: LeapUi.SkieKotlinStateFlow<Swift.AnyObject>, result: inout LeapUi.SkieSwiftStateFlow<T>?)
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _conditionallyBridgeFromObjectiveC(_ source: LeapUi.SkieKotlinStateFlow<Swift.AnyObject>, result: inout LeapUi.SkieSwiftStateFlow<T>?) -> Swift.Bool
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _unconditionallyBridgeFromObjectiveC(_ source: LeapUi.SkieKotlinStateFlow<Swift.AnyObject>?) -> Self
+  #endif
+  final public func _bridgeToObjectiveC() -> LeapUi.SkieKotlinStateFlow<Swift.AnyObject>
+  final public func makeAsyncIterator() -> LeapUi.SkieSwiftFlowIterator<T>
+  public typealias AsyncIterator = LeapUi.SkieSwiftFlowIterator<T>
+  public typealias Element = T
+  public typealias _ObjectiveCType = LeapUi.SkieKotlinStateFlow<Swift.AnyObject>
+  public typealias Delegate = any LeapUi.Kotlinx_coroutines_coreStateFlow
+  @available(iOS 18.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, macOS 15.0, *)
+  @_implements(_Concurrency.AsyncSequence, Failure) public typealias __AsyncSequence_Failure = Swift.Never
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers final public class SkieSwiftOptionalStateFlow<T> : LeapUi.SkieSwiftFlowProtocol, Swift._ObjectiveCBridgeable {
+  @_spi(SKIE) final public let delegate: any LeapUi.Kotlinx_coroutines_coreStateFlow
+  #if compiler(>=5.3) && $NonescapableTypes
+  final public var value: T? {
+    get
+  }
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  final public var replayCache: [T?] {
+    get
+  }
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _forceBridgeFromObjectiveC(_ source: LeapUi.SkieKotlinOptionalStateFlow<Swift.AnyObject>, result: inout LeapUi.SkieSwiftOptionalStateFlow<T>?)
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _conditionallyBridgeFromObjectiveC(_ source: LeapUi.SkieKotlinOptionalStateFlow<Swift.AnyObject>, result: inout LeapUi.SkieSwiftOptionalStateFlow<T>?) -> Swift.Bool
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _unconditionallyBridgeFromObjectiveC(_ source: LeapUi.SkieKotlinOptionalStateFlow<Swift.AnyObject>?) -> Self
+  #endif
+  final public func _bridgeToObjectiveC() -> LeapUi.SkieKotlinOptionalStateFlow<Swift.AnyObject>
+  #if compiler(>=5.3) && $NonescapableTypes
+  final public func makeAsyncIterator() -> LeapUi.SkieSwiftFlowIterator<T?>
+  #endif
+  public typealias AsyncIterator = LeapUi.SkieSwiftFlowIterator<T?>
+  public typealias Element = T?
+  public typealias _ObjectiveCType = LeapUi.SkieKotlinOptionalStateFlow<Swift.AnyObject>
+  public typealias Delegate = any LeapUi.Kotlinx_coroutines_coreStateFlow
+  @available(iOS 18.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, macOS 15.0, *)
+  @_implements(_Concurrency.AsyncSequence, Failure) public typealias __AsyncSequence_Failure = Swift.Never
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers final public class SkieSwiftMutableStateFlow<T> : LeapUi.SkieSwiftFlowProtocol, Swift._ObjectiveCBridgeable {
+  @_spi(SKIE) final public let delegate: any LeapUi.Kotlinx_coroutines_coreMutableStateFlow
+  final public var value: T {
+    get
+    set(value)
+  }
+  final public var replayCache: [T] {
+    get
+  }
+  final public var subscriptionCount: LeapUi.SkieSwiftStateFlow<LeapUi.KotlinInt> {
+    get
+  }
+  final public func compareAndSet(expect: T, update: T) -> Swift.Bool
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  final public func emit(value: T) async throws
+  final public func tryEmit(value: T) -> Swift.Bool
+  final public func resetReplayCache()
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _forceBridgeFromObjectiveC(_ source: LeapUi.SkieKotlinMutableStateFlow<Swift.AnyObject>, result: inout LeapUi.SkieSwiftMutableStateFlow<T>?)
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _conditionallyBridgeFromObjectiveC(_ source: LeapUi.SkieKotlinMutableStateFlow<Swift.AnyObject>, result: inout LeapUi.SkieSwiftMutableStateFlow<T>?) -> Swift.Bool
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _unconditionallyBridgeFromObjectiveC(_ source: LeapUi.SkieKotlinMutableStateFlow<Swift.AnyObject>?) -> Self
+  #endif
+  final public func _bridgeToObjectiveC() -> LeapUi.SkieKotlinMutableStateFlow<Swift.AnyObject>
+  final public func makeAsyncIterator() -> LeapUi.SkieSwiftFlowIterator<T>
+  public typealias AsyncIterator = LeapUi.SkieSwiftFlowIterator<T>
+  public typealias Element = T
+  public typealias _ObjectiveCType = LeapUi.SkieKotlinMutableStateFlow<Swift.AnyObject>
+  public typealias Delegate = any LeapUi.Kotlinx_coroutines_coreMutableStateFlow
+  @available(iOS 18.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, macOS 15.0, *)
+  @_implements(_Concurrency.AsyncSequence, Failure) public typealias __AsyncSequence_Failure = Swift.Never
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers final public class SkieSwiftOptionalMutableStateFlow<T> : LeapUi.SkieSwiftFlowProtocol, Swift._ObjectiveCBridgeable {
+  @_spi(SKIE) final public let delegate: any LeapUi.Kotlinx_coroutines_coreMutableStateFlow
+  #if compiler(>=5.3) && $NonescapableTypes
+  final public var value: T? {
+    get
+    set(value)
+  }
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  final public var replayCache: [T?] {
+    get
+  }
+  #endif
+  final public var subscriptionCount: LeapUi.SkieSwiftStateFlow<LeapUi.KotlinInt> {
+    get
+  }
+  #if compiler(>=5.3) && $NonescapableTypes
+  final public func compareAndSet(expect: T?, update: T?) -> Swift.Bool
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  final public func emit(value: T?) async throws
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  final public func tryEmit(value: T?) -> Swift.Bool
+  #endif
+  final public func resetReplayCache()
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _forceBridgeFromObjectiveC(_ source: LeapUi.SkieKotlinOptionalMutableStateFlow<Swift.AnyObject>, result: inout LeapUi.SkieSwiftOptionalMutableStateFlow<T>?)
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _conditionallyBridgeFromObjectiveC(_ source: LeapUi.SkieKotlinOptionalMutableStateFlow<Swift.AnyObject>, result: inout LeapUi.SkieSwiftOptionalMutableStateFlow<T>?) -> Swift.Bool
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _unconditionallyBridgeFromObjectiveC(_ source: LeapUi.SkieKotlinOptionalMutableStateFlow<Swift.AnyObject>?) -> Self
+  #endif
+  final public func _bridgeToObjectiveC() -> LeapUi.SkieKotlinOptionalMutableStateFlow<Swift.AnyObject>
+  #if compiler(>=5.3) && $NonescapableTypes
+  final public func makeAsyncIterator() -> LeapUi.SkieSwiftFlowIterator<T?>
+  #endif
+  public typealias AsyncIterator = LeapUi.SkieSwiftFlowIterator<T?>
+  public typealias Element = T?
+  public typealias _ObjectiveCType = LeapUi.SkieKotlinOptionalMutableStateFlow<Swift.AnyObject>
+  public typealias Delegate = any LeapUi.Kotlinx_coroutines_coreMutableStateFlow
+  @available(iOS 18.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, macOS 15.0, *)
+  @_implements(_Concurrency.AsyncSequence, Failure) public typealias __AsyncSequence_Failure = Swift.Never
+  @objc deinit
+}
+extension LeapUi.Skie.RuntimeKotlin.SkieColdFlowIterator {
+  public struct __Suspend<E> where E : AnyObject {
+    public let __kotlinObject: LeapUi.SkieColdFlowIterator<E>
+    public init(_ __kotlinObject: LeapUi.SkieColdFlowIterator<E>)
+  }
+}
+public func skie<E>(_ kotlinObject: LeapUi.SkieColdFlowIterator<E>) -> LeapUi.Skie.RuntimeKotlin.SkieColdFlowIterator.__Suspend<E> where E : AnyObject
+extension LeapUi.Skie.RuntimeKotlin.SkieColdFlowIterator.__Suspend {
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func hasNext() async throws -> LeapUi.KotlinBoolean
+}
+extension LeapUi.Kotlinx_coroutines_coreFlow {
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func collect(collector: any LeapUi.Kotlinx_coroutines_coreFlowCollector) async throws
+}
+extension LeapUi.Kotlinx_coroutines_coreFlowCollector {
+  #if compiler(>=5.3) && $NonescapableTypes
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func emit(value: Any?) async throws
+  #endif
+}
+extension LeapUi.VoiceAudioRecorder {
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func cancel() async throws
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func stop() async throws -> LeapUi.KotlinFloatArray
+}
+extension LeapUi.VoiceAudioPlayer {
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func waitForPlayback() async throws
+}
+extension LeapUi.VoiceConversation {
+  #if compiler(>=5.3) && $NonescapableTypes
+  @available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
+  public func generateResponse(audioSamples: LeapUi.KotlinFloatArray, sampleRate: Swift.Int32, onAudioChunk: @escaping (LeapUi.KotlinFloatArray, LeapUi.KotlinInt) -> Swift.Void) async throws -> LeapUi.Leap_sdkGenerationStats?
+  #endif
+}
+public func SkieKotlinFlow<T>(_ flow: LeapUi.SkieSwiftFlow<T>) -> LeapUi.SkieKotlinFlow<T> where T : AnyObject
+public func SkieKotlinFlow<T>(_ flow: LeapUi.SkieSwiftSharedFlow<T>) -> LeapUi.SkieKotlinFlow<T> where T : AnyObject
+public func SkieKotlinFlow<T>(_ flow: LeapUi.SkieSwiftMutableSharedFlow<T>) -> LeapUi.SkieKotlinFlow<T> where T : AnyObject
+public func SkieKotlinFlow<T>(_ flow: LeapUi.SkieSwiftStateFlow<T>) -> LeapUi.SkieKotlinFlow<T> where T : AnyObject
+public func SkieKotlinFlow<T>(_ flow: LeapUi.SkieSwiftMutableStateFlow<T>) -> LeapUi.SkieKotlinFlow<T> where T : AnyObject
+public func SkieKotlinFlow<T>(_ flow: LeapUi.SkieSwiftFlow<T>) -> LeapUi.SkieKotlinFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinFlow<T>(_ flow: LeapUi.SkieSwiftSharedFlow<T>) -> LeapUi.SkieKotlinFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinFlow<T>(_ flow: LeapUi.SkieSwiftMutableSharedFlow<T>) -> LeapUi.SkieKotlinFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinFlow<T>(_ flow: LeapUi.SkieSwiftStateFlow<T>) -> LeapUi.SkieKotlinFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinFlow<T>(_ flow: LeapUi.SkieSwiftMutableStateFlow<T>) -> LeapUi.SkieKotlinFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+extension LeapUi.SkieSwiftFlow where T : AnyObject {
+  convenience public init(_ flow: LeapUi.SkieKotlinFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieKotlinSharedFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieKotlinMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieKotlinStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieKotlinMutableStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftSharedFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftMutableStateFlow<T>)
+}
+extension LeapUi.SkieSwiftFlow where T : Swift._ObjectiveCBridgeable {
+  convenience public init(_ flow: LeapUi.SkieKotlinFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieKotlinSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieKotlinMutableSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieKotlinStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieKotlinMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftMutableSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftSharedFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftMutableStateFlow<T>)
+}
+public func SkieKotlinOptionalFlow<T>(_ flow: LeapUi.SkieSwiftFlow<T>) -> LeapUi.SkieKotlinOptionalFlow<T> where T : AnyObject
+public func SkieKotlinOptionalFlow<T>(_ flow: LeapUi.SkieSwiftOptionalFlow<T>) -> LeapUi.SkieKotlinOptionalFlow<T> where T : AnyObject
+public func SkieKotlinOptionalFlow<T>(_ flow: LeapUi.SkieSwiftSharedFlow<T>) -> LeapUi.SkieKotlinOptionalFlow<T> where T : AnyObject
+public func SkieKotlinOptionalFlow<T>(_ flow: LeapUi.SkieSwiftOptionalSharedFlow<T>) -> LeapUi.SkieKotlinOptionalFlow<T> where T : AnyObject
+public func SkieKotlinOptionalFlow<T>(_ flow: LeapUi.SkieSwiftMutableSharedFlow<T>) -> LeapUi.SkieKotlinOptionalFlow<T> where T : AnyObject
+public func SkieKotlinOptionalFlow<T>(_ flow: LeapUi.SkieSwiftOptionalMutableSharedFlow<T>) -> LeapUi.SkieKotlinOptionalFlow<T> where T : AnyObject
+public func SkieKotlinOptionalFlow<T>(_ flow: LeapUi.SkieSwiftStateFlow<T>) -> LeapUi.SkieKotlinOptionalFlow<T> where T : AnyObject
+public func SkieKotlinOptionalFlow<T>(_ flow: LeapUi.SkieSwiftOptionalStateFlow<T>) -> LeapUi.SkieKotlinOptionalFlow<T> where T : AnyObject
+public func SkieKotlinOptionalFlow<T>(_ flow: LeapUi.SkieSwiftMutableStateFlow<T>) -> LeapUi.SkieKotlinOptionalFlow<T> where T : AnyObject
+public func SkieKotlinOptionalFlow<T>(_ flow: LeapUi.SkieSwiftOptionalMutableStateFlow<T>) -> LeapUi.SkieKotlinOptionalFlow<T> where T : AnyObject
+public func SkieKotlinOptionalFlow<T>(_ flow: LeapUi.SkieSwiftFlow<T>) -> LeapUi.SkieKotlinOptionalFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinOptionalFlow<T>(_ flow: LeapUi.SkieSwiftOptionalFlow<T>) -> LeapUi.SkieKotlinOptionalFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinOptionalFlow<T>(_ flow: LeapUi.SkieSwiftSharedFlow<T>) -> LeapUi.SkieKotlinOptionalFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinOptionalFlow<T>(_ flow: LeapUi.SkieSwiftOptionalSharedFlow<T>) -> LeapUi.SkieKotlinOptionalFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinOptionalFlow<T>(_ flow: LeapUi.SkieSwiftMutableSharedFlow<T>) -> LeapUi.SkieKotlinOptionalFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinOptionalFlow<T>(_ flow: LeapUi.SkieSwiftOptionalMutableSharedFlow<T>) -> LeapUi.SkieKotlinOptionalFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinOptionalFlow<T>(_ flow: LeapUi.SkieSwiftStateFlow<T>) -> LeapUi.SkieKotlinOptionalFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinOptionalFlow<T>(_ flow: LeapUi.SkieSwiftOptionalStateFlow<T>) -> LeapUi.SkieKotlinOptionalFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinOptionalFlow<T>(_ flow: LeapUi.SkieSwiftMutableStateFlow<T>) -> LeapUi.SkieKotlinOptionalFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinOptionalFlow<T>(_ flow: LeapUi.SkieSwiftOptionalMutableStateFlow<T>) -> LeapUi.SkieKotlinOptionalFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+extension LeapUi.SkieSwiftOptionalFlow where T : AnyObject {
+  convenience public init(_ flow: LeapUi.SkieKotlinFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieKotlinOptionalFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieKotlinSharedFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieKotlinOptionalSharedFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieKotlinMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieKotlinOptionalMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieKotlinStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieKotlinOptionalStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieKotlinMutableStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieKotlinOptionalMutableStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftOptionalFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftSharedFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftOptionalSharedFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftOptionalMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftOptionalStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftMutableStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftOptionalMutableStateFlow<T>)
+}
+extension LeapUi.SkieSwiftOptionalFlow where T : Swift._ObjectiveCBridgeable {
+  convenience public init(_ flow: LeapUi.SkieKotlinFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieKotlinOptionalFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieKotlinSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieKotlinOptionalSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieKotlinMutableSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieKotlinOptionalMutableSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieKotlinStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieKotlinOptionalStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieKotlinMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieKotlinOptionalMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftOptionalFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftOptionalSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftMutableSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftOptionalMutableSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftOptionalStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftOptionalMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftOptionalFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftSharedFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftOptionalSharedFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftOptionalMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftOptionalStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftMutableStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftOptionalMutableStateFlow<T>)
+}
+public func SkieKotlinSharedFlow<T>(_ flow: LeapUi.SkieSwiftSharedFlow<T>) -> LeapUi.SkieKotlinSharedFlow<T> where T : AnyObject
+public func SkieKotlinSharedFlow<T>(_ flow: LeapUi.SkieSwiftMutableSharedFlow<T>) -> LeapUi.SkieKotlinSharedFlow<T> where T : AnyObject
+public func SkieKotlinSharedFlow<T>(_ flow: LeapUi.SkieSwiftStateFlow<T>) -> LeapUi.SkieKotlinSharedFlow<T> where T : AnyObject
+public func SkieKotlinSharedFlow<T>(_ flow: LeapUi.SkieSwiftMutableStateFlow<T>) -> LeapUi.SkieKotlinSharedFlow<T> where T : AnyObject
+public func SkieKotlinSharedFlow<T>(_ flow: LeapUi.SkieSwiftSharedFlow<T>) -> LeapUi.SkieKotlinSharedFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinSharedFlow<T>(_ flow: LeapUi.SkieSwiftMutableSharedFlow<T>) -> LeapUi.SkieKotlinSharedFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinSharedFlow<T>(_ flow: LeapUi.SkieSwiftStateFlow<T>) -> LeapUi.SkieKotlinSharedFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinSharedFlow<T>(_ flow: LeapUi.SkieSwiftMutableStateFlow<T>) -> LeapUi.SkieKotlinSharedFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+extension LeapUi.SkieSwiftSharedFlow where T : AnyObject {
+  convenience public init(_ flow: LeapUi.SkieKotlinSharedFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieKotlinMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieKotlinStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieKotlinMutableStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftSharedFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftMutableStateFlow<T>)
+}
+extension LeapUi.SkieSwiftSharedFlow where T : Swift._ObjectiveCBridgeable {
+  convenience public init(_ flow: LeapUi.SkieKotlinSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieKotlinMutableSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieKotlinStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieKotlinMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftMutableSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftSharedFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftMutableStateFlow<T>)
+}
+public func SkieKotlinOptionalSharedFlow<T>(_ flow: LeapUi.SkieSwiftSharedFlow<T>) -> LeapUi.SkieKotlinOptionalSharedFlow<T> where T : AnyObject
+public func SkieKotlinOptionalSharedFlow<T>(_ flow: LeapUi.SkieSwiftOptionalSharedFlow<T>) -> LeapUi.SkieKotlinOptionalSharedFlow<T> where T : AnyObject
+public func SkieKotlinOptionalSharedFlow<T>(_ flow: LeapUi.SkieSwiftMutableSharedFlow<T>) -> LeapUi.SkieKotlinOptionalSharedFlow<T> where T : AnyObject
+public func SkieKotlinOptionalSharedFlow<T>(_ flow: LeapUi.SkieSwiftOptionalMutableSharedFlow<T>) -> LeapUi.SkieKotlinOptionalSharedFlow<T> where T : AnyObject
+public func SkieKotlinOptionalSharedFlow<T>(_ flow: LeapUi.SkieSwiftStateFlow<T>) -> LeapUi.SkieKotlinOptionalSharedFlow<T> where T : AnyObject
+public func SkieKotlinOptionalSharedFlow<T>(_ flow: LeapUi.SkieSwiftOptionalStateFlow<T>) -> LeapUi.SkieKotlinOptionalSharedFlow<T> where T : AnyObject
+public func SkieKotlinOptionalSharedFlow<T>(_ flow: LeapUi.SkieSwiftMutableStateFlow<T>) -> LeapUi.SkieKotlinOptionalSharedFlow<T> where T : AnyObject
+public func SkieKotlinOptionalSharedFlow<T>(_ flow: LeapUi.SkieSwiftOptionalMutableStateFlow<T>) -> LeapUi.SkieKotlinOptionalSharedFlow<T> where T : AnyObject
+public func SkieKotlinOptionalSharedFlow<T>(_ flow: LeapUi.SkieSwiftSharedFlow<T>) -> LeapUi.SkieKotlinOptionalSharedFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinOptionalSharedFlow<T>(_ flow: LeapUi.SkieSwiftOptionalSharedFlow<T>) -> LeapUi.SkieKotlinOptionalSharedFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinOptionalSharedFlow<T>(_ flow: LeapUi.SkieSwiftMutableSharedFlow<T>) -> LeapUi.SkieKotlinOptionalSharedFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinOptionalSharedFlow<T>(_ flow: LeapUi.SkieSwiftOptionalMutableSharedFlow<T>) -> LeapUi.SkieKotlinOptionalSharedFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinOptionalSharedFlow<T>(_ flow: LeapUi.SkieSwiftStateFlow<T>) -> LeapUi.SkieKotlinOptionalSharedFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinOptionalSharedFlow<T>(_ flow: LeapUi.SkieSwiftOptionalStateFlow<T>) -> LeapUi.SkieKotlinOptionalSharedFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinOptionalSharedFlow<T>(_ flow: LeapUi.SkieSwiftMutableStateFlow<T>) -> LeapUi.SkieKotlinOptionalSharedFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinOptionalSharedFlow<T>(_ flow: LeapUi.SkieSwiftOptionalMutableStateFlow<T>) -> LeapUi.SkieKotlinOptionalSharedFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+extension LeapUi.SkieSwiftOptionalSharedFlow where T : AnyObject {
+  convenience public init(_ flow: LeapUi.SkieKotlinSharedFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieKotlinOptionalSharedFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieKotlinMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieKotlinOptionalMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieKotlinStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieKotlinOptionalStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieKotlinMutableStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieKotlinOptionalMutableStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftSharedFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftOptionalSharedFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftOptionalMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftOptionalStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftMutableStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftOptionalMutableStateFlow<T>)
+}
+extension LeapUi.SkieSwiftOptionalSharedFlow where T : Swift._ObjectiveCBridgeable {
+  convenience public init(_ flow: LeapUi.SkieKotlinSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieKotlinOptionalSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieKotlinMutableSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieKotlinOptionalMutableSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieKotlinStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieKotlinOptionalStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieKotlinMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieKotlinOptionalMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftOptionalSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftMutableSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftOptionalMutableSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftOptionalStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftOptionalMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftSharedFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftOptionalSharedFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftOptionalMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftOptionalStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftMutableStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftOptionalMutableStateFlow<T>)
+}
+public func SkieKotlinMutableSharedFlow<T>(_ flow: LeapUi.SkieSwiftMutableSharedFlow<T>) -> LeapUi.SkieKotlinMutableSharedFlow<T> where T : AnyObject
+public func SkieKotlinMutableSharedFlow<T>(_ flow: LeapUi.SkieSwiftMutableSharedFlow<T>) -> LeapUi.SkieKotlinMutableSharedFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+extension LeapUi.SkieSwiftMutableSharedFlow where T : AnyObject {
+  convenience public init(_ flow: LeapUi.SkieKotlinMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftMutableSharedFlow<T>)
+}
+extension LeapUi.SkieSwiftMutableSharedFlow where T : Swift._ObjectiveCBridgeable {
+  convenience public init(_ flow: LeapUi.SkieKotlinMutableSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftMutableSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftMutableSharedFlow<T>)
+}
+public func SkieKotlinOptionalMutableSharedFlow<T>(_ flow: LeapUi.SkieSwiftMutableSharedFlow<T>) -> LeapUi.SkieKotlinOptionalMutableSharedFlow<T> where T : AnyObject
+public func SkieKotlinOptionalMutableSharedFlow<T>(_ flow: LeapUi.SkieSwiftOptionalMutableSharedFlow<T>) -> LeapUi.SkieKotlinOptionalMutableSharedFlow<T> where T : AnyObject
+public func SkieKotlinOptionalMutableSharedFlow<T>(_ flow: LeapUi.SkieSwiftMutableSharedFlow<T>) -> LeapUi.SkieKotlinOptionalMutableSharedFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinOptionalMutableSharedFlow<T>(_ flow: LeapUi.SkieSwiftOptionalMutableSharedFlow<T>) -> LeapUi.SkieKotlinOptionalMutableSharedFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+extension LeapUi.SkieSwiftOptionalMutableSharedFlow where T : AnyObject {
+  convenience public init(_ flow: LeapUi.SkieKotlinMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieKotlinOptionalMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftOptionalMutableSharedFlow<T>)
+}
+extension LeapUi.SkieSwiftOptionalMutableSharedFlow where T : Swift._ObjectiveCBridgeable {
+  convenience public init(_ flow: LeapUi.SkieKotlinMutableSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieKotlinOptionalMutableSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftMutableSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftOptionalMutableSharedFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftMutableSharedFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftOptionalMutableSharedFlow<T>)
+}
+public func SkieKotlinStateFlow<T>(_ flow: LeapUi.SkieSwiftStateFlow<T>) -> LeapUi.SkieKotlinStateFlow<T> where T : AnyObject
+public func SkieKotlinStateFlow<T>(_ flow: LeapUi.SkieSwiftMutableStateFlow<T>) -> LeapUi.SkieKotlinStateFlow<T> where T : AnyObject
+public func SkieKotlinStateFlow<T>(_ flow: LeapUi.SkieSwiftStateFlow<T>) -> LeapUi.SkieKotlinStateFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinStateFlow<T>(_ flow: LeapUi.SkieSwiftMutableStateFlow<T>) -> LeapUi.SkieKotlinStateFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+extension LeapUi.SkieSwiftStateFlow where T : AnyObject {
+  convenience public init(_ flow: LeapUi.SkieKotlinStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieKotlinMutableStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftMutableStateFlow<T>)
+}
+extension LeapUi.SkieSwiftStateFlow where T : Swift._ObjectiveCBridgeable {
+  convenience public init(_ flow: LeapUi.SkieKotlinStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieKotlinMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftMutableStateFlow<T>)
+}
+public func SkieKotlinOptionalStateFlow<T>(_ flow: LeapUi.SkieSwiftStateFlow<T>) -> LeapUi.SkieKotlinOptionalStateFlow<T> where T : AnyObject
+public func SkieKotlinOptionalStateFlow<T>(_ flow: LeapUi.SkieSwiftOptionalStateFlow<T>) -> LeapUi.SkieKotlinOptionalStateFlow<T> where T : AnyObject
+public func SkieKotlinOptionalStateFlow<T>(_ flow: LeapUi.SkieSwiftMutableStateFlow<T>) -> LeapUi.SkieKotlinOptionalStateFlow<T> where T : AnyObject
+public func SkieKotlinOptionalStateFlow<T>(_ flow: LeapUi.SkieSwiftOptionalMutableStateFlow<T>) -> LeapUi.SkieKotlinOptionalStateFlow<T> where T : AnyObject
+public func SkieKotlinOptionalStateFlow<T>(_ flow: LeapUi.SkieSwiftStateFlow<T>) -> LeapUi.SkieKotlinOptionalStateFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinOptionalStateFlow<T>(_ flow: LeapUi.SkieSwiftOptionalStateFlow<T>) -> LeapUi.SkieKotlinOptionalStateFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinOptionalStateFlow<T>(_ flow: LeapUi.SkieSwiftMutableStateFlow<T>) -> LeapUi.SkieKotlinOptionalStateFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinOptionalStateFlow<T>(_ flow: LeapUi.SkieSwiftOptionalMutableStateFlow<T>) -> LeapUi.SkieKotlinOptionalStateFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+extension LeapUi.SkieSwiftOptionalStateFlow where T : AnyObject {
+  convenience public init(_ flow: LeapUi.SkieKotlinStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieKotlinOptionalStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieKotlinMutableStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieKotlinOptionalMutableStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftOptionalStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftMutableStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftOptionalMutableStateFlow<T>)
+}
+extension LeapUi.SkieSwiftOptionalStateFlow where T : Swift._ObjectiveCBridgeable {
+  convenience public init(_ flow: LeapUi.SkieKotlinStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieKotlinOptionalStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieKotlinMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieKotlinOptionalMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftOptionalStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftOptionalMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftOptionalStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftMutableStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftOptionalMutableStateFlow<T>)
+}
+public func SkieKotlinMutableStateFlow<T>(_ flow: LeapUi.SkieSwiftMutableStateFlow<T>) -> LeapUi.SkieKotlinMutableStateFlow<T> where T : AnyObject
+public func SkieKotlinMutableStateFlow<T>(_ flow: LeapUi.SkieSwiftMutableStateFlow<T>) -> LeapUi.SkieKotlinMutableStateFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+extension LeapUi.SkieSwiftMutableStateFlow where T : AnyObject {
+  convenience public init(_ flow: LeapUi.SkieKotlinMutableStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftMutableStateFlow<T>)
+}
+extension LeapUi.SkieSwiftMutableStateFlow where T : Swift._ObjectiveCBridgeable {
+  convenience public init(_ flow: LeapUi.SkieKotlinMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftMutableStateFlow<T>)
+}
+public func SkieKotlinOptionalMutableStateFlow<T>(_ flow: LeapUi.SkieSwiftMutableStateFlow<T>) -> LeapUi.SkieKotlinOptionalMutableStateFlow<T> where T : AnyObject
+public func SkieKotlinOptionalMutableStateFlow<T>(_ flow: LeapUi.SkieSwiftOptionalMutableStateFlow<T>) -> LeapUi.SkieKotlinOptionalMutableStateFlow<T> where T : AnyObject
+public func SkieKotlinOptionalMutableStateFlow<T>(_ flow: LeapUi.SkieSwiftMutableStateFlow<T>) -> LeapUi.SkieKotlinOptionalMutableStateFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+public func SkieKotlinOptionalMutableStateFlow<T>(_ flow: LeapUi.SkieSwiftOptionalMutableStateFlow<T>) -> LeapUi.SkieKotlinOptionalMutableStateFlow<T._ObjectiveCType> where T : Swift._ObjectiveCBridgeable
+extension LeapUi.SkieSwiftOptionalMutableStateFlow where T : AnyObject {
+  convenience public init(_ flow: LeapUi.SkieKotlinMutableStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieKotlinOptionalMutableStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftMutableStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftOptionalMutableStateFlow<T>)
+}
+extension LeapUi.SkieSwiftOptionalMutableStateFlow where T : Swift._ObjectiveCBridgeable {
+  convenience public init(_ flow: LeapUi.SkieKotlinMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieKotlinOptionalMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftOptionalMutableStateFlow<T._ObjectiveCType>)
+  convenience public init(_ flow: LeapUi.SkieSwiftMutableStateFlow<T>)
+  convenience public init(_ flow: LeapUi.SkieSwiftOptionalMutableStateFlow<T>)
+}
+@frozen public enum VoiceWidgetMode : Swift.Hashable, Swift.CaseIterable, Swift._ObjectiveCBridgeable {
+  case idle
+  case listening
+  case responding
+  public var name: Swift.String {
+    get
+  }
+  public var ordinal: Swift.Int32 {
+    get
+  }
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _forceBridgeFromObjectiveC(_ source: LeapUi.__VoiceWidgetMode, result: inout LeapUi.VoiceWidgetMode?)
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _conditionallyBridgeFromObjectiveC(_ source: LeapUi.__VoiceWidgetMode, result: inout LeapUi.VoiceWidgetMode?) -> Swift.Bool
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _unconditionallyBridgeFromObjectiveC(_ source: LeapUi.__VoiceWidgetMode?) -> LeapUi.VoiceWidgetMode
+  #endif
+  public func _bridgeToObjectiveC() -> LeapUi.__VoiceWidgetMode
+  public typealias _ObjectiveCType = LeapUi.__VoiceWidgetMode
+  public static func == (a: LeapUi.VoiceWidgetMode, b: LeapUi.VoiceWidgetMode) -> Swift.Bool
+  public typealias AllCases = [LeapUi.VoiceWidgetMode]
+  nonisolated public static var allCases: [LeapUi.VoiceWidgetMode] {
+    get
+  }
+  public func hash(into hasher: inout Swift.Hasher)
+  public var hashValue: Swift.Int {
+    get
+  }
+}
+extension LeapUi.VoiceWidgetMode {
+  public func toKotlinEnum() -> LeapUi.__VoiceWidgetMode
+}
+extension LeapUi.__VoiceWidgetMode {
+  public func toSwiftEnum() -> LeapUi.VoiceWidgetMode
+}
+@frozen public enum StatusType : Swift.Hashable, Swift.CaseIterable, Swift._ObjectiveCBridgeable {
+  case loading
+  case ready
+  case error
+  public var name: Swift.String {
+    get
+  }
+  public var ordinal: Swift.Int32 {
+    get
+  }
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _forceBridgeFromObjectiveC(_ source: LeapUi.__StatusType, result: inout LeapUi.StatusType?)
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _conditionallyBridgeFromObjectiveC(_ source: LeapUi.__StatusType, result: inout LeapUi.StatusType?) -> Swift.Bool
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func _unconditionallyBridgeFromObjectiveC(_ source: LeapUi.__StatusType?) -> LeapUi.StatusType
+  #endif
+  public func _bridgeToObjectiveC() -> LeapUi.__StatusType
+  public typealias _ObjectiveCType = LeapUi.__StatusType
+  public static func == (a: LeapUi.StatusType, b: LeapUi.StatusType) -> Swift.Bool
+  public typealias AllCases = [LeapUi.StatusType]
+  nonisolated public static var allCases: [LeapUi.StatusType] {
+    get
+  }
+  public func hash(into hasher: inout Swift.Hasher)
+  public var hashValue: Swift.Int {
+    get
+  }
+}
+extension LeapUi.StatusType {
+  public func toKotlinEnum() -> LeapUi.__StatusType
+}
+extension LeapUi.__StatusType {
+  public func toSwiftEnum() -> LeapUi.StatusType
+}
+extension LeapUi.Skie.RuntimeKotlin.Skie_SuspendResult {
+  @frozen public enum __Sealed : Swift.Hashable {
+    case canceled(LeapUi.Skie_SuspendResult.Canceled)
+    case error(LeapUi.Skie_SuspendResult.Error)
+    case success(LeapUi.Skie_SuspendResult.Success)
+    public static func == (a: LeapUi.Skie.RuntimeKotlin.Skie_SuspendResult.__Sealed, b: LeapUi.Skie.RuntimeKotlin.Skie_SuspendResult.__Sealed) -> Swift.Bool
+    public func hash(into hasher: inout Swift.Hasher)
+    public var hashValue: Swift.Int {
+      get
+    }
+  }
+}
+public func onEnum<__Sealed>(of sealed: __Sealed) -> LeapUi.Skie.RuntimeKotlin.Skie_SuspendResult.__Sealed where __Sealed : LeapUi.Skie_SuspendResult
+#if compiler(>=5.3) && $NonescapableTypes
+@_disfavoredOverload public func onEnum<__Sealed>(of sealed: __Sealed?) -> LeapUi.Skie.RuntimeKotlin.Skie_SuspendResult.__Sealed? where __Sealed : LeapUi.Skie_SuspendResult
+#endif
+extension LeapUi.Skie.ai_liquid_leap__leap_ui.VoiceAssistantIntent {
+  @frozen public enum __Sealed : Swift.Hashable {
+    case cancelGeneration(LeapUi.VoiceAssistantIntentCancelGeneration)
+    case startRecording(LeapUi.VoiceAssistantIntentStartRecording)
+    case stopRecording(LeapUi.VoiceAssistantIntentStopRecording)
+    public static func == (a: LeapUi.Skie.ai_liquid_leap__leap_ui.VoiceAssistantIntent.__Sealed, b: LeapUi.Skie.ai_liquid_leap__leap_ui.VoiceAssistantIntent.__Sealed) -> Swift.Bool
+    public func hash(into hasher: inout Swift.Hasher)
+    public var hashValue: Swift.Int {
+      get
+    }
+  }
+}
+public func onEnum<__Sealed>(of sealed: __Sealed) -> LeapUi.Skie.ai_liquid_leap__leap_ui.VoiceAssistantIntent.__Sealed where __Sealed : LeapUi.VoiceAssistantIntent
+#if compiler(>=5.3) && $NonescapableTypes
+@_disfavoredOverload public func onEnum<__Sealed>(of sealed: __Sealed?) -> LeapUi.Skie.ai_liquid_leap__leap_ui.VoiceAssistantIntent.__Sealed? where __Sealed : LeapUi.VoiceAssistantIntent
+#endif
+public func createMainScope() -> any LeapUi.Kotlinx_coroutines_coreCoroutineScope
+public func floatArrayToNSData(array: LeapUi.KotlinFloatArray) -> Foundation.Data
+public func nsDataToFloatArray(data: Foundation.Data) -> LeapUi.KotlinFloatArray
+public func VoiceAssistantViewController(state: LeapUi.VoiceAssistantStateHolder, onIntent: @escaping (any LeapUi.VoiceAssistantIntent) -> Swift.Void, labels: LeapUi.VoiceWidgetLabels, colors: LeapUi.VoiceWidgetColors, showPoweredBy: Swift.Bool) -> UIKit.UIViewController
+extension LeapUi.UiModifier {
+  public func halftoneEffect(isDarkMode: Swift.Bool) -> any LeapUi.UiModifier
+}
+extension LeapUi.VoiceWidgetMode : Swift.Sendable {}
+extension LeapUi.VoiceWidgetMode : Swift.BitwiseCopyable {}
+extension LeapUi.StatusType : Swift.Sendable {}
+extension LeapUi.StatusType : Swift.BitwiseCopyable {}

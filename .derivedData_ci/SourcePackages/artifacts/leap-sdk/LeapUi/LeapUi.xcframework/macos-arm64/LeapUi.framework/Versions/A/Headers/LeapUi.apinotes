@@ -1,0 +1,1909 @@
+Name: "LeapUi"
+Classes:
+- Name: "LeapUiBase"
+  SwiftName: "KotlinBase"
+- Name: "LeapUiMutableSet"
+  SwiftName: "KotlinMutableSet"
+- Name: "LeapUiMutableDictionary"
+  SwiftName: "KotlinMutableDictionary"
+- Name: "LeapUiNumber"
+  SwiftName: "KotlinNumber"
+- Name: "LeapUiByte"
+  SwiftName: "KotlinByte"
+- Name: "LeapUiUByte"
+  SwiftName: "KotlinUByte"
+- Name: "LeapUiShort"
+  SwiftName: "KotlinShort"
+- Name: "LeapUiUShort"
+  SwiftName: "KotlinUShort"
+- Name: "LeapUiInt"
+  SwiftName: "KotlinInt"
+- Name: "LeapUiUInt"
+  SwiftName: "KotlinUInt"
+- Name: "LeapUiLong"
+  SwiftName: "KotlinLong"
+- Name: "LeapUiULong"
+  SwiftName: "KotlinULong"
+- Name: "LeapUiFloat"
+  SwiftName: "KotlinFloat"
+- Name: "LeapUiDouble"
+  SwiftName: "KotlinDouble"
+- Name: "LeapUiBoolean"
+  SwiftName: "KotlinBoolean"
+- Name: "LeapUiKotlinCancellationException"
+  SwiftName: "KotlinCancellationException"
+  Methods:
+  - Selector: "init"
+    MethodKind: "Instance"
+    SwiftName: "init()"
+  - Selector: "initWithMessage:"
+    MethodKind: "Instance"
+    SwiftName: "init(message:)"
+    Parameters:
+    - Position: 0
+      Type: "NSString * _Nullable"
+  - Selector: "initWithMessage:cause:"
+    MethodKind: "Instance"
+    SwiftName: "init(message:cause:)"
+    Parameters:
+    - Position: 0
+      Type: "NSString * _Nullable"
+    - Position: 1
+      Type: "LeapUiKotlinThrowable * _Nullable"
+  - Selector: "initWithCause:"
+    MethodKind: "Instance"
+    SwiftName: "init(cause:)"
+    Parameters:
+    - Position: 0
+      Type: "LeapUiKotlinThrowable * _Nullable"
+- Name: "LeapUiKotlinThrowable"
+  SwiftName: "KotlinThrowable"
+  Properties:
+  - Name: "cause"
+    PropertyKind: "Instance"
+    SwiftName: "cause"
+    Type: "LeapUiKotlinThrowable * _Nullable"
+  - Name: "message"
+    PropertyKind: "Instance"
+    SwiftName: "message"
+    Type: "NSString * _Nullable"
+  Methods:
+  - Selector: "initWithMessage:"
+    MethodKind: "Instance"
+    SwiftName: "init(message:)"
+    Parameters:
+    - Position: 0
+      Type: "NSString * _Nullable"
+  - Selector: "initWithCause:"
+    MethodKind: "Instance"
+    SwiftName: "init(cause:)"
+    Parameters:
+    - Position: 0
+      Type: "LeapUiKotlinThrowable * _Nullable"
+  - Selector: "init"
+    MethodKind: "Instance"
+    SwiftName: "init()"
+  - Selector: "initWithMessage:cause:"
+    MethodKind: "Instance"
+    SwiftName: "init(message:cause:)"
+    Parameters:
+    - Position: 0
+      Type: "NSString * _Nullable"
+    - Position: 1
+      Type: "LeapUiKotlinThrowable * _Nullable"
+  - Selector: "getStackTrace"
+    MethodKind: "Instance"
+    SwiftName: "getStackTrace()"
+    ResultType: "LeapUiKotlinArray<NSString *> * _Nonnull"
+  - Selector: "printStackTrace"
+    MethodKind: "Instance"
+    SwiftName: "printStackTrace()"
+    ResultType: "void"
+  - Selector: "description"
+    MethodKind: "Instance"
+    SwiftName: "description()"
+    ResultType: "NSString * _Nonnull"
+- Name: "LeapUiKotlinArray"
+  SwiftName: "KotlinArray"
+  Properties:
+  - Name: "size"
+    PropertyKind: "Instance"
+    SwiftName: "size"
+    Type: "int32_t"
+  Methods:
+  - Selector: "arrayWithSize:init:"
+    MethodKind: "Instance"
+    SwiftName: "init(size:init:)"
+    Parameters:
+    - Position: 0
+      Type: "int32_t"
+    - Position: 1
+      Type: "T _Nullable (^ _Nonnull)(LeapUiInt * _Nonnull)"
+  - Selector: "getIndex:"
+    MethodKind: "Instance"
+    SwiftName: "get(index:)"
+    ResultType: "T _Nullable"
+    Parameters:
+    - Position: 0
+      Type: "int32_t"
+  - Selector: "iterator"
+    MethodKind: "Instance"
+    SwiftName: "iterator()"
+    ResultType: "id<LeapUiKotlinIterator> _Nonnull"
+  - Selector: "setIndex:value:"
+    MethodKind: "Instance"
+    SwiftName: "set(index:value:)"
+    ResultType: "void"
+    Parameters:
+    - Position: 0
+      Type: "int32_t"
+    - Position: 1
+      Type: "T _Nullable"
+- Name: "LeapUiKotlinIllegalStateException"
+  SwiftName: "KotlinIllegalStateException"
+  Methods:
+  - Selector: "init"
+    MethodKind: "Instance"
+    SwiftName: "init()"
+  - Selector: "initWithMessage:"
+    MethodKind: "Instance"
+    SwiftName: "init(message:)"
+    Parameters:
+    - Position: 0
+      Type: "NSString * _Nullable"
+  - Selector: "initWithMessage:cause:"
+    MethodKind: "Instance"
+    SwiftName: "init(message:cause:)"
+    Parameters:
+    - Position: 0
+      Type: "NSString * _Nullable"
+    - Position: 1
+      Type: "LeapUiKotlinThrowable * _Nullable"
+  - Selector: "initWithCause:"
+    MethodKind: "Instance"
+    SwiftName: "init(cause:)"
+    Parameters:
+    - Position: 0
+      Type: "LeapUiKotlinThrowable * _Nullable"
+- Name: "LeapUiKotlinRuntimeException"
+  SwiftName: "KotlinRuntimeException"
+  Methods:
+  - Selector: "init"
+    MethodKind: "Instance"
+    SwiftName: "init()"
+  - Selector: "initWithMessage:"
+    MethodKind: "Instance"
+    SwiftName: "init(message:)"
+    Parameters:
+    - Position: 0
+      Type: "NSString * _Nullable"
+  - Selector: "initWithMessage:cause:"
+    MethodKind: "Instance"
+    SwiftName: "init(message:cause:)"
+    Parameters:
+    - Position: 0
+      Type: "NSString * _Nullable"
+    - Position: 1
+      Type: "LeapUiKotlinThrowable * _Nullable"
+  - Selector: "initWithCause:"
+    MethodKind: "Instance"
+    SwiftName: "init(cause:)"
+    Parameters:
+    - Position: 0
+      Type: "LeapUiKotlinThrowable * _Nullable"
+- Name: "LeapUiKotlinException"
+  SwiftName: "KotlinException"
+  Methods:
+  - Selector: "init"
+    MethodKind: "Instance"
+    SwiftName: "init()"
+  - Selector: "initWithMessage:"
+    MethodKind: "Instance"
+    SwiftName: "init(message:)"
+    Parameters:
+    - Position: 0
+      Type: "NSString * _Nullable"
+  - Selector: "initWithMessage:cause:"
+    MethodKind: "Instance"
+    SwiftName: "init(message:cause:)"
+    Parameters:
+    - Position: 0
+      Type: "NSString * _Nullable"
+    - Position: 1
+      Type: "LeapUiKotlinThrowable * _Nullable"
+  - Selector: "initWithCause:"
+    MethodKind: "Instance"
+    SwiftName: "init(cause:)"
+    Parameters:
+    - Position: 0
+      Type: "LeapUiKotlinThrowable * _Nullable"
+- Name: "LeapUiKotlinFloatArray"
+  SwiftName: "KotlinFloatArray"
+  Properties:
+  - Name: "size"
+    PropertyKind: "Instance"
+    SwiftName: "size"
+    Type: "int32_t"
+  Methods:
+  - Selector: "arrayWithSize:init:"
+    MethodKind: "Instance"
+    SwiftName: "init(size:init:)"
+    Parameters:
+    - Position: 0
+      Type: "int32_t"
+    - Position: 1
+      Type: "LeapUiFloat * _Nonnull (^ _Nonnull)(LeapUiInt * _Nonnull)"
+  - Selector: "arrayWithSize:"
+    MethodKind: "Instance"
+    SwiftName: "init(size:)"
+    Parameters:
+    - Position: 0
+      Type: "int32_t"
+  - Selector: "getIndex:"
+    MethodKind: "Instance"
+    SwiftName: "get(index:)"
+    ResultType: "float"
+    Parameters:
+    - Position: 0
+      Type: "int32_t"
+  - Selector: "iterator"
+    MethodKind: "Instance"
+    SwiftName: "iterator()"
+    ResultType: "LeapUiKotlinFloatIterator * _Nonnull"
+  - Selector: "setIndex:value:"
+    MethodKind: "Instance"
+    SwiftName: "set(index:value:)"
+    ResultType: "void"
+    Parameters:
+    - Position: 0
+      Type: "int32_t"
+    - Position: 1
+      Type: "float"
+- Name: "LeapUiKotlinFloatIterator"
+  SwiftName: "KotlinFloatIterator"
+  Methods:
+  - Selector: "init"
+    MethodKind: "Instance"
+    SwiftName: "init()"
+  - Selector: "next"
+    MethodKind: "Instance"
+    SwiftName: "next()"
+    ResultType: "LeapUiFloat * _Nonnull"
+  - Selector: "nextFloat"
+    MethodKind: "Instance"
+    SwiftName: "nextFloat()"
+    ResultType: "float"
+- Name: "LeapUiKotlinEnum"
+  SwiftName: "KotlinEnum"
+  Properties:
+  - Name: "name"
+    PropertyKind: "Instance"
+    SwiftName: "name"
+    Type: "NSString * _Nonnull"
+  - Name: "ordinal"
+    PropertyKind: "Instance"
+    SwiftName: "ordinal"
+    Type: "int32_t"
+  Methods:
+  - Selector: "initWithName:ordinal:"
+    MethodKind: "Instance"
+    SwiftName: "init(name:ordinal:)"
+    Parameters:
+    - Position: 0
+      Type: "NSString * _Nonnull"
+    - Position: 1
+      Type: "int32_t"
+  - Selector: "compareToOther:"
+    MethodKind: "Instance"
+    SwiftName: "compareTo(other:)"
+    ResultType: "int32_t"
+    Parameters:
+    - Position: 0
+      Type: "E _Nonnull"
+  - Selector: "isEqual:"
+    MethodKind: "Instance"
+    SwiftName: "isEqual(_:)"
+    ResultType: "BOOL"
+    Parameters:
+    - Position: 0
+      Type: "id _Nullable"
+  - Selector: "hash"
+    MethodKind: "Instance"
+    SwiftName: "hash()"
+    ResultType: "NSUInteger"
+  - Selector: "description"
+    MethodKind: "Instance"
+    SwiftName: "description()"
+    ResultType: "NSString * _Nonnull"
+- Name: "LeapUiKotlinEnumCompanion"
+  SwiftName: "KotlinEnumCompanion"
+- Name: "LeapUiSkieColdFlowIterator"
+  SwiftName: "SkieColdFlowIterator"
+  SwiftPrivate: true
+  Methods:
+  - Selector: "initWithFlow:"
+    MethodKind: "Instance"
+    SwiftName: "init(flow:)"
+    Parameters:
+    - Position: 0
+      Type: "id<LeapUiKotlinx_coroutines_coreFlow> _Nonnull"
+  - Selector: "cancel"
+    MethodKind: "Instance"
+    SwiftName: "cancel()"
+    ResultType: "void"
+  - Selector: "hasNextWithCompletionHandler:"
+    MethodKind: "Instance"
+    SwiftName: "__hasNext(completionHandler:)"
+    SwiftPrivate: true
+    ResultType: "void"
+    Parameters:
+    - Position: 0
+      Type: "void (^ _Nonnull)(LeapUiBoolean * _Nullable, NSError * _Nullable)"
+  - Selector: "next"
+    MethodKind: "Instance"
+    SwiftName: "next()"
+    ResultType: "E _Nullable"
+- Name: "LeapUiSkieKotlinFlow"
+  SwiftBridge: "SkieSwiftFlow"
+  SwiftName: "SkieKotlinFlow"
+  SwiftPrivate: true
+  Methods:
+  - Selector: "initWithDelegate:"
+    MethodKind: "Instance"
+    SwiftName: "init(_:)"
+    Parameters:
+    - Position: 0
+      Type: "id<LeapUiKotlinx_coroutines_coreFlow> _Nonnull"
+  - Selector: "collectCollector:completionHandler:"
+    MethodKind: "Instance"
+    SwiftName: "__collect(collector:completionHandler:)"
+    SwiftPrivate: true
+    ResultType: "void"
+    Parameters:
+    - Position: 0
+      Type: "id<LeapUiKotlinx_coroutines_coreFlowCollector> _Nonnull"
+    - Position: 1
+      Type: "void (^ _Nonnull)(NSError * _Nullable)"
+- Name: "LeapUiSkieKotlinMutableSharedFlow"
+  SwiftBridge: "SkieSwiftMutableSharedFlow"
+  SwiftName: "SkieKotlinMutableSharedFlow"
+  SwiftPrivate: true
+  Properties:
+  - Name: "replayCache"
+    PropertyKind: "Instance"
+    SwiftName: "replayCache"
+    Type: "NSArray<T> * _Nonnull"
+  - Name: "subscriptionCount"
+    PropertyKind: "Instance"
+    SwiftName: "subscriptionCount"
+    Type: "LeapUiSkieKotlinStateFlow<LeapUiInt *> * _Nonnull"
+  Methods:
+  - Selector: "initWithDelegate:"
+    MethodKind: "Instance"
+    SwiftName: "init(_:)"
+    Parameters:
+    - Position: 0
+      Type: "id<LeapUiKotlinx_coroutines_coreMutableSharedFlow> _Nonnull"
+  - Selector: "collectCollector:completionHandler:"
+    MethodKind: "Instance"
+    SwiftName: "__collect(collector:completionHandler:)"
+    SwiftPrivate: true
+    ResultType: "void"
+    Parameters:
+    - Position: 0
+      Type: "id<LeapUiKotlinx_coroutines_coreFlowCollector> _Nonnull"
+    - Position: 1
+      Type: "void (^ _Nonnull)(NSError * _Nullable)"
+  - Selector: "emitValue:completionHandler:"
+    MethodKind: "Instance"
+    SwiftName: "__emit(value:completionHandler:)"
+    SwiftPrivate: true
+    ResultType: "void"
+    Parameters:
+    - Position: 0
+      Type: "T _Nonnull"
+    - Position: 1
+      Type: "void (^ _Nonnull)(NSError * _Nullable)"
+  - Selector: "resetReplayCache"
+    MethodKind: "Instance"
+    SwiftName: "resetReplayCache()"
+    ResultType: "void"
+  - Selector: "tryEmitValue:"
+    MethodKind: "Instance"
+    SwiftName: "tryEmit(value:)"
+    ResultType: "BOOL"
+    Parameters:
+    - Position: 0
+      Type: "T _Nonnull"
+- Name: "LeapUiSkieKotlinMutableStateFlow"
+  SwiftBridge: "SkieSwiftMutableStateFlow"
+  SwiftName: "SkieKotlinMutableStateFlow"
+  SwiftPrivate: true
+  Properties:
+  - Name: "replayCache"
+    PropertyKind: "Instance"
+    SwiftName: "replayCache"
+    Type: "NSArray<T> * _Nonnull"
+  - Name: "subscriptionCount"
+    PropertyKind: "Instance"
+    SwiftName: "subscriptionCount"
+    Type: "LeapUiSkieKotlinStateFlow<LeapUiInt *> * _Nonnull"
+  - Name: "value"
+    PropertyKind: "Instance"
+    SwiftName: "value"
+    Type: "T _Nonnull"
+  Methods:
+  - Selector: "initWithDelegate:"
+    MethodKind: "Instance"
+    SwiftName: "init(_:)"
+    Parameters:
+    - Position: 0
+      Type: "id<LeapUiKotlinx_coroutines_coreMutableStateFlow> _Nonnull"
+  - Selector: "collectCollector:completionHandler:"
+    MethodKind: "Instance"
+    SwiftName: "__collect(collector:completionHandler:)"
+    SwiftPrivate: true
+    ResultType: "void"
+    Parameters:
+    - Position: 0
+      Type: "id<LeapUiKotlinx_coroutines_coreFlowCollector> _Nonnull"
+    - Position: 1
+      Type: "void (^ _Nonnull)(NSError * _Nullable)"
+  - Selector: "compareAndSetExpect:update:"
+    MethodKind: "Instance"
+    SwiftName: "compareAndSet(expect:update:)"
+    ResultType: "BOOL"
+    Parameters:
+    - Position: 0
+      Type: "T _Nonnull"
+    - Position: 1
+      Type: "T _Nonnull"
+  - Selector: "emitValue:completionHandler:"
+    MethodKind: "Instance"
+    SwiftName: "__emit(value:completionHandler:)"
+    SwiftPrivate: true
+    ResultType: "void"
+    Parameters:
+    - Position: 0
+      Type: "T _Nonnull"
+    - Position: 1
+      Type: "void (^ _Nonnull)(NSError * _Nullable)"
+  - Selector: "resetReplayCache"
+    MethodKind: "Instance"
+    SwiftName: "resetReplayCache()"
+    ResultType: "void"
+  - Selector: "tryEmitValue:"
+    MethodKind: "Instance"
+    SwiftName: "tryEmit(value:)"
+    ResultType: "BOOL"
+    Parameters:
+    - Position: 0
+      Type: "T _Nonnull"
+- Name: "LeapUiSkieKotlinOptionalFlow"
+  SwiftBridge: "SkieSwiftOptionalFlow"
+  SwiftName: "SkieKotlinOptionalFlow"
+  SwiftPrivate: true
+  Methods:
+  - Selector: "initWithDelegate:"
+    MethodKind: "Instance"
+    SwiftName: "init(_:)"
+    Parameters:
+    - Position: 0
+      Type: "id<LeapUiKotlinx_coroutines_coreFlow> _Nonnull"
+  - Selector: "collectCollector:completionHandler:"
+    MethodKind: "Instance"
+    SwiftName: "__collect(collector:completionHandler:)"
+    SwiftPrivate: true
+    ResultType: "void"
+    Parameters:
+    - Position: 0
+      Type: "id<LeapUiKotlinx_coroutines_coreFlowCollector> _Nonnull"
+    - Position: 1
+      Type: "void (^ _Nonnull)(NSError * _Nullable)"
+- Name: "LeapUiSkieKotlinOptionalMutableSharedFlow"
+  SwiftBridge: "SkieSwiftOptionalMutableSharedFlow"
+  SwiftName: "SkieKotlinOptionalMutableSharedFlow"
+  SwiftPrivate: true
+  Properties:
+  - Name: "replayCache"
+    PropertyKind: "Instance"
+    SwiftName: "replayCache"
+    Type: "NSArray<id> * _Nonnull"
+  - Name: "subscriptionCount"
+    PropertyKind: "Instance"
+    SwiftName: "subscriptionCount"
+    Type: "LeapUiSkieKotlinStateFlow<LeapUiInt *> * _Nonnull"
+  Methods:
+  - Selector: "initWithDelegate:"
+    MethodKind: "Instance"
+    SwiftName: "init(_:)"
+    Parameters:
+    - Position: 0
+      Type: "id<LeapUiKotlinx_coroutines_coreMutableSharedFlow> _Nonnull"
+  - Selector: "collectCollector:completionHandler:"
+    MethodKind: "Instance"
+    SwiftName: "__collect(collector:completionHandler:)"
+    SwiftPrivate: true
+    ResultType: "void"
+    Parameters:
+    - Position: 0
+      Type: "id<LeapUiKotlinx_coroutines_coreFlowCollector> _Nonnull"
+    - Position: 1
+      Type: "void (^ _Nonnull)(NSError * _Nullable)"
+  - Selector: "emitValue:completionHandler:"
+    MethodKind: "Instance"
+    SwiftName: "__emit(value:completionHandler:)"
+    SwiftPrivate: true
+    ResultType: "void"
+    Parameters:
+    - Position: 0
+      Type: "T _Nullable"
+    - Position: 1
+      Type: "void (^ _Nonnull)(NSError * _Nullable)"
+  - Selector: "resetReplayCache"
+    MethodKind: "Instance"
+    SwiftName: "resetReplayCache()"
+    ResultType: "void"
+  - Selector: "tryEmitValue:"
+    MethodKind: "Instance"
+    SwiftName: "tryEmit(value:)"
+    ResultType: "BOOL"
+    Parameters:
+    - Position: 0
+      Type: "T _Nullable"
+- Name: "LeapUiSkieKotlinOptionalMutableStateFlow"
+  SwiftBridge: "SkieSwiftOptionalMutableStateFlow"
+  SwiftName: "SkieKotlinOptionalMutableStateFlow"
+  SwiftPrivate: true
+  Properties:
+  - Name: "replayCache"
+    PropertyKind: "Instance"
+    SwiftName: "replayCache"
+    Type: "NSArray<id> * _Nonnull"
+  - Name: "subscriptionCount"
+    PropertyKind: "Instance"
+    SwiftName: "subscriptionCount"
+    Type: "LeapUiSkieKotlinStateFlow<LeapUiInt *> * _Nonnull"
+  - Name: "value"
+    PropertyKind: "Instance"
+    SwiftName: "value"
+    Type: "T _Nullable"
+  Methods:
+  - Selector: "initWithDelegate:"
+    MethodKind: "Instance"
+    SwiftName: "init(_:)"
+    Parameters:
+    - Position: 0
+      Type: "id<LeapUiKotlinx_coroutines_coreMutableStateFlow> _Nonnull"
+  - Selector: "collectCollector:completionHandler:"
+    MethodKind: "Instance"
+    SwiftName: "__collect(collector:completionHandler:)"
+    SwiftPrivate: true
+    ResultType: "void"
+    Parameters:
+    - Position: 0
+      Type: "id<LeapUiKotlinx_coroutines_coreFlowCollector> _Nonnull"
+    - Position: 1
+      Type: "void (^ _Nonnull)(NSError * _Nullable)"
+  - Selector: "compareAndSetExpect:update:"
+    MethodKind: "Instance"
+    SwiftName: "compareAndSet(expect:update:)"
+    ResultType: "BOOL"
+    Parameters:
+    - Position: 0
+      Type: "T _Nullable"
+    - Position: 1
+      Type: "T _Nullable"
+  - Selector: "emitValue:completionHandler:"
+    MethodKind: "Instance"
+    SwiftName: "__emit(value:completionHandler:)"
+    SwiftPrivate: true
+    ResultType: "void"
+    Parameters:
+    - Position: 0
+      Type: "T _Nullable"
+    - Position: 1
+      Type: "void (^ _Nonnull)(NSError * _Nullable)"
+  - Selector: "resetReplayCache"
+    MethodKind: "Instance"
+    SwiftName: "resetReplayCache()"
+    ResultType: "void"
+  - Selector: "tryEmitValue:"
+    MethodKind: "Instance"
+    SwiftName: "tryEmit(value:)"
+    ResultType: "BOOL"
+    Parameters:
+    - Position: 0
+      Type: "T _Nullable"
+- Name: "LeapUiSkieKotlinOptionalSharedFlow"
+  SwiftBridge: "SkieSwiftOptionalSharedFlow"
+  SwiftName: "SkieKotlinOptionalSharedFlow"
+  SwiftPrivate: true
+  Properties:
+  - Name: "replayCache"
+    PropertyKind: "Instance"
+    SwiftName: "replayCache"
+    Type: "NSArray<id> * _Nonnull"
+  Methods:
+  - Selector: "initWithDelegate:"
+    MethodKind: "Instance"
+    SwiftName: "init(_:)"
+    Parameters:
+    - Position: 0
+      Type: "id<LeapUiKotlinx_coroutines_coreSharedFlow> _Nonnull"
+  - Selector: "collectCollector:completionHandler:"
+    MethodKind: "Instance"
+    SwiftName: "__collect(collector:completionHandler:)"
+    SwiftPrivate: true
+    ResultType: "void"
+    Parameters:
+    - Position: 0
+      Type: "id<LeapUiKotlinx_coroutines_coreFlowCollector> _Nonnull"
+    - Position: 1
+      Type: "void (^ _Nonnull)(NSError * _Nullable)"
+- Name: "LeapUiSkieKotlinOptionalStateFlow"
+  SwiftBridge: "SkieSwiftOptionalStateFlow"
+  SwiftName: "SkieKotlinOptionalStateFlow"
+  SwiftPrivate: true
+  Properties:
+  - Name: "replayCache"
+    PropertyKind: "Instance"
+    SwiftName: "replayCache"
+    Type: "NSArray<id> * _Nonnull"
+  - Name: "value"
+    PropertyKind: "Instance"
+    SwiftName: "value"
+    Type: "T _Nullable"
+  Methods:
+  - Selector: "initWithDelegate:"
+    MethodKind: "Instance"
+    SwiftName: "init(_:)"
+    Parameters:
+    - Position: 0
+      Type: "id<LeapUiKotlinx_coroutines_coreStateFlow> _Nonnull"
+  - Selector: "collectCollector:completionHandler:"
+    MethodKind: "Instance"
+    SwiftName: "__collect(collector:completionHandler:)"
+    SwiftPrivate: true
+    ResultType: "void"
+    Parameters:
+    - Position: 0
+      Type: "id<LeapUiKotlinx_coroutines_coreFlowCollector> _Nonnull"
+    - Position: 1
+      Type: "void (^ _Nonnull)(NSError * _Nullable)"
+- Name: "LeapUiSkieKotlinSharedFlow"
+  SwiftBridge: "SkieSwiftSharedFlow"
+  SwiftName: "SkieKotlinSharedFlow"
+  SwiftPrivate: true
+  Properties:
+  - Name: "replayCache"
+    PropertyKind: "Instance"
+    SwiftName: "replayCache"
+    Type: "NSArray<T> * _Nonnull"
+  Methods:
+  - Selector: "initWithDelegate:"
+    MethodKind: "Instance"
+    SwiftName: "init(_:)"
+    Parameters:
+    - Position: 0
+      Type: "id<LeapUiKotlinx_coroutines_coreSharedFlow> _Nonnull"
+  - Selector: "collectCollector:completionHandler:"
+    MethodKind: "Instance"
+    SwiftName: "__collect(collector:completionHandler:)"
+    SwiftPrivate: true
+    ResultType: "void"
+    Parameters:
+    - Position: 0
+      Type: "id<LeapUiKotlinx_coroutines_coreFlowCollector> _Nonnull"
+    - Position: 1
+      Type: "void (^ _Nonnull)(NSError * _Nullable)"
+- Name: "LeapUiSkieKotlinStateFlow"
+  SwiftBridge: "SkieSwiftStateFlow"
+  SwiftName: "SkieKotlinStateFlow"
+  SwiftPrivate: true
+  Properties:
+  - Name: "replayCache"
+    PropertyKind: "Instance"
+    SwiftName: "replayCache"
+    Type: "NSArray<T> * _Nonnull"
+  - Name: "value"
+    PropertyKind: "Instance"
+    SwiftName: "value"
+    Type: "T _Nonnull"
+  Methods:
+  - Selector: "initWithDelegate:"
+    MethodKind: "Instance"
+    SwiftName: "init(_:)"
+    Parameters:
+    - Position: 0
+      Type: "id<LeapUiKotlinx_coroutines_coreStateFlow> _Nonnull"
+  - Selector: "collectCollector:completionHandler:"
+    MethodKind: "Instance"
+    SwiftName: "__collect(collector:completionHandler:)"
+    SwiftPrivate: true
+    ResultType: "void"
+    Parameters:
+    - Position: 0
+      Type: "id<LeapUiKotlinx_coroutines_coreFlowCollector> _Nonnull"
+    - Position: 1
+      Type: "void (^ _Nonnull)(NSError * _Nullable)"
+- Name: "LeapUiSkie_CancellationHandler"
+  SwiftName: "Skie_CancellationHandler"
+  SwiftPrivate: true
+  Methods:
+  - Selector: "init"
+    MethodKind: "Instance"
+    SwiftName: "init()"
+  - Selector: "cancel"
+    MethodKind: "Instance"
+    SwiftName: "cancel()"
+    ResultType: "void"
+- Name: "LeapUiSkie_SuspendHandler"
+  SwiftName: "Skie_SuspendHandler"
+  SwiftPrivate: true
+  Methods:
+  - Selector: "initWithCancellationHandler:dispatcherDelegate:onResult:"
+    MethodKind: "Instance"
+    SwiftName: "init(cancellationHandler:dispatcherDelegate:onResult:)"
+    Parameters:
+    - Position: 0
+      Type: "LeapUiSkie_CancellationHandler * _Nonnull"
+    - Position: 1
+      Type: "id<LeapUiSkie_DispatcherDelegate> _Nonnull"
+    - Position: 2
+      Type: "void (^ _Nonnull)(LeapUiSkie_SuspendResult * _Nonnull)"
+- Name: "LeapUiSkie_SuspendResult"
+  SwiftName: "Skie_SuspendResult"
+  SwiftPrivate: true
+- Name: "LeapUiSkie_SuspendResultSuccess"
+  SwiftName: "Skie_SuspendResult.Success"
+  SwiftPrivate: true
+  Properties:
+  - Name: "value"
+    PropertyKind: "Instance"
+    SwiftName: "value"
+    Type: "id _Nullable"
+  Methods:
+  - Selector: "initWithValue:"
+    MethodKind: "Instance"
+    SwiftName: "init(value:)"
+    Parameters:
+    - Position: 0
+      Type: "id _Nullable"
+  - Selector: "doCopyValue:"
+    MethodKind: "Instance"
+    SwiftName: "doCopy(value:)"
+    ResultType: "LeapUiSkie_SuspendResultSuccess * _Nonnull"
+    Parameters:
+    - Position: 0
+      Type: "id _Nullable"
+  - Selector: "isEqual:"
+    MethodKind: "Instance"
+    SwiftName: "isEqual(_:)"
+    ResultType: "BOOL"
+    Parameters:
+    - Position: 0
+      Type: "id _Nullable"
+  - Selector: "hash"
+    MethodKind: "Instance"
+    SwiftName: "hash()"
+    ResultType: "NSUInteger"
+  - Selector: "description"
+    MethodKind: "Instance"
+    SwiftName: "description()"
+    ResultType: "NSString * _Nonnull"
+- Name: "LeapUiSkie_SuspendResultError"
+  SwiftName: "Skie_SuspendResult.Error"
+  SwiftPrivate: true
+  Properties:
+  - Name: "error"
+    PropertyKind: "Instance"
+    SwiftName: "error"
+    Type: "NSError * _Nonnull"
+  Methods:
+  - Selector: "initWithError:"
+    MethodKind: "Instance"
+    SwiftName: "init(error:)"
+    Parameters:
+    - Position: 0
+      Type: "NSError * _Nonnull"
+  - Selector: "doCopyError:"
+    MethodKind: "Instance"
+    SwiftName: "doCopy(error:)"
+    ResultType: "LeapUiSkie_SuspendResultError * _Nonnull"
+    Parameters:
+    - Position: 0
+      Type: "NSError * _Nonnull"
+  - Selector: "isEqual:"
+    MethodKind: "Instance"
+    SwiftName: "isEqual(_:)"
+    ResultType: "BOOL"
+    Parameters:
+    - Position: 0
+      Type: "id _Nullable"
+  - Selector: "hash"
+    MethodKind: "Instance"
+    SwiftName: "hash()"
+    ResultType: "NSUInteger"
+  - Selector: "description"
+    MethodKind: "Instance"
+    SwiftName: "description()"
+    ResultType: "NSString * _Nonnull"
+- Name: "LeapUiSkie_SuspendResultCanceled"
+  SwiftName: "Skie_SuspendResult.Canceled"
+  SwiftPrivate: true
+- Name: "LeapUiFrameTimer"
+  SwiftName: "FrameTimer"
+  Methods:
+  - Selector: "initWithCallback:"
+    MethodKind: "Instance"
+    SwiftName: "init(callback:)"
+    Parameters:
+    - Position: 0
+      Type: "void (^ _Nonnull)(void)"
+  - Selector: "start"
+    MethodKind: "Instance"
+    SwiftName: "start()"
+    ResultType: "void"
+  - Selector: "stop"
+    MethodKind: "Instance"
+    SwiftName: "stop()"
+    ResultType: "void"
+- Name: "LeapUiAmplitudeSmoother"
+  SwiftName: "AmplitudeSmoother"
+  Properties:
+  - Name: "value"
+    PropertyKind: "Instance"
+    SwiftName: "value"
+    Type: "float"
+  Methods:
+  - Selector: "initWithAlpha:releaseAlpha:"
+    MethodKind: "Instance"
+    SwiftName: "init(alpha:releaseAlpha:)"
+    Parameters:
+    - Position: 0
+      Type: "float"
+    - Position: 1
+      Type: "float"
+  - Selector: "reset"
+    MethodKind: "Instance"
+    SwiftName: "reset()"
+    ResultType: "void"
+  - Selector: "updateRaw:"
+    MethodKind: "Instance"
+    SwiftName: "update(raw:)"
+    ResultType: "float"
+    Parameters:
+    - Position: 0
+      Type: "float"
+- Name: "LeapUiVoiceAssistantIntentStartRecording"
+  SwiftName: "VoiceAssistantIntentStartRecording"
+  Methods:
+  - Selector: "isEqual:"
+    MethodKind: "Instance"
+    SwiftName: "isEqual(_:)"
+    ResultType: "BOOL"
+    Parameters:
+    - Position: 0
+      Type: "id _Nullable"
+  - Selector: "hash"
+    MethodKind: "Instance"
+    SwiftName: "hash()"
+    ResultType: "NSUInteger"
+  - Selector: "description"
+    MethodKind: "Instance"
+    SwiftName: "description()"
+    ResultType: "NSString * _Nonnull"
+- Name: "LeapUiVoiceAssistantIntentStopRecording"
+  SwiftName: "VoiceAssistantIntentStopRecording"
+  Methods:
+  - Selector: "isEqual:"
+    MethodKind: "Instance"
+    SwiftName: "isEqual(_:)"
+    ResultType: "BOOL"
+    Parameters:
+    - Position: 0
+      Type: "id _Nullable"
+  - Selector: "hash"
+    MethodKind: "Instance"
+    SwiftName: "hash()"
+    ResultType: "NSUInteger"
+  - Selector: "description"
+    MethodKind: "Instance"
+    SwiftName: "description()"
+    ResultType: "NSString * _Nonnull"
+- Name: "LeapUiVoiceAssistantIntentCancelGeneration"
+  SwiftName: "VoiceAssistantIntentCancelGeneration"
+  Methods:
+  - Selector: "isEqual:"
+    MethodKind: "Instance"
+    SwiftName: "isEqual(_:)"
+    ResultType: "BOOL"
+    Parameters:
+    - Position: 0
+      Type: "id _Nullable"
+  - Selector: "hash"
+    MethodKind: "Instance"
+    SwiftName: "hash()"
+    ResultType: "NSUInteger"
+  - Selector: "description"
+    MethodKind: "Instance"
+    SwiftName: "description()"
+    ResultType: "NSString * _Nonnull"
+- Name: "LeapUiVoiceAssistantState"
+  SwiftName: "VoiceAssistantState"
+  Properties:
+  - Name: "amplitude"
+    PropertyKind: "Instance"
+    SwiftName: "amplitude"
+    Type: "float"
+  - Name: "mode"
+    PropertyKind: "Instance"
+    SwiftName: "mode"
+    Type: "LeapUiVoiceWidgetMode * _Nonnull"
+  Methods:
+  - Selector: "initWithMode:amplitude:"
+    MethodKind: "Instance"
+    SwiftName: "init(mode:amplitude:)"
+    Parameters:
+    - Position: 0
+      Type: "LeapUiVoiceWidgetMode * _Nonnull"
+    - Position: 1
+      Type: "float"
+  - Selector: "doCopyMode:amplitude:"
+    MethodKind: "Instance"
+    SwiftName: "doCopy(mode:amplitude:)"
+    ResultType: "LeapUiVoiceAssistantState * _Nonnull"
+    Parameters:
+    - Position: 0
+      Type: "LeapUiVoiceWidgetMode * _Nonnull"
+    - Position: 1
+      Type: "float"
+  - Selector: "isEqual:"
+    MethodKind: "Instance"
+    SwiftName: "isEqual(_:)"
+    ResultType: "BOOL"
+    Parameters:
+    - Position: 0
+      Type: "id _Nullable"
+  - Selector: "hash"
+    MethodKind: "Instance"
+    SwiftName: "hash()"
+    ResultType: "NSUInteger"
+  - Selector: "description"
+    MethodKind: "Instance"
+    SwiftName: "description()"
+    ResultType: "NSString * _Nonnull"
+- Name: "LeapUiVoiceWidgetMode"
+  SwiftBridge: "VoiceWidgetMode"
+  SwiftName: "__VoiceWidgetMode"
+  SwiftPrivate: true
+  Properties:
+  - Name: "idle"
+    PropertyKind: "Class"
+    SwiftName: "idle"
+    Type: "LeapUiVoiceWidgetMode * _Nonnull"
+  - Name: "listening"
+    PropertyKind: "Class"
+    SwiftName: "listening"
+    Type: "LeapUiVoiceWidgetMode * _Nonnull"
+  - Name: "responding"
+    PropertyKind: "Class"
+    SwiftName: "responding"
+    Type: "LeapUiVoiceWidgetMode * _Nonnull"
+  Methods:
+  - Selector: "initWithName:ordinal:"
+    MethodKind: "Instance"
+    SwiftName: "init(name:ordinal:)"
+    Availability: "nonswift"
+- Name: "LeapUiVoiceAssistantStateHolder"
+  SwiftName: "VoiceAssistantStateHolder"
+  Properties:
+  - Name: "state"
+    PropertyKind: "Instance"
+    SwiftName: "state"
+    Type: "LeapUiVoiceAssistantState * _Nonnull"
+  Methods:
+  - Selector: "initWithInitial:"
+    MethodKind: "Instance"
+    SwiftName: "init(initial:)"
+    Parameters:
+    - Position: 0
+      Type: "LeapUiVoiceAssistantState * _Nonnull"
+  - Selector: "updateTransform:"
+    MethodKind: "Instance"
+    SwiftName: "update(transform:)"
+    ResultType: "void"
+    Parameters:
+    - Position: 0
+      Type: "LeapUiVoiceAssistantState * _Nonnull (^ _Nonnull)(LeapUiVoiceAssistantState * _Nonnull)"
+- Name: "LeapUiVoiceAssistantStore"
+  SwiftName: "VoiceAssistantStore"
+  Properties:
+  - Name: "state"
+    PropertyKind: "Instance"
+    SwiftName: "state"
+    Type: "LeapUiSkieKotlinStateFlow<LeapUiVoiceAssistantStoreState *> * _Nonnull"
+  - Name: "widgetStateHolder"
+    PropertyKind: "Instance"
+    SwiftName: "widgetStateHolder"
+    Type: "LeapUiVoiceAssistantStateHolder * _Nonnull"
+  Methods:
+  - Selector: "initWithRecorder:player:scope:smoothingAlpha:playbackTimeoutMs:ownedScope:interruptToSpeak:"
+    MethodKind: "Instance"
+    SwiftName: "init(recorder:player:scope:smoothingAlpha:playbackTimeoutMs:ownedScope:interruptToSpeak:)"
+    Parameters:
+    - Position: 0
+      Type: "id<LeapUiVoiceAudioRecorder> _Nonnull"
+    - Position: 1
+      Type: "id<LeapUiVoiceAudioPlayer> _Nonnull"
+    - Position: 2
+      Type: "id<LeapUiKotlinx_coroutines_coreCoroutineScope> _Nonnull"
+    - Position: 3
+      Type: "float"
+    - Position: 4
+      Type: "int64_t"
+    - Position: 5
+      Type: "id<LeapUiKotlinx_coroutines_coreCoroutineScope> _Nullable"
+    - Position: 6
+      Type: "BOOL"
+  - Selector: "close"
+    MethodKind: "Instance"
+    SwiftName: "close()"
+    ResultType: "void"
+  - Selector: "processIntentIntent:"
+    MethodKind: "Instance"
+    SwiftName: "processIntent(intent:)"
+    ResultType: "void"
+    Parameters:
+    - Position: 0
+      Type: "id<LeapUiVoiceAssistantIntent> _Nonnull"
+  - Selector: "setConversationConv:"
+    MethodKind: "Instance"
+    SwiftName: "setConversation(conv:)"
+    ResultType: "void"
+    Parameters:
+    - Position: 0
+      Type: "id<LeapUiVoiceConversation> _Nonnull"
+  - Selector: "setModelErrorMessage:"
+    MethodKind: "Instance"
+    SwiftName: "setModelError(message:)"
+    ResultType: "void"
+    Parameters:
+    - Position: 0
+      Type: "NSString * _Nonnull"
+  - Selector: "setModelProgressFraction:message:"
+    MethodKind: "Instance"
+    SwiftName: "setModelProgress(fraction:message:)"
+    ResultType: "void"
+    Parameters:
+    - Position: 0
+      Type: "float"
+    - Position: 1
+      Type: "NSString * _Nonnull"
+- Name: "LeapUiStatusType"
+  SwiftBridge: "StatusType"
+  SwiftName: "__StatusType"
+  SwiftPrivate: true
+  Properties:
+  - Name: "loading"
+    PropertyKind: "Class"
+    SwiftName: "loading"
+    Type: "LeapUiStatusType * _Nonnull"
+  - Name: "ready"
+    PropertyKind: "Class"
+    SwiftName: "ready"
+    Type: "LeapUiStatusType * _Nonnull"
+  - Name: "error"
+    PropertyKind: "Class"
+    SwiftName: "error"
+    Type: "LeapUiStatusType * _Nonnull"
+  Methods:
+  - Selector: "initWithName:ordinal:"
+    MethodKind: "Instance"
+    SwiftName: "init(name:ordinal:)"
+    Availability: "nonswift"
+- Name: "LeapUiVoiceAssistantStoreState"
+  SwiftName: "VoiceAssistantStoreState"
+  Properties:
+  - Name: "statsText"
+    PropertyKind: "Instance"
+    SwiftName: "statsText"
+    Type: "NSString * _Nullable"
+  - Name: "statusText"
+    PropertyKind: "Instance"
+    SwiftName: "statusText"
+    Type: "NSString * _Nonnull"
+  - Name: "statusType"
+    PropertyKind: "Instance"
+    SwiftName: "statusType"
+    Type: "LeapUiStatusType * _Nonnull"
+  - Name: "widgetState"
+    PropertyKind: "Instance"
+    SwiftName: "widgetState"
+    Type: "LeapUiVoiceAssistantState * _Nonnull"
+  Methods:
+  - Selector: "initWithWidgetState:statusText:statusType:statsText:"
+    MethodKind: "Instance"
+    SwiftName: "init(widgetState:statusText:statusType:statsText:)"
+    Parameters:
+    - Position: 0
+      Type: "LeapUiVoiceAssistantState * _Nonnull"
+    - Position: 1
+      Type: "NSString * _Nonnull"
+    - Position: 2
+      Type: "LeapUiStatusType * _Nonnull"
+    - Position: 3
+      Type: "NSString * _Nullable"
+  - Selector: "doCopyWidgetState:statusText:statusType:statsText:"
+    MethodKind: "Instance"
+    SwiftName: "doCopy(widgetState:statusText:statusType:statsText:)"
+    ResultType: "LeapUiVoiceAssistantStoreState * _Nonnull"
+    Parameters:
+    - Position: 0
+      Type: "LeapUiVoiceAssistantState * _Nonnull"
+    - Position: 1
+      Type: "NSString * _Nonnull"
+    - Position: 2
+      Type: "LeapUiStatusType * _Nonnull"
+    - Position: 3
+      Type: "NSString * _Nullable"
+  - Selector: "isEqual:"
+    MethodKind: "Instance"
+    SwiftName: "isEqual(_:)"
+    ResultType: "BOOL"
+    Parameters:
+    - Position: 0
+      Type: "id _Nullable"
+  - Selector: "hash"
+    MethodKind: "Instance"
+    SwiftName: "hash()"
+    ResultType: "NSUInteger"
+  - Selector: "description"
+    MethodKind: "Instance"
+    SwiftName: "description()"
+    ResultType: "NSString * _Nonnull"
+- Name: "LeapUiVoiceWidgetColors"
+  SwiftName: "VoiceWidgetColors"
+  Properties:
+  - Name: "label"
+    PropertyKind: "Instance"
+    SwiftName: "label"
+    Type: "uint64_t"
+  - Name: "listeningPrimary"
+    PropertyKind: "Instance"
+    SwiftName: "listeningPrimary"
+    Type: "uint64_t"
+  - Name: "listeningSecondary"
+    PropertyKind: "Instance"
+    SwiftName: "listeningSecondary"
+    Type: "uint64_t"
+  - Name: "listeningTertiary"
+    PropertyKind: "Instance"
+    SwiftName: "listeningTertiary"
+    Type: "uint64_t"
+  - Name: "respondingPrimary"
+    PropertyKind: "Instance"
+    SwiftName: "respondingPrimary"
+    Type: "uint64_t"
+  - Name: "respondingSecondary"
+    PropertyKind: "Instance"
+    SwiftName: "respondingSecondary"
+    Type: "uint64_t"
+  - Name: "respondingTertiary"
+    PropertyKind: "Instance"
+    SwiftName: "respondingTertiary"
+    Type: "uint64_t"
+  Methods:
+  - Selector: "initWithListeningPrimary:listeningSecondary:listeningTertiary:respondingPrimary:respondingSecondary:respondingTertiary:label:"
+    MethodKind: "Instance"
+    SwiftName: "init(listeningPrimary:listeningSecondary:listeningTertiary:respondingPrimary:respondingSecondary:respondingTertiary:label:)"
+    Parameters:
+    - Position: 0
+      Type: "uint64_t"
+    - Position: 1
+      Type: "uint64_t"
+    - Position: 2
+      Type: "uint64_t"
+    - Position: 3
+      Type: "uint64_t"
+    - Position: 4
+      Type: "uint64_t"
+    - Position: 5
+      Type: "uint64_t"
+    - Position: 6
+      Type: "uint64_t"
+  - Selector: "doCopyListeningPrimary:listeningSecondary:listeningTertiary:respondingPrimary:respondingSecondary:respondingTertiary:label:"
+    MethodKind: "Instance"
+    SwiftName: "doCopy(listeningPrimary:listeningSecondary:listeningTertiary:respondingPrimary:respondingSecondary:respondingTertiary:label:)"
+    ResultType: "LeapUiVoiceWidgetColors * _Nonnull"
+    Parameters:
+    - Position: 0
+      Type: "uint64_t"
+    - Position: 1
+      Type: "uint64_t"
+    - Position: 2
+      Type: "uint64_t"
+    - Position: 3
+      Type: "uint64_t"
+    - Position: 4
+      Type: "uint64_t"
+    - Position: 5
+      Type: "uint64_t"
+    - Position: 6
+      Type: "uint64_t"
+  - Selector: "isEqual:"
+    MethodKind: "Instance"
+    SwiftName: "isEqual(_:)"
+    ResultType: "BOOL"
+    Parameters:
+    - Position: 0
+      Type: "id _Nullable"
+  - Selector: "hash"
+    MethodKind: "Instance"
+    SwiftName: "hash()"
+    ResultType: "NSUInteger"
+  - Selector: "description"
+    MethodKind: "Instance"
+    SwiftName: "description()"
+    ResultType: "NSString * _Nonnull"
+- Name: "LeapUiVoiceWidgetColorsCompanion"
+  SwiftName: "VoiceWidgetColors.Companion"
+  Properties:
+  - Name: "Default"
+    PropertyKind: "Instance"
+    SwiftName: "Default"
+    Type: "LeapUiVoiceWidgetColors * _Nonnull"
+- Name: "LeapUiVoiceWidgetLabels"
+  SwiftName: "VoiceWidgetLabels"
+  Properties:
+  - Name: "idle"
+    PropertyKind: "Instance"
+    SwiftName: "idle"
+    Type: "NSString * _Nonnull"
+  - Name: "listening"
+    PropertyKind: "Instance"
+    SwiftName: "listening"
+    Type: "NSString * _Nonnull"
+  - Name: "micCancelDescription"
+    PropertyKind: "Instance"
+    SwiftName: "micCancelDescription"
+    Type: "NSString * _Nonnull"
+  - Name: "micStartDescription"
+    PropertyKind: "Instance"
+    SwiftName: "micStartDescription"
+    Type: "NSString * _Nonnull"
+  - Name: "micStopDescription"
+    PropertyKind: "Instance"
+    SwiftName: "micStopDescription"
+    Type: "NSString * _Nonnull"
+  - Name: "responding"
+    PropertyKind: "Instance"
+    SwiftName: "responding"
+    Type: "NSString * _Nonnull"
+  Methods:
+  - Selector: "initWithIdle:listening:responding:micStartDescription:micStopDescription:micCancelDescription:"
+    MethodKind: "Instance"
+    SwiftName: "init(idle:listening:responding:micStartDescription:micStopDescription:micCancelDescription:)"
+    Parameters:
+    - Position: 0
+      Type: "NSString * _Nonnull"
+    - Position: 1
+      Type: "NSString * _Nonnull"
+    - Position: 2
+      Type: "NSString * _Nonnull"
+    - Position: 3
+      Type: "NSString * _Nonnull"
+    - Position: 4
+      Type: "NSString * _Nonnull"
+    - Position: 5
+      Type: "NSString * _Nonnull"
+  - Selector: "doCopyIdle:listening:responding:micStartDescription:micStopDescription:micCancelDescription:"
+    MethodKind: "Instance"
+    SwiftName: "doCopy(idle:listening:responding:micStartDescription:micStopDescription:micCancelDescription:)"
+    ResultType: "LeapUiVoiceWidgetLabels * _Nonnull"
+    Parameters:
+    - Position: 0
+      Type: "NSString * _Nonnull"
+    - Position: 1
+      Type: "NSString * _Nonnull"
+    - Position: 2
+      Type: "NSString * _Nonnull"
+    - Position: 3
+      Type: "NSString * _Nonnull"
+    - Position: 4
+      Type: "NSString * _Nonnull"
+    - Position: 5
+      Type: "NSString * _Nonnull"
+  - Selector: "isEqual:"
+    MethodKind: "Instance"
+    SwiftName: "isEqual(_:)"
+    ResultType: "BOOL"
+    Parameters:
+    - Position: 0
+      Type: "id _Nullable"
+  - Selector: "hash"
+    MethodKind: "Instance"
+    SwiftName: "hash()"
+    ResultType: "NSUInteger"
+  - Selector: "description"
+    MethodKind: "Instance"
+    SwiftName: "description()"
+    ResultType: "NSString * _Nonnull"
+- Name: "LeapUiAppleCoroutineScopeKt"
+  SwiftName: "AppleCoroutineScopeKt"
+  Methods:
+  - Selector: "createMainScope"
+    MethodKind: "Class"
+    SwiftName: "createMainScope()"
+    ResultType: "id<LeapUiKotlinx_coroutines_coreCoroutineScope> _Nonnull"
+- Name: "LeapUiArrayConversionsKt"
+  SwiftName: "ArrayConversionsKt"
+  Methods:
+  - Selector: "floatArrayToNSDataArray:"
+    MethodKind: "Class"
+    SwiftName: "floatArrayToNSData(array:)"
+    ResultType: "NSData * _Nonnull"
+    Parameters:
+    - Position: 0
+      Type: "LeapUiKotlinFloatArray * _Nonnull"
+  - Selector: "nsDataToFloatArrayData:"
+    MethodKind: "Class"
+    SwiftName: "nsDataToFloatArray(data:)"
+    ResultType: "LeapUiKotlinFloatArray * _Nonnull"
+    Parameters:
+    - Position: 0
+      Type: "NSData * _Nonnull"
+- Name: "LeapUiVoiceAssistantNSViewControllerKt"
+  SwiftName: "VoiceAssistantNSViewControllerKt"
+  Methods:
+  - Selector: "VoiceAssistantNSViewControllerState:onIntent:labels:colors:showPoweredBy:"
+    MethodKind: "Class"
+    SwiftName: "VoiceAssistantNSViewController(state:onIntent:labels:colors:showPoweredBy:)"
+    ResultType: "NSViewController * _Nonnull"
+    Parameters:
+    - Position: 0
+      Type: "LeapUiVoiceAssistantStateHolder * _Nonnull"
+    - Position: 1
+      Type: "void (^ _Nonnull)(id<LeapUiVoiceAssistantIntent> _Nonnull)"
+    - Position: 2
+      Type: "LeapUiVoiceWidgetLabels * _Nonnull"
+    - Position: 3
+      Type: "LeapUiVoiceWidgetColors * _Nonnull"
+    - Position: 4
+      Type: "BOOL"
+- Name: "LeapUiHalftoneEffect_skikoKt"
+  SwiftName: "HalftoneEffect_skikoKt"
+  Methods:
+  - Selector: "halftoneEffect:isDarkMode:"
+    MethodKind: "Class"
+    SwiftName: "halftoneEffect(_:isDarkMode:)"
+    ResultType: "id<LeapUiUiModifier> _Nonnull"
+    Parameters:
+    - Position: 0
+      Type: "id<LeapUiUiModifier> _Nonnull"
+    - Position: 1
+      Type: "BOOL"
+- Name: "LeapUiLeap_sdkGenerationStats"
+  SwiftName: "Leap_sdkGenerationStats"
+  Properties:
+  - Name: "cachedPromptTokens"
+    PropertyKind: "Instance"
+    SwiftName: "cachedPromptTokens"
+    Type: "int64_t"
+  - Name: "completionTokens"
+    PropertyKind: "Instance"
+    SwiftName: "completionTokens"
+    Type: "int64_t"
+  - Name: "promptTokens"
+    PropertyKind: "Instance"
+    SwiftName: "promptTokens"
+    Type: "int64_t"
+  - Name: "tokenPerSecond"
+    PropertyKind: "Instance"
+    SwiftName: "tokenPerSecond"
+    Type: "float"
+  - Name: "totalTokens"
+    PropertyKind: "Instance"
+    SwiftName: "totalTokens"
+    Type: "int64_t"
+  Methods:
+  - Selector: "initWithPromptTokens:completionTokens:totalTokens:tokenPerSecond:cachedPromptTokens:"
+    MethodKind: "Instance"
+    SwiftName: "init(promptTokens:completionTokens:totalTokens:tokenPerSecond:cachedPromptTokens:)"
+    Parameters:
+    - Position: 0
+      Type: "int64_t"
+    - Position: 1
+      Type: "int64_t"
+    - Position: 2
+      Type: "int64_t"
+    - Position: 3
+      Type: "float"
+    - Position: 4
+      Type: "int64_t"
+  - Selector: "doCopyPromptTokens:completionTokens:totalTokens:tokenPerSecond:cachedPromptTokens:"
+    MethodKind: "Instance"
+    SwiftName: "doCopy(promptTokens:completionTokens:totalTokens:tokenPerSecond:cachedPromptTokens:)"
+    ResultType: "LeapUiLeap_sdkGenerationStats * _Nonnull"
+    Parameters:
+    - Position: 0
+      Type: "int64_t"
+    - Position: 1
+      Type: "int64_t"
+    - Position: 2
+      Type: "int64_t"
+    - Position: 3
+      Type: "float"
+    - Position: 4
+      Type: "int64_t"
+  - Selector: "isEqual:"
+    MethodKind: "Instance"
+    SwiftName: "isEqual(_:)"
+    ResultType: "BOOL"
+    Parameters:
+    - Position: 0
+      Type: "id _Nullable"
+  - Selector: "hash"
+    MethodKind: "Instance"
+    SwiftName: "hash()"
+    ResultType: "NSUInteger"
+  - Selector: "description"
+    MethodKind: "Instance"
+    SwiftName: "description()"
+    ResultType: "NSString * _Nonnull"
+- Name: "LeapUi__SkieSuspendWrappersKt"
+  SwiftName: "__SkieSuspendWrappersKt"
+  Availability: "nonswift"
+  Methods:
+  - Selector: "Skie_Suspend__0__hasNextDispatchReceiver:suspendHandler:"
+    MethodKind: "Class"
+    SwiftName: "Skie_Suspend__0__hasNext(dispatchReceiver:suspendHandler:)"
+    Availability: "nonswift"
+    ResultType: "void"
+    Parameters:
+    - Position: 0
+      Type: "LeapUiSkieColdFlowIterator<id> * _Nonnull"
+    - Position: 1
+      Type: "LeapUiSkie_SuspendHandler * _Nonnull"
+  - Selector: "Skie_Suspend__1__collectDispatchReceiver:collector:suspendHandler:"
+    MethodKind: "Class"
+    SwiftName: "Skie_Suspend__1__collect(dispatchReceiver:collector:suspendHandler:)"
+    Availability: "nonswift"
+    ResultType: "void"
+    Parameters:
+    - Position: 0
+      Type: "id<LeapUiKotlinx_coroutines_coreFlow> _Nonnull"
+    - Position: 1
+      Type: "id<LeapUiKotlinx_coroutines_coreFlowCollector> _Nonnull"
+    - Position: 2
+      Type: "LeapUiSkie_SuspendHandler * _Nonnull"
+  - Selector: "Skie_Suspend__2__emitDispatchReceiver:value:suspendHandler:"
+    MethodKind: "Class"
+    SwiftName: "Skie_Suspend__2__emit(dispatchReceiver:value:suspendHandler:)"
+    Availability: "nonswift"
+    ResultType: "void"
+    Parameters:
+    - Position: 0
+      Type: "id<LeapUiKotlinx_coroutines_coreFlowCollector> _Nonnull"
+    - Position: 1
+      Type: "id _Nullable"
+    - Position: 2
+      Type: "LeapUiSkie_SuspendHandler * _Nonnull"
+  - Selector: "Skie_Suspend__3__cancelDispatchReceiver:suspendHandler:"
+    MethodKind: "Class"
+    SwiftName: "Skie_Suspend__3__cancel(dispatchReceiver:suspendHandler:)"
+    Availability: "nonswift"
+    ResultType: "void"
+    Parameters:
+    - Position: 0
+      Type: "id<LeapUiVoiceAudioRecorder> _Nonnull"
+    - Position: 1
+      Type: "LeapUiSkie_SuspendHandler * _Nonnull"
+  - Selector: "Skie_Suspend__4__stopDispatchReceiver:suspendHandler:"
+    MethodKind: "Class"
+    SwiftName: "Skie_Suspend__4__stop(dispatchReceiver:suspendHandler:)"
+    Availability: "nonswift"
+    ResultType: "void"
+    Parameters:
+    - Position: 0
+      Type: "id<LeapUiVoiceAudioRecorder> _Nonnull"
+    - Position: 1
+      Type: "LeapUiSkie_SuspendHandler * _Nonnull"
+  - Selector: "Skie_Suspend__5__waitForPlaybackDispatchReceiver:suspendHandler:"
+    MethodKind: "Class"
+    SwiftName: "Skie_Suspend__5__waitForPlayback(dispatchReceiver:suspendHandler:)"
+    Availability: "nonswift"
+    ResultType: "void"
+    Parameters:
+    - Position: 0
+      Type: "id<LeapUiVoiceAudioPlayer> _Nonnull"
+    - Position: 1
+      Type: "LeapUiSkie_SuspendHandler * _Nonnull"
+  - Selector: "Skie_Suspend__6__generateResponseDispatchReceiver:audioSamples:sampleRate:onAudioChunk:suspendHandler:"
+    MethodKind: "Class"
+    SwiftName: "Skie_Suspend__6__generateResponse(dispatchReceiver:audioSamples:sampleRate:onAudioChunk:suspendHandler:)"
+    Availability: "nonswift"
+    ResultType: "void"
+    Parameters:
+    - Position: 0
+      Type: "id<LeapUiVoiceConversation> _Nonnull"
+    - Position: 1
+      Type: "LeapUiKotlinFloatArray * _Nonnull"
+    - Position: 2
+      Type: "int32_t"
+    - Position: 3
+      Type: "void (^ _Nonnull)(LeapUiKotlinFloatArray * _Nonnull, LeapUiInt * _Nonnull)"
+    - Position: 4
+      Type: "LeapUiSkie_SuspendHandler * _Nonnull"
+Protocols:
+- Name: "LeapUiKotlinIterator"
+  SwiftName: "KotlinIterator"
+  Methods:
+  - Selector: "hasNext"
+    MethodKind: "Instance"
+    SwiftName: "hasNext()"
+    ResultType: "BOOL"
+  - Selector: "next"
+    MethodKind: "Instance"
+    SwiftName: "next()"
+    ResultType: "id _Nullable"
+- Name: "LeapUiKotlinCoroutineContext"
+  SwiftName: "KotlinCoroutineContext"
+  Methods:
+  - Selector: "foldInitial:operation:"
+    MethodKind: "Instance"
+    SwiftName: "fold(initial:operation:)"
+    ResultType: "id _Nullable"
+    Parameters:
+    - Position: 0
+      Type: "id _Nullable"
+    - Position: 1
+      Type: "id _Nullable (^ _Nonnull)(id _Nullable, id<LeapUiKotlinCoroutineContextElement> _Nonnull)"
+  - Selector: "getKey:"
+    MethodKind: "Instance"
+    SwiftName: "get(key:)"
+    ResultType: "id<LeapUiKotlinCoroutineContextElement> _Nullable"
+    Parameters:
+    - Position: 0
+      Type: "id<LeapUiKotlinCoroutineContextKey> _Nonnull"
+  - Selector: "minusKeyKey:"
+    MethodKind: "Instance"
+    SwiftName: "minusKey(key:)"
+    ResultType: "id<LeapUiKotlinCoroutineContext> _Nonnull"
+    Parameters:
+    - Position: 0
+      Type: "id<LeapUiKotlinCoroutineContextKey> _Nonnull"
+  - Selector: "plusContext:"
+    MethodKind: "Instance"
+    SwiftName: "plus(context:)"
+    ResultType: "id<LeapUiKotlinCoroutineContext> _Nonnull"
+    Parameters:
+    - Position: 0
+      Type: "id<LeapUiKotlinCoroutineContext> _Nonnull"
+- Name: "LeapUiKotlinCoroutineContextKey"
+  SwiftName: "KotlinCoroutineContextKey"
+- Name: "LeapUiKotlinCoroutineContextElement"
+  SwiftName: "KotlinCoroutineContextElement"
+  Properties:
+  - Name: "key"
+    PropertyKind: "Instance"
+    SwiftName: "key"
+    Type: "id<LeapUiKotlinCoroutineContextKey> _Nonnull"
+  Methods:
+  - Selector: "foldInitial:operation:"
+    MethodKind: "Instance"
+    SwiftName: "fold(initial:operation:)"
+    ResultType: "id _Nullable"
+    Parameters:
+    - Position: 0
+      Type: "id _Nullable"
+    - Position: 1
+      Type: "id _Nullable (^ _Nonnull)(id _Nullable, id<LeapUiKotlinCoroutineContextElement> _Nonnull)"
+  - Selector: "getKey:"
+    MethodKind: "Instance"
+    SwiftName: "get(key:)"
+    ResultType: "id<LeapUiKotlinCoroutineContextElement> _Nullable"
+    Parameters:
+    - Position: 0
+      Type: "id<LeapUiKotlinCoroutineContextKey> _Nonnull"
+  - Selector: "minusKeyKey:"
+    MethodKind: "Instance"
+    SwiftName: "minusKey(key:)"
+    ResultType: "id<LeapUiKotlinCoroutineContext> _Nonnull"
+    Parameters:
+    - Position: 0
+      Type: "id<LeapUiKotlinCoroutineContextKey> _Nonnull"
+- Name: "LeapUiKotlinComparable"
+  SwiftName: "KotlinComparable"
+  Methods:
+  - Selector: "compareToOther:"
+    MethodKind: "Instance"
+    SwiftName: "compareTo(other:)"
+    ResultType: "int32_t"
+    Parameters:
+    - Position: 0
+      Type: "id _Nullable"
+- Name: "LeapUiSkie_DispatcherDelegate"
+  SwiftName: "Skie_DispatcherDelegate"
+  SwiftPrivate: true
+  Methods:
+  - Selector: "dispatchBlock:"
+    MethodKind: "Instance"
+    SwiftName: "dispatch(block:)"
+    ResultType: "void"
+    Parameters:
+    - Position: 0
+      Type: "id<LeapUiKotlinx_coroutines_coreRunnable> _Nonnull"
+- Name: "LeapUiKotlinx_coroutines_coreFlow"
+  SwiftName: "Kotlinx_coroutines_coreFlow"
+  Methods:
+  - Selector: "collectCollector:completionHandler:"
+    MethodKind: "Instance"
+    SwiftName: "__collect(collector:completionHandler:)"
+    SwiftPrivate: true
+    ResultType: "void"
+    Parameters:
+    - Position: 0
+      Type: "id<LeapUiKotlinx_coroutines_coreFlowCollector> _Nonnull"
+    - Position: 1
+      Type: "void (^ _Nonnull)(NSError * _Nullable)"
+- Name: "LeapUiKotlinx_coroutines_coreFlowCollector"
+  SwiftName: "Kotlinx_coroutines_coreFlowCollector"
+  Methods:
+  - Selector: "emitValue:completionHandler:"
+    MethodKind: "Instance"
+    SwiftName: "__emit(value:completionHandler:)"
+    SwiftPrivate: true
+    ResultType: "void"
+    Parameters:
+    - Position: 0
+      Type: "id _Nullable"
+    - Position: 1
+      Type: "void (^ _Nonnull)(NSError * _Nullable)"
+- Name: "LeapUiKotlinx_coroutines_coreStateFlow"
+  SwiftName: "Kotlinx_coroutines_coreStateFlow"
+  Properties:
+  - Name: "value"
+    PropertyKind: "Instance"
+    SwiftName: "value"
+    Type: "id _Nullable"
+- Name: "LeapUiKotlinx_coroutines_coreSharedFlow"
+  SwiftName: "Kotlinx_coroutines_coreSharedFlow"
+  Properties:
+  - Name: "replayCache"
+    PropertyKind: "Instance"
+    SwiftName: "replayCache"
+    Type: "NSArray<id> * _Nonnull"
+  Methods:
+  - Selector: "collectCollector:completionHandler:"
+    MethodKind: "Instance"
+    SwiftName: "__collect(collector:completionHandler:)"
+    SwiftPrivate: true
+    ResultType: "void"
+    Parameters:
+    - Position: 0
+      Type: "id<LeapUiKotlinx_coroutines_coreFlowCollector> _Nonnull"
+    - Position: 1
+      Type: "void (^ _Nonnull)(NSError * _Nullable)"
+- Name: "LeapUiKotlinx_coroutines_coreMutableSharedFlow"
+  SwiftName: "Kotlinx_coroutines_coreMutableSharedFlow"
+  Properties:
+  - Name: "subscriptionCount"
+    PropertyKind: "Instance"
+    SwiftName: "subscriptionCount"
+    Type: "LeapUiSkieKotlinStateFlow<LeapUiInt *> * _Nonnull"
+  Methods:
+  - Selector: "emitValue:completionHandler:"
+    MethodKind: "Instance"
+    SwiftName: "__emit(value:completionHandler:)"
+    SwiftPrivate: true
+    ResultType: "void"
+    Parameters:
+    - Position: 0
+      Type: "id _Nullable"
+    - Position: 1
+      Type: "void (^ _Nonnull)(NSError * _Nullable)"
+  - Selector: "resetReplayCache"
+    MethodKind: "Instance"
+    SwiftName: "resetReplayCache()"
+    ResultType: "void"
+  - Selector: "tryEmitValue:"
+    MethodKind: "Instance"
+    SwiftName: "tryEmit(value:)"
+    ResultType: "BOOL"
+    Parameters:
+    - Position: 0
+      Type: "id _Nullable"
+- Name: "LeapUiKotlinx_coroutines_coreMutableStateFlow"
+  SwiftName: "Kotlinx_coroutines_coreMutableStateFlow"
+  Properties:
+  - Name: "value"
+    PropertyKind: "Instance"
+    SwiftName: "value"
+    Type: "id _Nullable"
+  Methods:
+  - Selector: "compareAndSetExpect:update:"
+    MethodKind: "Instance"
+    SwiftName: "compareAndSet(expect:update:)"
+    ResultType: "BOOL"
+    Parameters:
+    - Position: 0
+      Type: "id _Nullable"
+    - Position: 1
+      Type: "id _Nullable"
+- Name: "LeapUiKotlinx_coroutines_coreRunnable"
+  SwiftName: "Kotlinx_coroutines_coreRunnable"
+  Methods:
+  - Selector: "run"
+    MethodKind: "Instance"
+    SwiftName: "run()"
+    ResultType: "void"
+- Name: "LeapUiKotlinx_coroutines_coreCoroutineScope"
+  SwiftName: "Kotlinx_coroutines_coreCoroutineScope"
+  Properties:
+  - Name: "coroutineContext"
+    PropertyKind: "Instance"
+    SwiftName: "coroutineContext"
+    Type: "id<LeapUiKotlinCoroutineContext> _Nonnull"
+- Name: "LeapUiVoiceAudioRecorder"
+  SwiftName: "VoiceAudioRecorder"
+  Properties:
+  - Name: "amplitude"
+    PropertyKind: "Instance"
+    SwiftName: "amplitude"
+    Type: "float"
+  - Name: "nativeSampleRate"
+    PropertyKind: "Instance"
+    SwiftName: "nativeSampleRate"
+    Type: "int32_t"
+  Methods:
+  - Selector: "cancelWithCompletionHandler:"
+    MethodKind: "Instance"
+    SwiftName: "__cancel(completionHandler:)"
+    SwiftPrivate: true
+    ResultType: "void"
+    Parameters:
+    - Position: 0
+      Type: "void (^ _Nonnull)(NSError * _Nullable)"
+  - Selector: "start"
+    MethodKind: "Instance"
+    SwiftName: "start()"
+    ResultType: "BOOL"
+  - Selector: "stopWithCompletionHandler:"
+    MethodKind: "Instance"
+    SwiftName: "__stop(completionHandler:)"
+    SwiftPrivate: true
+    ResultType: "void"
+    Parameters:
+    - Position: 0
+      Type: "void (^ _Nonnull)(LeapUiKotlinFloatArray * _Nullable, NSError * _Nullable)"
+- Name: "LeapUiVoiceAudioPlayer"
+  SwiftName: "VoiceAudioPlayer"
+  Properties:
+  - Name: "amplitude"
+    PropertyKind: "Instance"
+    SwiftName: "amplitude"
+    Type: "float"
+  Methods:
+  - Selector: "enqueueSamples:sampleRate:"
+    MethodKind: "Instance"
+    SwiftName: "enqueue(samples:sampleRate:)"
+    ResultType: "void"
+    Parameters:
+    - Position: 0
+      Type: "LeapUiKotlinFloatArray * _Nonnull"
+    - Position: 1
+      Type: "int32_t"
+  - Selector: "stop"
+    MethodKind: "Instance"
+    SwiftName: "stop()"
+    ResultType: "void"
+  - Selector: "waitForPlaybackWithCompletionHandler:"
+    MethodKind: "Instance"
+    SwiftName: "__waitForPlayback(completionHandler:)"
+    SwiftPrivate: true
+    ResultType: "void"
+    Parameters:
+    - Position: 0
+      Type: "void (^ _Nonnull)(NSError * _Nullable)"
+- Name: "LeapUiVoiceAssistantIntent"
+  SwiftName: "VoiceAssistantIntent"
+- Name: "LeapUiVoiceConversation"
+  SwiftName: "VoiceConversation"
+  Methods:
+  - Selector: "generateResponseAudioSamples:sampleRate:onAudioChunk:completionHandler:"
+    MethodKind: "Instance"
+    SwiftName: "__generateResponse(audioSamples:sampleRate:onAudioChunk:completionHandler:)"
+    SwiftPrivate: true
+    ResultType: "void"
+    Parameters:
+    - Position: 0
+      Type: "LeapUiKotlinFloatArray * _Nonnull"
+    - Position: 1
+      Type: "int32_t"
+    - Position: 2
+      Type: "void (^ _Nonnull)(LeapUiKotlinFloatArray * _Nonnull, LeapUiInt * _Nonnull)"
+    - Position: 3
+      Type: "void (^ _Nonnull)(LeapUiLeap_sdkGenerationStats * _Nullable_result, NSError * _Nullable)"
+  - Selector: "reset"
+    MethodKind: "Instance"
+    SwiftName: "reset()"
+    ResultType: "id<LeapUiVoiceConversation> _Nonnull"
+- Name: "LeapUiUiModifier"
+  SwiftName: "UiModifier"
+  Methods:
+  - Selector: "allPredicate:"
+    MethodKind: "Instance"
+    SwiftName: "all(predicate:)"
+    ResultType: "BOOL"
+    Parameters:
+    - Position: 0
+      Type: "LeapUiBoolean * _Nonnull (^ _Nonnull)(id<LeapUiUiModifierElement> _Nonnull)"
+  - Selector: "anyPredicate:"
+    MethodKind: "Instance"
+    SwiftName: "any(predicate:)"
+    ResultType: "BOOL"
+    Parameters:
+    - Position: 0
+      Type: "LeapUiBoolean * _Nonnull (^ _Nonnull)(id<LeapUiUiModifierElement> _Nonnull)"
+  - Selector: "foldInInitial:operation:"
+    MethodKind: "Instance"
+    SwiftName: "foldIn(initial:operation:)"
+    ResultType: "id _Nullable"
+    Parameters:
+    - Position: 0
+      Type: "id _Nullable"
+    - Position: 1
+      Type: "id _Nullable (^ _Nonnull)(id _Nullable, id<LeapUiUiModifierElement> _Nonnull)"
+  - Selector: "foldOutInitial:operation:"
+    MethodKind: "Instance"
+    SwiftName: "foldOut(initial:operation:)"
+    ResultType: "id _Nullable"
+    Parameters:
+    - Position: 0
+      Type: "id _Nullable"
+    - Position: 1
+      Type: "id _Nullable (^ _Nonnull)(id<LeapUiUiModifierElement> _Nonnull, id _Nullable)"
+  - Selector: "thenOther:"
+    MethodKind: "Instance"
+    SwiftName: "then(other:)"
+    ResultType: "id<LeapUiUiModifier> _Nonnull"
+    Parameters:
+    - Position: 0
+      Type: "id<LeapUiUiModifier> _Nonnull"
+- Name: "LeapUiUiModifierElement"
+  SwiftName: "UiModifierElement"
+  Methods:
+  - Selector: "allPredicate:"
+    MethodKind: "Instance"
+    SwiftName: "all(predicate:)"
+    ResultType: "BOOL"
+    Parameters:
+    - Position: 0
+      Type: "LeapUiBoolean * _Nonnull (^ _Nonnull)(id<LeapUiUiModifierElement> _Nonnull)"
+  - Selector: "anyPredicate:"
+    MethodKind: "Instance"
+    SwiftName: "any(predicate:)"
+    ResultType: "BOOL"
+    Parameters:
+    - Position: 0
+      Type: "LeapUiBoolean * _Nonnull (^ _Nonnull)(id<LeapUiUiModifierElement> _Nonnull)"
+  - Selector: "foldInInitial:operation:"
+    MethodKind: "Instance"
+    SwiftName: "foldIn(initial:operation:)"
+    ResultType: "id _Nullable"
+    Parameters:
+    - Position: 0
+      Type: "id _Nullable"
+    - Position: 1
+      Type: "id _Nullable (^ _Nonnull)(id _Nullable, id<LeapUiUiModifierElement> _Nonnull)"
+  - Selector: "foldOutInitial:operation:"
+    MethodKind: "Instance"
+    SwiftName: "foldOut(initial:operation:)"
+    ResultType: "id _Nullable"
+    Parameters:
+    - Position: 0
+      Type: "id _Nullable"
+    - Position: 1
+      Type: "id _Nullable (^ _Nonnull)(id<LeapUiUiModifierElement> _Nonnull, id _Nullable)"

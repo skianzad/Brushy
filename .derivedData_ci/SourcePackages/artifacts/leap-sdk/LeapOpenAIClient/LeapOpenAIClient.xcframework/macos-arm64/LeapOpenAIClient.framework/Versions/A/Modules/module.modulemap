@@ -1,0 +1,8 @@
+framework module "LeapOpenAIClient" {
+    umbrella header "LeapOpenAIClient.h"
+
+    export *
+    module * { export * }
+
+    use Foundation
+}
