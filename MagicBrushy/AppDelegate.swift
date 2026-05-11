@@ -12,4 +12,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     func application(_ application: UIApplication, didDiscardSceneSessions sceneSessions: Set<UISceneSession>) {}
+
+    /// iPhone: landscape-only UI. iPad: all orientations (required for multitasking; see `UISupportedInterfaceOrientations~ipad` in the target).
+    func application(_ application: UIApplication, supportedInterfaceOrientationsFor window: UIWindow?) -> UIInterfaceOrientationMask {
+        UIDevice.current.userInterfaceIdiom == .pad ? .all : [.landscapeLeft, .landscapeRight]
+    }
 }

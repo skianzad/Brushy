@@ -16,9 +16,11 @@ final class HomeViewController: UIViewController {
         case sports = 7
         case vehicles = 8
         case winterSports = 9
+        case freeDrawing = 10
 
         var title: String {
             switch self {
+            case .freeDrawing: return "Free draw"
             case .ocean: return "Ocean"
             case .animals: return "Animals"
             case .dinosaurs: return "Dinosaurs"
@@ -34,6 +36,7 @@ final class HomeViewController: UIViewController {
 
         var packId: String {
             switch self {
+            case .freeDrawing: return "free_drawing"
             case .ocean: return "ocean"
             case .animals: return "animals"
             case .dinosaurs: return "dinosaurs"
@@ -49,6 +52,7 @@ final class HomeViewController: UIViewController {
 
         var accent: UIColor {
             switch self {
+            case .freeDrawing: return FigmaTheme.actionBlue
             case .animals: return FigmaTheme.animalsAccent
             case .ocean: return FigmaTheme.oceanAccent
             case .dinosaurs: return FigmaTheme.dinosaursAccent
@@ -63,7 +67,7 @@ final class HomeViewController: UIViewController {
         }
 
         var isFree: Bool {
-            self == .animals
+            self == .animals || self == .freeDrawing
         }
     }
 
@@ -90,6 +94,11 @@ final class HomeViewController: UIViewController {
     /// Bottom-left (scroll content); sits above the saved strip when it is visible.
     private var mascotBottomToContentConstraint: NSLayoutConstraint!
     private var mascotBottomAboveSavedStripConstraint: NSLayoutConstraint!
+    /// Dynamic layout constraints updated when vertical size class changes (compact = iPhone landscape).
+    private var titleTopConstraint: NSLayoutConstraint!
+    private var mainStackTopConstraint: NSLayoutConstraint!
+    private var mainStackBottomConstraint: NSLayoutConstraint!
+    private var savedDrawingsHeightConstraint: NSLayoutConstraint!
 
     /// Title + category row + saved-drawing strip (bottom).
     private let homeMainStack = UIStackView()
@@ -190,6 +199,10 @@ final class HomeViewController: UIViewController {
 
         let g = view.safeAreaLayoutGuide
 
+        titleTopConstraint = titleLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12)
+        mainStackTopConstraint = homeMainStack.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 10)
+        mainStackBottomConstraint = homeMainStack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -22)
+
         NSLayoutConstraint.activate([
             heroView.topAnchor.constraint(equalTo: view.topAnchor),
             heroView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -209,12 +222,12 @@ final class HomeViewController: UIViewController {
 
             titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 24),
             titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -24),
-            titleLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
+            titleTopConstraint,
 
-            homeMainStack.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 10),
+            mainStackTopConstraint,
             homeMainStack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
             homeMainStack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
-            homeMainStack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -22),
+            mainStackBottomConstraint,
 
             categoryGridScrollView.widthAnchor.constraint(equalTo: contentView.widthAnchor, multiplier: HomeCategoryTileMetrics.gridWidthFraction),
             categoryGridViewportHeightConstraint,
@@ -429,10 +442,10 @@ final class HomeViewController: UIViewController {
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        updateCategoryGridViewportHeightIfNeeded()
+        applyLayoutMetricsForCurrentTraits()
     }
 
-    /// Keeps the category area to exactly two tile rows (6 categories); remaining rows scroll inside `categoryGridScrollView`.
+    /// Keeps the category grid to 2 rows on regular height, 1.5 rows on compact (iPhone landscape).
     private func updateCategoryGridViewportHeightIfNeeded() {
         let w = categoryGridScrollView.bounds.width
         guard w > 1 else { return }
@@ -440,7 +453,8 @@ final class HomeViewController: UIViewController {
         let aspect = HomeCategoryTileMetrics.cardAspectHeightPerWidth
         let tileWidth = (w - 2 * col) / 3
         let rowHeight = tileWidth * aspect
-        let visible = 2 * rowHeight + HomeCategoryTileMetrics.rowSpacing
+        let visibleRows: CGFloat = isCompactHeight ? 1.4 : 2.0
+        let visible = visibleRows * rowHeight + (visibleRows - 1) * HomeCategoryTileMetrics.rowSpacing
         guard abs(categoryGridViewportHeightConstraint.constant - visible) > 0.5 else { return }
         categoryGridViewportHeightConstraint.constant = visible
     }
@@ -506,7 +520,7 @@ final class HomeViewController: UIViewController {
             savedDrawingsStack.trailingAnchor.constraint(equalTo: savedDrawingsScrollView.contentLayoutGuide.trailingAnchor),
             savedDrawingsStack.heightAnchor.constraint(equalTo: savedDrawingsScrollView.frameLayoutGuide.heightAnchor),
 
-            savedDrawingsScrollView.heightAnchor.constraint(equalToConstant: 152),
+            { savedDrawingsHeightConstraint = savedDrawingsScrollView.heightAnchor.constraint(equalToConstant: 152); return savedDrawingsHeightConstraint }(),
         ])
     }
 
@@ -737,9 +751,32 @@ final class HomeViewController: UIViewController {
         present(sheet, animated: true)
     }
 
+    private var isCompactHeight: Bool {
+        traitCollection.verticalSizeClass == .compact
+    }
+
+    private func applyLayoutMetricsForCurrentTraits() {
+        let compact = isCompactHeight
+        titleTopConstraint?.constant = compact ? 4 : 12
+        mainStackTopConstraint?.constant = compact ? 4 : 10
+        mainStackBottomConstraint?.constant = compact ? -8 : -22
+        homeMainStack.spacing = compact ? 6 : 16
+        bodyStack.spacing = compact ? 6 : HomeCategoryTileMetrics.bodyStackSpacing
+        savedDrawingsHeightConstraint?.constant = compact ? 100 : 152
+        applyTitleAttributedText()
+        updateCategoryGridViewportHeightIfNeeded()
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        guard previousTraitCollection?.verticalSizeClass != traitCollection.verticalSizeClass else { return }
+        applyLayoutMetricsForCurrentTraits()
+    }
+
     private func applyTitleAttributedText() {
         let text = "Color with\nBrushi"
-        let font = FigmaTheme.titleFont(size: 44)
+        let fontSize: CGFloat = isCompactHeight ? 26 : 44
+        let font = FigmaTheme.titleFont(size: fontSize)
         let paragraph = NSMutableParagraphStyle()
         paragraph.alignment = .center
         paragraph.lineSpacing = 2
@@ -750,8 +787,7 @@ final class HomeViewController: UIViewController {
             .strokeWidth: -4,
             .paragraphStyle: paragraph,
         ]
-        titleLabel.attributedText =
-        NSAttributedString(string: text, attributes: attrs)
+        titleLabel.attributedText = NSAttributedString(string: text, attributes: attrs)
     }
 
     private func makeTile(for category: Category) -> UIView {
@@ -863,22 +899,21 @@ final class HomeViewController: UIViewController {
         row3.spacing = HomeCategoryTileMetrics.columnSpacing
         row3.distribution = .fillEqually
 
+        row0.addArrangedSubview(makeTile(for: .freeDrawing))
         row0.addArrangedSubview(makeTile(for: .ocean))
         row0.addArrangedSubview(makeTile(for: .animals))
-        row0.addArrangedSubview(makeTile(for: .dinosaurs))
+        row1.addArrangedSubview(makeTile(for: .dinosaurs))
         row1.addArrangedSubview(makeTile(for: .famousArt))
         row1.addArrangedSubview(makeTile(for: .fantasyAndMagic))
-        row1.addArrangedSubview(makeTile(for: .food))
+        row2.addArrangedSubview(makeTile(for: .food))
         row2.addArrangedSubview(makeTile(for: .naturePlants))
         row2.addArrangedSubview(makeTile(for: .sports))
-        row2.addArrangedSubview(makeTile(for: .vehicles))
-        let row3LeftPad = UIView()
-        row3LeftPad.backgroundColor = .clear
-        let row3RightPad = UIView()
-        row3RightPad.backgroundColor = .clear
-        row3.addArrangedSubview(row3LeftPad)
+        row3.addArrangedSubview(makeTile(for: .vehicles))
         row3.addArrangedSubview(makeTile(for: .winterSports))
-        row3.addArrangedSubview(row3RightPad)
+        let row3Spacer = UIView()
+        row3Spacer.backgroundColor = .clear
+        row3Spacer.isUserInteractionEnabled = false
+        row3.addArrangedSubview(row3Spacer)
         gridStack.addArrangedSubview(row0)
         gridStack.addArrangedSubview(row1)
         gridStack.addArrangedSubview(row2)

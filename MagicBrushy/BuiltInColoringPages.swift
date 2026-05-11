@@ -20,6 +20,9 @@ enum BuiltInColoringPages {
     /// All shelves, in the order they appear in the horizontal category bar (matches home tiles + extras).
     static let library: [CategoryPack] = {
         [
+            CategoryPack(id: "free_drawing", title: "Free drawing", symbolName: "pencil.and.outline", pages: [
+                Page(title: "Blank paper", image: renderBlankFreeDrawingPaper()),
+            ]),
             CategoryPack(id: "ocean", title: "Ocean", symbolName: "water.waves", pages: [
                 pageFromAsset("Ocean_01", fallbackTitle: "Ocean 1"),
                 pageFromAsset("Ocean_02", fallbackTitle: "Ocean 2"),
@@ -184,6 +187,11 @@ enum BuiltInColoringPages {
     private static func strokeOval(_ c: CGContext, _ r: CGRect) {
         c.addEllipse(in: r)
         c.strokePath()
+    }
+
+    /// Solid white sheet—no border or line art; kids draw freely on top.
+    private static func renderBlankFreeDrawingPaper() -> UIImage {
+        render { _ in }
     }
 
     private static func renderHouse() -> UIImage {

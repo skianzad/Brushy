@@ -1320,7 +1320,7 @@ final class ColoringViewController: UIViewController {
 
             let img = self.captureCanvasForVLM()
             let previewImage = model.prepareImageForModelPreview(img) ?? img
-            self.showVLMInputPreview(previewImage)
+            // self.showVLMInputPreview(previewImage)
             let prompt = self.composeFeedbackPrompt()
 
             model.maxTokens = 120
