@@ -1502,9 +1502,9 @@ final class ColoringViewController: UIViewController {
 
 \(paletteHintBlock)
 
-Your job: say one cheery thing about the color they just added—use simple kid words for that color. Do not describe where on the picture they painted (no left, right, top, bottom, or “in the corner”). Stay warm and specific to the color, not the place.
+Your job: say one cheery thing that names the color they just added, in simple kid words. If the photo makes it obvious what they colored (sun, fish, flower, shirt, etc.), name that thing too—only when you are fairly sure; do not guess random objects. Do not use map directions (no left, right, top, bottom, or “in the corner”).
 
-Speak to THEM: write one or two very short sentences, easy words, use "you" or "your". Start with warmth. Add a 3-5 word compliment using color psychology that fits that color.
+Speak to THEM: one or two very short sentences, easy words, use "you" or "your". Sound warm. You may add a tiny color-feeling phrase (happy, cozy, bold) that fits that color—avoid repeating the same opening every time (do not always start with “You are so bright”).
 
 IMPORTANT: Reply with ONLY the words you say aloud—no rules, no quotes about yourself, no repeating this text, no bullets, no markdown, no symbols like <>. Never mention AI, robots, computers, phones, apps, or internet.
 
