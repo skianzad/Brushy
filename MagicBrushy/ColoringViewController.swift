@@ -73,10 +73,12 @@ final class ColoringViewController: UIViewController {
     private var brushToolButton: UIButton?
     private var eraserToolButton: UIButton?
 
-    // ── Stroke-size picker (top bar, five dots) ───────────────────────────
+    // ── Stroke-size picker (canvas top-trailing, five “paint blobs”) ───────
     private let strokeWidthPresets: [CGFloat] = [10, 16, 22, 30, 40]
     private var selectedStrokeSizeIndex: Int = 2
     private var strokeSizeButtons: [UIButton] = []
+    private var strokeSizeDotViews: [UIView] = []
+    private let strokeSizeStack = UIStackView()
 
     /// App-wide singleton model; loaded once at app startup from SceneDelegate.
     private let vlm = LeapVLMModel.shared
@@ -360,31 +362,7 @@ final class ColoringViewController: UIViewController {
         toolRow.addArrangedSubview(navSpacer)
         modelStatusStack.isHidden = true
 
-        let strokeSizeStack = UIStackView()
-        strokeSizeStack.axis = .horizontal
-        strokeSizeStack.spacing = 12
-        strokeSizeStack.alignment = .center
-        strokeSizeStack.distribution = .fill
-        let dotVisualDiameters: [CGFloat] = [9, 12, 15, 18, 22]
-        strokeSizeButtons.removeAll()
-        for i in 0..<min(5, strokeWidthPresets.count) {
-            let b = makeStrokeSizeCircleButton(index: i, dotDiameter: dotVisualDiameters[i])
-            strokeSizeButtons.append(b)
-            strokeSizeStack.addArrangedSubview(b)
-        }
-        refreshStrokeSizeSelection()
-
-        let strokeRowSpacerL = UIView()
-        strokeRowSpacerL.setContentHuggingPriority(UILayoutPriority(1), for: .horizontal)
-        let strokeRowSpacerR = UIView()
-        strokeRowSpacerR.setContentHuggingPriority(UILayoutPriority(1), for: .horizontal)
-        let strokeSizeRow = UIStackView(arrangedSubviews: [strokeRowSpacerL, strokeSizeStack, strokeRowSpacerR])
-        strokeSizeRow.axis = .horizontal
-        strokeSizeRow.alignment = .center
-        strokeSizeRow.spacing = 0
-        strokeSizeRow.translatesAutoresizingMaskIntoConstraints = false
-
-        let bar = UIStackView(arrangedSubviews: [toolRow, strokeSizeRow])
+        let bar = UIStackView(arrangedSubviews: [toolRow])
         bar.axis = .vertical
         bar.spacing = 10
 
@@ -413,6 +391,26 @@ final class ColoringViewController: UIViewController {
         canvasContainer.addSubview(resumeSnapshotView)
         canvasContainer.addSubview(strokeView)
         canvasContainer.addSubview(templateLineOverlayView)
+
+        strokeSizeStack.axis = .vertical
+        strokeSizeStack.spacing = 5
+        strokeSizeStack.alignment = .trailing
+        strokeSizeStack.distribution = .fill
+        strokeSizeStack.translatesAutoresizingMaskIntoConstraints = false
+        strokeSizeStack.isUserInteractionEnabled = true
+        let dotVisualDiameters: [CGFloat] = [8, 11, 13, 16, 19]
+        strokeSizeButtons.removeAll()
+        strokeSizeDotViews.removeAll()
+        for i in 0..<min(5, strokeWidthPresets.count) {
+            let b = makeStrokeSizeBlobButton(index: i, dotDiameter: dotVisualDiameters[i])
+            strokeSizeButtons.append(b)
+            strokeSizeStack.addArrangedSubview(b)
+        }
+        canvasContainer.addSubview(strokeSizeStack)
+        NSLayoutConstraint.activate([
+            strokeSizeStack.topAnchor.constraint(equalTo: canvasContainer.topAnchor, constant: 10),
+            strokeSizeStack.trailingAnchor.constraint(equalTo: canvasContainer.trailingAnchor, constant: -10),
+        ])
 
         let paintRow = UIStackView()
         paintRow.axis = .horizontal
@@ -616,42 +614,73 @@ final class ColoringViewController: UIViewController {
         button.layer.shadowOffset = CGSize(width: 0, height: 2)
     }
 
-    private func makeStrokeSizeCircleButton(index: Int, dotDiameter: CGFloat) -> UIButton {
+    /// Rounded “paint blob” matching nav chrome size; inner dot shows relative thickness.
+    private func makeStrokeSizeBlobButton(index: Int, dotDiameter: CGFloat) -> UIButton {
         let b = UIButton(type: .custom)
         b.tag = index
         b.translatesAutoresizingMaskIntoConstraints = false
-        b.backgroundColor = UIColor.white.withAlphaComponent(0.72)
-        b.layer.cornerRadius = 14
-        b.clipsToBounds = true
+        b.layer.cornerRadius = 26
+        b.clipsToBounds = false
         b.accessibilityLabel = "Brush size \(index + 1) of \(strokeWidthPresets.count)"
-        b.widthAnchor.constraint(equalToConstant: 44).isActive = true
-        b.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        b.accessibilityHint = "Pick how thick your paint is"
+        b.widthAnchor.constraint(equalToConstant: 52).isActive = true
+        b.heightAnchor.constraint(equalToConstant: 52).isActive = true
+        b.layer.shadowColor = UIColor.black.cgColor
+        b.layer.shadowOpacity = 0.2
+        b.layer.shadowRadius = 4
+        b.layer.shadowOffset = CGSize(width: 0, height: 2)
 
         let dot = UIView()
         dot.translatesAutoresizingMaskIntoConstraints = false
-        dot.backgroundColor = UIColor(white: 0.22, alpha: 1)
+        dot.backgroundColor = UIColor.white.withAlphaComponent(0.92)
         dot.layer.cornerRadius = dotDiameter * 0.5
         dot.isUserInteractionEnabled = false
         b.addSubview(dot)
+        strokeSizeDotViews.append(dot)
         NSLayoutConstraint.activate([
             dot.centerXAnchor.constraint(equalTo: b.centerXAnchor),
-            dot.centerYAnchor.constraint(equalTo: b.centerYAnchor),
+            dot.centerYAnchor.constraint(equalTo: b.centerYAnchor, constant: 1),
             dot.widthAnchor.constraint(equalToConstant: dotDiameter),
             dot.heightAnchor.constraint(equalToConstant: dotDiameter),
         ])
+
+        let gloss = UIView()
+        gloss.translatesAutoresizingMaskIntoConstraints = false
+        gloss.backgroundColor = UIColor.white.withAlphaComponent(0.35)
+        gloss.layer.cornerRadius = 5
+        gloss.isUserInteractionEnabled = false
+        b.addSubview(gloss)
+        NSLayoutConstraint.activate([
+            gloss.leadingAnchor.constraint(equalTo: b.leadingAnchor, constant: 10),
+            gloss.topAnchor.constraint(equalTo: b.topAnchor, constant: 8),
+            gloss.widthAnchor.constraint(equalToConstant: 14),
+            gloss.heightAnchor.constraint(equalToConstant: 8),
+        ])
+
+        b.addTarget(self, action: #selector(strokeSizeTouchDown(_:)), for: .touchDown)
+        b.addTarget(self, action: #selector(strokeSizeTouchUp(_:)), for: [.touchUpInside, .touchCancel, .touchDragExit])
         b.addTarget(self, action: #selector(strokeSizeButtonTapped(_:)), for: .touchUpInside)
         return b
     }
 
-    private func refreshStrokeSizeSelection() {
+    private func refreshStrokeSizeAppearance() {
         let presets = strokeWidthPresets
+        guard !strokeSizeButtons.isEmpty else { return }
+        let cIdx = strokePaletteIndex.clamped(to: 0...(palette.count - 1))
+        let crayon = palette[cIdx]
+        let rim = crayon.magicBrushyStrokeChromeBorder()
         for (i, b) in strokeSizeButtons.enumerated() {
             let on = i == selectedStrokeSizeIndex
-            b.layer.borderWidth = on ? 3.5 : 1.5
-            b.layer.borderColor = (on ? FigmaTheme.primaryOrange : FigmaTheme.primaryOrange.withAlphaComponent(0.35)).cgColor
-            b.transform = on ? CGAffineTransform(scaleX: 1.05, y: 1.05) : .identity
+            b.backgroundColor = crayon.withAlphaComponent(on ? 1 : 0.7)
+            b.layer.borderWidth = on ? 4 : 2.5
+            b.layer.borderColor = (on ? UIColor.white : rim).cgColor
+            let scale: CGFloat = on ? 1.06 : 1
+            b.transform = CGAffineTransform(scaleX: scale, y: scale)
+            if i < strokeSizeDotViews.count {
+                strokeSizeDotViews[i].backgroundColor = UIColor.white.withAlphaComponent(on ? 1 : 0.88)
+            }
             if i < presets.count {
-                b.accessibilityValue = "\(Int(presets[i])) points"
+                b.accessibilityValue = "\(Int(presets[i])) points wide"
                 b.accessibilityTraits = on ? [.button, .selected] : .button
             }
         }
@@ -834,6 +863,7 @@ final class ColoringViewController: UIViewController {
             let on = c.tag == strokePaletteIndex && !isEraserMode
             c.setSelected(on, animated: animated)
         }
+        refreshStrokeSizeAppearance()
     }
 
     private func applyToolMode() {
@@ -1100,13 +1130,23 @@ final class ColoringViewController: UIViewController {
         strokeView.clearStrokes()
     }
 
+    @objc private func strokeSizeTouchDown(_ sender: UIButton) {
+        UIView.animate(withDuration: 0.12, delay: 0, options: [.curveEaseIn]) {
+            sender.transform = sender.transform.scaledBy(x: 0.92, y: 0.92)
+        }
+    }
+
+    @objc private func strokeSizeTouchUp(_ sender: UIButton) {
+        refreshStrokeSizeAppearance()
+    }
+
     @objc private func strokeSizeButtonTapped(_ sender: UIButton) {
         let i = sender.tag.clamped(to: 0...(strokeWidthPresets.count - 1))
         guard i != selectedStrokeSizeIndex else { return }
         selectedStrokeSizeIndex = i
         applyStrokeWidthFromSelection()
-        refreshStrokeSizeSelection()
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        refreshStrokeSizeAppearance()
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
     }
 
     @objc private func clearStrokes() {
@@ -1796,6 +1836,21 @@ final class EraserIconView: UIView {
     override func layoutSubviews() {
         super.layoutSubviews()
         setNeedsDisplay()
+    }
+}
+
+private extension UIColor {
+    /// Darker rim for stroke-size “bubble” buttons on a crayon-colored fill.
+    func magicBrushyStrokeChromeBorder() -> UIColor {
+        var h: CGFloat = 0, s: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        if getHue(&h, saturation: &s, brightness: &b, alpha: &a) {
+            return UIColor(hue: h, saturation: min(1, s + 0.06), brightness: max(0.1, b * 0.66), alpha: 1)
+        }
+        var w: CGFloat = 0
+        if getWhite(&w, alpha: &a) {
+            return UIColor(white: max(0, w - 0.32), alpha: 1)
+        }
+        return FigmaTheme.actionBlueBorder
     }
 }
 
