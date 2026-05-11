@@ -342,8 +342,7 @@ final class ColoringViewController: UIViewController {
         prevBtn.addTarget(self, action: #selector(undoStroke), for: .touchUpInside)
         let nextBtn = makeNavButton(icon: "chevron.right", fill: FigmaTheme.actionBlue, border: FigmaTheme.actionBlueBorder)
         nextBtn.addTarget(self, action: #selector(clearStrokes), for: .touchUpInside)
-        let doneBtn = makeNavButton(icon: "checkmark", fill: FigmaTheme.actionBlue, border: FigmaTheme.actionBlueBorder)
-        doneBtn.addTarget(self, action: #selector(requestFeedback), for: .touchUpInside)
+        // let doneBtn = makeNavButton(icon: "checkmark", ...) — checkmark button removed (no-op)
 
         let saveBtn = makeNavButton(icon: "square.and.arrow.down", fill: FigmaTheme.actionBlue, border: FigmaTheme.actionBlueBorder)
         saveBtn.accessibilityLabel = "Save to Photos"
@@ -358,7 +357,6 @@ final class ColoringViewController: UIViewController {
         toolRow.addArrangedSubview(prevBtn)
         toolRow.addArrangedSubview(nextBtn)
         toolRow.addArrangedSubview(saveBtn)
-        toolRow.addArrangedSubview(doneBtn)
         toolRow.addArrangedSubview(navSpacer)
         modelStatusStack.isHidden = true
 
