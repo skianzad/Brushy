@@ -128,6 +128,7 @@ final class ColoringViewController: UIViewController {
     private var lastMascotReaction: MascotReactionState?
     /// Bumped on page change / clear / undo only — **not** on every new stroke, so debounced mascot reactions can still apply after pen lift.
     private var reactionSession: UInt64 = 0
+    private var vlmInputPreviewHideWork: DispatchWorkItem?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -961,6 +962,7 @@ final class ColoringViewController: UIViewController {
         cancelFeedbackIdleTimer()
         cancelPendingReactionWork()
         vlm.cancel()
+        hideVLMInputPreviewImmediate()
     }
 
     /// New stroke started — stop deferred **speech** and cancel in-flight VLM, but keep the debounced **reaction** work item
@@ -969,6 +971,7 @@ final class ColoringViewController: UIViewController {
         feedbackGeneration &+= 1
         cancelFeedbackIdleTimer()
         vlm.cancel()
+        hideVLMInputPreviewImmediate()
     }
 
     private func onColoringStrokeBegan() {
@@ -1198,7 +1201,7 @@ final class ColoringViewController: UIViewController {
 
             let img = self.captureCanvasForVLM()
             let previewImage = model.prepareImageForModelPreview(img) ?? img
-            // self.showVLMInputPreview(previewImage) // off: hide debug thumbnail of model input for now
+            self.showVLMInputPreview(previewImage)
             let prompt = self.composeFeedbackPrompt()
 
             model.maxTokens = 120
@@ -1375,27 +1378,43 @@ final class ColoringViewController: UIViewController {
         present(sheet, animated: true)
     }
 
+    private func hideVLMInputPreviewImmediate() {
+        vlmInputPreviewHideWork?.cancel()
+        vlmInputPreviewHideWork = nil
+        vlmInputPreviewImageView.layer.removeAllAnimations()
+        vlmInputPreviewLabel.layer.removeAllAnimations()
+        vlmInputPreviewImageView.isHidden = true
+        vlmInputPreviewLabel.isHidden = true
+        vlmInputPreviewImageView.alpha = 1
+        vlmInputPreviewLabel.alpha = 1
+    }
+
     private func showVLMInputPreview(_ image: UIImage) {
-        // On-screen VLM input preview disabled — uncomment body + call site in `runCoachFeedbackVLM` to restore.
-        _ = image
-        /*
+        vlmInputPreviewHideWork?.cancel()
         vlmInputPreviewImageView.image = image
         vlmInputPreviewLabel.text = "VLM input\n\(Int(image.size.width))×\(Int(image.size.height))"
         vlmInputPreviewImageView.alpha = 1
         vlmInputPreviewLabel.alpha = 1
         vlmInputPreviewImageView.isHidden = false
         vlmInputPreviewLabel.isHidden = false
+        view.bringSubviewToFront(vlmInputPreviewImageView)
+        view.bringSubviewToFront(vlmInputPreviewLabel)
 
-        UIView.animate(withDuration: 0.35, delay: 3.0, options: [.curveEaseInOut]) {
-            self.vlmInputPreviewImageView.alpha = 0
-            self.vlmInputPreviewLabel.alpha = 0
-        } completion: { _ in
-            self.vlmInputPreviewImageView.isHidden = true
-            self.vlmInputPreviewLabel.isHidden = true
-            self.vlmInputPreviewImageView.alpha = 1
-            self.vlmInputPreviewLabel.alpha = 1
+        let work = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            UIView.animate(withDuration: 0.35, options: [.curveEaseInOut]) {
+                self.vlmInputPreviewImageView.alpha = 0
+                self.vlmInputPreviewLabel.alpha = 0
+            } completion: { _ in
+                self.vlmInputPreviewImageView.isHidden = true
+                self.vlmInputPreviewLabel.isHidden = true
+                self.vlmInputPreviewImageView.alpha = 1
+                self.vlmInputPreviewLabel.alpha = 1
+                self.vlmInputPreviewHideWork = nil
+            }
         }
-        */
+        vlmInputPreviewHideWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0, execute: work)
     }
 
     private func composeFeedbackPrompt() -> String {
