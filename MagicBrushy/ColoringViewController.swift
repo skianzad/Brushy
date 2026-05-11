@@ -73,6 +73,12 @@ final class ColoringViewController: UIViewController {
     private var brushToolButton: UIButton?
     private var eraserToolButton: UIButton?
 
+    // ── Stroke-size floating panel ────────────────────────────────────────
+    private let strokeSizePanel = UIView()
+    private let strokeSizeSlider = UISlider()
+    /// Live preview dot that scales to the current brush size.
+    private let strokeSizeDot = UIView()
+
     /// App-wide singleton model; loaded once at app startup from SceneDelegate.
     private let vlm = LeapVLMModel.shared
 
@@ -385,6 +391,55 @@ final class ColoringViewController: UIViewController {
         canvasContainer.addSubview(resumeSnapshotView)
         canvasContainer.addSubview(strokeView)
         canvasContainer.addSubview(templateLineOverlayView)
+
+        // ── Stroke-size floating panel ─────────────────────────────────────────
+        let thinDot = UIView()
+        thinDot.translatesAutoresizingMaskIntoConstraints = false
+        thinDot.backgroundColor = .white
+        thinDot.layer.cornerRadius = 3
+
+        strokeSizeDot.translatesAutoresizingMaskIntoConstraints = false
+        strokeSizeDot.backgroundColor = .white
+        strokeSizeDot.layer.cornerRadius = 11
+
+        strokeSizeSlider.translatesAutoresizingMaskIntoConstraints = false
+        strokeSizeSlider.minimumValue = 6
+        strokeSizeSlider.maximumValue = 60
+        strokeSizeSlider.value = Float(strokeView.strokeWidth)
+        strokeSizeSlider.tintColor = .white
+        strokeSizeSlider.thumbTintColor = .white
+        strokeSizeSlider.addTarget(self, action: #selector(strokeSizeChanged), for: .valueChanged)
+
+        strokeSizePanel.translatesAutoresizingMaskIntoConstraints = false
+        strokeSizePanel.backgroundColor = UIColor.black.withAlphaComponent(0.38)
+        strokeSizePanel.layer.cornerRadius = 20
+        strokeSizePanel.isUserInteractionEnabled = true
+        strokeSizePanel.addSubview(thinDot)
+        strokeSizePanel.addSubview(strokeSizeSlider)
+        strokeSizePanel.addSubview(strokeSizeDot)
+        canvasContainer.addSubview(strokeSizePanel)
+
+        NSLayoutConstraint.activate([
+            thinDot.widthAnchor.constraint(equalToConstant: 6),
+            thinDot.heightAnchor.constraint(equalToConstant: 6),
+            thinDot.centerYAnchor.constraint(equalTo: strokeSizePanel.centerYAnchor),
+            thinDot.leadingAnchor.constraint(equalTo: strokeSizePanel.leadingAnchor, constant: 12),
+
+            strokeSizeDot.widthAnchor.constraint(equalToConstant: 22),
+            strokeSizeDot.heightAnchor.constraint(equalToConstant: 22),
+            strokeSizeDot.centerYAnchor.constraint(equalTo: strokeSizePanel.centerYAnchor),
+            strokeSizeDot.trailingAnchor.constraint(equalTo: strokeSizePanel.trailingAnchor, constant: -12),
+
+            strokeSizeSlider.centerYAnchor.constraint(equalTo: strokeSizePanel.centerYAnchor),
+            strokeSizeSlider.leadingAnchor.constraint(equalTo: thinDot.trailingAnchor, constant: 8),
+            strokeSizeSlider.trailingAnchor.constraint(equalTo: strokeSizeDot.leadingAnchor, constant: -8),
+
+            strokeSizePanel.widthAnchor.constraint(equalToConstant: 210),
+            strokeSizePanel.heightAnchor.constraint(equalToConstant: 40),
+            strokeSizePanel.leadingAnchor.constraint(equalTo: canvasContainer.leadingAnchor, constant: 12),
+            strokeSizePanel.bottomAnchor.constraint(equalTo: canvasContainer.bottomAnchor, constant: -12),
+        ])
+        updateStrokeSizeDot()
 
         let paintRow = UIStackView()
         paintRow.axis = .horizontal
@@ -1023,6 +1078,19 @@ final class ColoringViewController: UIViewController {
         templateView.image = page.image
         templateLineOverlayView.image = page.image.magicBrushyLineArtOverlay()
         strokeView.clearStrokes()
+    }
+
+    @objc private func strokeSizeChanged() {
+        strokeView.strokeWidth = CGFloat(strokeSizeSlider.value)
+        updateStrokeSizeDot()
+    }
+
+    private func updateStrokeSizeDot() {
+        let v = CGFloat(strokeSizeSlider.value)
+        let minV: CGFloat = 6, maxV: CGFloat = 60
+        // Dot is laid out at 22 pt; scale it between 0.27 (small) and 1.0 (large).
+        let scale = 0.27 + 0.73 * (v - minV) / (maxV - minV)
+        strokeSizeDot.transform = CGAffineTransform(scaleX: scale, y: scale)
     }
 
     @objc private func clearStrokes() {
