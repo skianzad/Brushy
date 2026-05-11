@@ -1460,29 +1460,32 @@ final class ColoringViewController: UIViewController {
     private func composeFeedbackPrompt() -> String {
         let lastPoints = strokeView.lastFinishedStrokePointCount
         let lastColor = strokeView.chronologicalStrokeColors.last
-        let spatial = strokeView.lastFinishedStrokeSpatialHint()
+        // Location hint disabled — coach should focus on *which color* they used, not where on the page.
+        // let spatial = strokeView.lastFinishedStrokeSpatialHint()
 
         let paletteHintBlock: String
         if lastPoints > 30, let c = lastColor {
             let paintWord = simpleKidColorName(for: c)
-            paletteHintBlock = "Their last big stroke was palette “\(paintWord)” — use this only if the photo matches."
+            paletteHintBlock = "Their most recent big brush used palette color “\(paintWord)”—celebrate that color if you see it in the photo."
 
         } else if lastPoints > 0, let c = lastColor {
             let paintWord = simpleKidColorName(for: c)
-            paletteHintBlock = "Their last stroke was smaller—palette “\(paintWord)” — look for that fresh dab or line in the photo where they brushed most recently."
+            paletteHintBlock = "Their most recent brush used palette color “\(paintWord)”—celebrate that color if you see it in the photo."
 
         } else if lastPoints > 0 {
-            paletteHintBlock = "Their last stroke was small; look for the freshest dab or line inside the outlines."
+            paletteHintBlock = "They added a little paint recently; give a warm cheer without insisting on a specific color name."
         } else {
             paletteHintBlock = "No new stroke tracked; peek at the picture and cheer gently."
         }
 
+        /*
         let spatialBlock: String
         if let s = spatial {
             spatialBlock = "\(s) Aim your praise at that region first."
         } else {
             spatialBlock = "Find the patch of paint that looks newest or brightest compared with the rest, usually near the last finger path."
         }
+        */
 
         let themeLine: String
         if pageIndex >= 0, pageIndex < coloringBookPages.count {
@@ -1499,11 +1502,9 @@ final class ColoringViewController: UIViewController {
 
 \(paletteHintBlock)
 
-\(spatialBlock)
+Your job: say one cheery thing about the color they just added—use simple kid words for that color. Do not describe where on the picture they painted (no left, right, top, bottom, or “in the corner”). Stay warm and specific to the color, not the place.
 
-Your job: say one cheery thing about what they JUST painted—name the body part or object area AND the color you see there. Do not stay generic about the whole page; tie your words to that newest paint.
-
-Speak to THEM: write one or two very short sentences, easy words, use "you" or "your". Start with warmth. Add a 3-5 word compliment using color psychology that fits what they painted.
+Speak to THEM: write one or two very short sentences, easy words, use "you" or "your". Start with warmth. Add a 3-5 word compliment using color psychology that fits that color.
 
 IMPORTANT: Reply with ONLY the words you say aloud—no rules, no quotes about yourself, no repeating this text, no bullets, no markdown, no symbols like <>. Never mention AI, robots, computers, phones, apps, or internet.
 
