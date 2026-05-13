@@ -8,6 +8,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let windowScene = scene as? UIWindowScene else { return }
         let window = UIWindow(windowScene: windowScene)
         let nav = UINavigationController(rootViewController: HomeViewController())
+        let root = LandscapeLetterboxHostViewController(embedded: nav)
         let barAppearance = UINavigationBarAppearance()
         barAppearance.configureWithTransparentBackground()
         barAppearance.shadowColor = .clear
@@ -22,7 +23,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         nav.navigationBar.setBackgroundImage(UIImage(), for: .default)
         nav.navigationBar.shadowImage = UIImage()
         nav.navigationBar.isHidden = true
-        window.rootViewController = nav
+        window.rootViewController = root
         window.makeKeyAndVisible()
         self.window = window
     }
