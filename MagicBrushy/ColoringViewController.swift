@@ -659,18 +659,17 @@ final class ColoringViewController: UIViewController {
         b.translatesAutoresizingMaskIntoConstraints = false
         b.layer.cornerRadius = 26
         b.clipsToBounds = false
-        b.backgroundColor = .clear
+        b.backgroundColor = UIColor.white.withAlphaComponent(0.78)
         b.layer.borderWidth = 0
         b.layer.borderColor = nil
-        b.layer.shadowOpacity = 0
         b.accessibilityLabel = "Brush size \(index + 1) of \(strokeWidthPresets.count)"
         b.accessibilityHint = "Pick how thick your paint is"
         b.widthAnchor.constraint(equalToConstant: 52).isActive = true
         b.heightAnchor.constraint(equalToConstant: 52).isActive = true
         b.layer.shadowColor = UIColor.black.cgColor
-        b.layer.shadowOpacity = 0.2
         b.layer.shadowRadius = 4
         b.layer.shadowOffset = CGSize(width: 0, height: 2)
+        b.layer.shadowOpacity = 0.12
 
         let dot = UIView()
         dot.translatesAutoresizingMaskIntoConstraints = false
@@ -714,15 +713,16 @@ final class ColoringViewController: UIViewController {
         let rim = crayon.magicBrushyStrokeChromeBorder()
         for (i, b) in strokeSizeButtons.enumerated() {
             let on = i == selectedStrokeSizeIndex
-            b.backgroundColor = .clear
             if on {
+                b.backgroundColor = UIColor.white.withAlphaComponent(0.94)
                 b.layer.borderWidth = 4
                 b.layer.borderColor = rim.cgColor
-                b.layer.shadowOpacity = 0.18
+                b.layer.shadowOpacity = 0.2
             } else {
+                b.backgroundColor = UIColor.white.withAlphaComponent(0.78)
                 b.layer.borderWidth = 0
                 b.layer.borderColor = nil
-                b.layer.shadowOpacity = 0
+                b.layer.shadowOpacity = 0.12
             }
             let scale: CGFloat = on ? 1.06 : 1
             b.transform = CGAffineTransform(scaleX: scale, y: scale)
@@ -1664,8 +1664,10 @@ private enum ColoringCrayonPaletteLayout {
     static let stackSpacing: CGFloat = 0
     static let scrollContainerMinHeight: CGFloat = 220
     static let toolButtonHeight: CGFloat = 72
-    /// Side gap between brush and eraser (~1 mm on common iPhone/iPad densities).
-    static let toolPairSpacing: CGFloat = 1
+    /// Side gap between brush and eraser (~1 mm; scales with screen density).
+    static var toolPairSpacing: CGFloat {
+        max(3, (4 * UIScreen.main.nativeScale / UIScreen.main.scale).rounded(.toNearestOrAwayFromZero))
+    }
     /// Drawing page scale (uniform) and nudge vs. the stack layout.
     static let canvasVisualScale: CGFloat = 0.97
     /// Shift canvas + aligned chrome slightly left (logical points).
