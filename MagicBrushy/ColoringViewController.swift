@@ -8,7 +8,8 @@ final class ColoringViewController: UIViewController {
     private enum TopChromeMetrics {
         /// Pin the nav row to the safe-area top (no extra gap under the status bar).
         static let menuTopOffset: CGFloat = 0
-        static let menuHorizontalInset: CGFloat = 6
+        static let menuHorizontalInset: CGFloat = 2
+        static let menuTrailingInset: CGFloat = 10
         /// Slightly reduce system safe-area padding so content can sit closer to edges.
         static let additionalSafeAreaShrink = UIEdgeInsets(top: 0, left: -4, bottom: -6, right: -4)
     }
@@ -91,9 +92,14 @@ final class ColoringViewController: UIViewController {
         "cream", "gray", "magenta", "turquoise",
     ]
 
+    private enum CrayonPaletteFigma {
+        /// Wax fill from Figma crayon template (217×217 artboard swatch).
+        static let purpleWax = UIColor(red: 0.739, green: 0.079, blue: 1, alpha: 1)
+    }
+
     private let palette: [UIColor] = [
         .systemRed, .systemOrange, .systemYellow, .systemGreen,
-        .systemBlue, .systemIndigo, .systemPurple, .systemPink,
+        .systemBlue, .systemIndigo, CrayonPaletteFigma.purpleWax, .systemPink,
         .brown, .black,
         UIColor(red: 0, green: 0.75, blue: 0.83, alpha: 1),
         UIColor(red: 1, green: 0.45, blue: 0.42, alpha: 1),
@@ -151,8 +157,7 @@ final class ColoringViewController: UIViewController {
         templateView.clipsToBounds = true
         templateView.backgroundColor = FigmaTheme.canvasFill
         templateView.layer.cornerRadius = 24
-        templateView.layer.borderWidth = 5
-        templateView.layer.borderColor = FigmaTheme.canvasBorder.cgColor
+        templateView.layer.borderWidth = 0
 
         for page in coloringBookPages {
             pageControl.insertSegment(withTitle: page.title, at: pageControl.numberOfSegments, animated: false)
@@ -202,7 +207,7 @@ final class ColoringViewController: UIViewController {
         brushToolButton = makeBrushToolButton()
         eraserToolButton = makeEraserToolButton()
         toolPairStack.axis = .horizontal
-        toolPairStack.spacing = 10
+        toolPairStack.spacing = ColoringCrayonPaletteLayout.toolPairSpacing
         toolPairStack.alignment = .center
         toolPairStack.distribution = .fillEqually
         toolPairStack.addArrangedSubview(brushToolButton!)
@@ -239,11 +244,11 @@ final class ColoringViewController: UIViewController {
             crayonScrollView.leadingAnchor.constraint(equalTo: crayonScrollContainer.leadingAnchor),
             crayonScrollView.trailingAnchor.constraint(equalTo: crayonScrollContainer.trailingAnchor),
             crayonScrollView.bottomAnchor.constraint(equalTo: crayonScrollContainer.bottomAnchor),
-            crayonScrollContainer.heightAnchor.constraint(greaterThanOrEqualToConstant: 120),
+            crayonScrollContainer.heightAnchor.constraint(greaterThanOrEqualToConstant: ColoringCrayonPaletteLayout.scrollContainerMinHeight),
         ])
 
         crayonStack.axis = .vertical
-        crayonStack.spacing = 7
+        crayonStack.spacing = ColoringCrayonPaletteLayout.stackSpacing
         crayonStack.isLayoutMarginsRelativeArrangement = false
         crayonStack.alignment = .fill
         crayonStack.distribution = .fill
@@ -268,7 +273,7 @@ final class ColoringViewController: UIViewController {
                 )
             )
             c.translatesAutoresizingMaskIntoConstraints = false
-            c.heightAnchor.constraint(equalToConstant: 52).isActive = true
+            c.heightAnchor.constraint(equalToConstant: ColoringCrayonPaletteLayout.crayonRowHeight).isActive = true
             c.addTarget(self, action: #selector(crayonTapped(_:)), for: .touchUpInside)
             crayonStack.addArrangedSubview(c)
             crayonControls.append(c)
@@ -332,6 +337,7 @@ final class ColoringViewController: UIViewController {
         rightPanelStack.translatesAutoresizingMaskIntoConstraints = false
         rightPanelStack.setContentHuggingPriority(.defaultHigh, for: .horizontal)
         rightPanelStack.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+        rightPanelStack.layer.zPosition = 1
 
         // ── Top nav bar ───────────────────────────────────────────────────────
         func makeNavButton(icon: String, fill: UIColor, border: UIColor) -> UIButton {
@@ -416,9 +422,9 @@ final class ColoringViewController: UIViewController {
         canvasContainer.addSubview(strokeView)
         canvasContainer.addSubview(templateLineOverlayView)
 
-        strokeSizeStack.axis = .vertical
-        strokeSizeStack.spacing = 5
-        strokeSizeStack.alignment = .trailing
+        strokeSizeStack.axis = .horizontal
+        strokeSizeStack.spacing = 8
+        strokeSizeStack.alignment = .center
         strokeSizeStack.distribution = .fill
         strokeSizeStack.translatesAutoresizingMaskIntoConstraints = false
         strokeSizeStack.isUserInteractionEnabled = true
@@ -430,11 +436,7 @@ final class ColoringViewController: UIViewController {
             strokeSizeButtons.append(b)
             strokeSizeStack.addArrangedSubview(b)
         }
-        canvasContainer.addSubview(strokeSizeStack)
-        NSLayoutConstraint.activate([
-            strokeSizeStack.topAnchor.constraint(equalTo: canvasContainer.topAnchor, constant: 10),
-            strokeSizeStack.trailingAnchor.constraint(equalTo: canvasContainer.trailingAnchor, constant: -10),
-        ])
+        // strokeSizeStack is added to view after the view hierarchy is assembled (see below)
 
         let paintRow = UIStackView()
         paintRow.axis = .horizontal
@@ -464,6 +466,13 @@ final class ColoringViewController: UIViewController {
         view.addSubview(cloudContainer)
         view.addSubview(headerStack)
         view.addSubview(paintRow)
+
+        // Stroke-size picker floats at the same vertical level as the nav bar (home/save row)
+        view.addSubview(strokeSizeStack)
+        NSLayoutConstraint.activate([
+            strokeSizeStack.centerYAnchor.constraint(equalTo: toolRow.centerYAnchor),
+            strokeSizeStack.trailingAnchor.constraint(equalTo: templateView.trailingAnchor, constant: -10),
+        ])
 
         installClouds()
 
@@ -504,7 +513,7 @@ final class ColoringViewController: UIViewController {
 
         let canvasAspect = canvasContainer.widthAnchor.constraint(equalTo: canvasContainer.heightAnchor, multiplier: 4 / 5)
         canvasAspect.priority = .defaultHigh
-        let rightPanelWidth = rightPanelStack.widthAnchor.constraint(equalToConstant: 172)
+        let rightPanelWidth = rightPanelStack.widthAnchor.constraint(equalToConstant: ColoringCrayonPaletteLayout.rightPanelWidth)
         rightPanelWidth.priority = .required
 
         NSLayoutConstraint.activate([
@@ -520,11 +529,11 @@ final class ColoringViewController: UIViewController {
 
             headerStack.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: TopChromeMetrics.menuTopOffset),
             headerStack.leadingAnchor.constraint(equalTo: g.leadingAnchor, constant: TopChromeMetrics.menuHorizontalInset),
-            headerStack.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -TopChromeMetrics.menuHorizontalInset),
+            headerStack.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -TopChromeMetrics.menuTrailingInset),
 
             paintRow.topAnchor.constraint(equalTo: headerStack.bottomAnchor, constant: 8),
-            paintRow.leadingAnchor.constraint(equalTo: g.leadingAnchor, constant: 6),
-            paintRow.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -6),
+            paintRow.leadingAnchor.constraint(equalTo: g.leadingAnchor, constant: 2),
+            paintRow.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -10),
             paintRow.bottomAnchor.constraint(equalTo: g.bottomAnchor, constant: -6),
 
             canvasContainer.heightAnchor.constraint(greaterThanOrEqualToConstant: 200),
@@ -574,6 +583,11 @@ final class ColoringViewController: UIViewController {
             vlmInputPreviewLabel.trailingAnchor.constraint(equalTo: vlmInputPreviewImageView.trailingAnchor),
             vlmInputPreviewLabel.bottomAnchor.constraint(equalTo: vlmInputPreviewImageView.topAnchor, constant: -6),
         ])
+
+        let cvScale = ColoringCrayonPaletteLayout.canvasVisualScale
+        let cvLeft = ColoringCrayonPaletteLayout.canvasShiftLeftPoints
+        canvasContainer.transform = CGAffineTransform(translationX: -cvLeft, y: 0)
+            .concatenating(CGAffineTransform(scaleX: cvScale, y: cvScale))
 
         let start = pinnedPageIndex ?? 0
         pageIndex = min(max(0, start), max(0, coloringBookPages.count - 1))
@@ -645,6 +659,10 @@ final class ColoringViewController: UIViewController {
         b.translatesAutoresizingMaskIntoConstraints = false
         b.layer.cornerRadius = 26
         b.clipsToBounds = false
+        b.backgroundColor = .clear
+        b.layer.borderWidth = 0
+        b.layer.borderColor = nil
+        b.layer.shadowOpacity = 0
         b.accessibilityLabel = "Brush size \(index + 1) of \(strokeWidthPresets.count)"
         b.accessibilityHint = "Pick how thick your paint is"
         b.widthAnchor.constraint(equalToConstant: 52).isActive = true
@@ -680,6 +698,7 @@ final class ColoringViewController: UIViewController {
             gloss.widthAnchor.constraint(equalToConstant: 14),
             gloss.heightAnchor.constraint(equalToConstant: 8),
         ])
+        gloss.isHidden = true
 
         b.addTarget(self, action: #selector(strokeSizeTouchDown(_:)), for: .touchDown)
         b.addTarget(self, action: #selector(strokeSizeTouchUp(_:)), for: [.touchUpInside, .touchCancel, .touchDragExit])
@@ -695,13 +714,20 @@ final class ColoringViewController: UIViewController {
         let rim = crayon.magicBrushyStrokeChromeBorder()
         for (i, b) in strokeSizeButtons.enumerated() {
             let on = i == selectedStrokeSizeIndex
-            b.backgroundColor = crayon.withAlphaComponent(on ? 1 : 0.7)
-            b.layer.borderWidth = on ? 4 : 2.5
-            b.layer.borderColor = (on ? UIColor.white : rim).cgColor
+            b.backgroundColor = .clear
+            if on {
+                b.layer.borderWidth = 4
+                b.layer.borderColor = rim.cgColor
+                b.layer.shadowOpacity = 0.18
+            } else {
+                b.layer.borderWidth = 0
+                b.layer.borderColor = nil
+                b.layer.shadowOpacity = 0
+            }
             let scale: CGFloat = on ? 1.06 : 1
             b.transform = CGAffineTransform(scaleX: scale, y: scale)
             if i < strokeSizeDotViews.count {
-                strokeSizeDotViews[i].backgroundColor = UIColor.white.withAlphaComponent(on ? 1 : 0.88)
+                strokeSizeDotViews[i].backgroundColor = crayon.withAlphaComponent(on ? 1 : 0.92)
             }
             if i < presets.count {
                 b.accessibilityValue = "\(Int(presets[i])) points wide"
@@ -728,8 +754,8 @@ final class ColoringViewController: UIViewController {
             NSLayoutConstraint.activate([
                 iv.centerXAnchor.constraint(equalTo: b.centerXAnchor),
                 iv.centerYAnchor.constraint(equalTo: b.centerYAnchor),
-                iv.widthAnchor.constraint(equalToConstant: 38),
-                iv.heightAnchor.constraint(equalToConstant: 38),
+                iv.widthAnchor.constraint(equalToConstant: 44),
+                iv.heightAnchor.constraint(equalToConstant: 44),
             ])
         } else {
             let icon = PaintBrushIconView()
@@ -739,13 +765,13 @@ final class ColoringViewController: UIViewController {
             NSLayoutConstraint.activate([
                 icon.centerXAnchor.constraint(equalTo: b.centerXAnchor),
                 icon.centerYAnchor.constraint(equalTo: b.centerYAnchor),
-                icon.widthAnchor.constraint(equalToConstant: 36),
-                icon.heightAnchor.constraint(equalToConstant: 36),
+                icon.widthAnchor.constraint(equalToConstant: 42),
+                icon.heightAnchor.constraint(equalToConstant: 42),
             ])
         }
         b.addTarget(self, action: #selector(toolModeTapped(_:)), for: .touchUpInside)
         b.translatesAutoresizingMaskIntoConstraints = false
-        b.heightAnchor.constraint(equalToConstant: 62).isActive = true
+        b.heightAnchor.constraint(equalToConstant: ColoringCrayonPaletteLayout.toolButtonHeight).isActive = true
         return b
     }
 
@@ -784,7 +810,7 @@ final class ColoringViewController: UIViewController {
         }
         b.addTarget(self, action: #selector(toolModeTapped(_:)), for: .touchUpInside)
         b.translatesAutoresizingMaskIntoConstraints = false
-        b.heightAnchor.constraint(equalToConstant: 62).isActive = true
+        b.heightAnchor.constraint(equalToConstant: ColoringCrayonPaletteLayout.toolButtonHeight).isActive = true
         return b
     }
 
@@ -900,6 +926,8 @@ final class ColoringViewController: UIViewController {
         }
         brushToolButton?.alpha = isEraserMode ? 0.55 : 1.0
         eraserToolButton?.alpha = isEraserMode ? 1.0 : 0.95
+        brushToolButton?.transform = .identity
+        eraserToolButton?.transform = .identity
     }
 
     deinit {
@@ -1625,7 +1653,24 @@ IMPORTANT: Reply with ONLY the words you say aloud—no rules, no quotes about y
     }
 }
 
-// MARK: - Magic crayon palette (horizontal wax crayons, drawn in code)
+// MARK: - Magic crayon palette (horizontal wax crayons, scrollable)
+
+/// Layout for the coloring screen right rail (crayons + panel width). Tuned to match Figma-style chunky crayons.
+private enum ColoringCrayonPaletteLayout {
+    static let rightPanelWidth: CGFloat = 180
+    static let crayonRowHeight: CGFloat = 65
+    /// Fraction of row height used by `HorizontalCrayonShapeView` (rest is tap padding).
+    static let shapeHeightMultiplier: CGFloat = 1.0
+    static let stackSpacing: CGFloat = 0
+    static let scrollContainerMinHeight: CGFloat = 220
+    static let toolButtonHeight: CGFloat = 72
+    /// Side gap between brush and eraser (~1 mm on common iPhone/iPad densities).
+    static let toolPairSpacing: CGFloat = 1
+    /// Drawing page scale (uniform) and nudge vs. the stack layout.
+    static let canvasVisualScale: CGFloat = 0.97
+    /// Shift canvas + aligned chrome slightly left (logical points).
+    static let canvasShiftLeftPoints: CGFloat = 6
+}
 
 /// Scroll view that hands drags to scrolling even when the gesture starts on a `UIControl` (crayon).
 private final class CrayonPaletteScrollView: UIScrollView {
@@ -1645,16 +1690,33 @@ private final class CrayonPaletteScrollView: UIScrollView {
     }
 }
 
-/// Renders a single horizontal crayon (tip on the left, rounded cap on the right).
+/// Vector crayon template aligned to Figma group [4:2140](https://www.figma.com/design/URam8tXjBWNS5SZzVuvSGI/Untitled?node-id=4-2140&m=dev) (design exports a raster; we draw equivalent structure in code).
+/// Only `waxColor` / `highlightColor` vary per palette slot; wrapper bands and label oval use fixed chrome.
 private final class HorizontalCrayonShapeView: UIView {
 
     var waxColor: UIColor = .systemBlue { didSet { setNeedsDisplay() } }
     var highlightColor: UIColor = .white { didSet { setNeedsDisplay() } }
 
+    /// Wrapper bands + label field (from design; not tinted with wax).
+    private static let wrapperChrome = UIColor(red: 33 / 255, green: 26 / 255, blue: 49 / 255, alpha: 1)
+
     static func defaultHighlight(for wax: UIColor) -> UIColor {
         var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
         guard wax.getRed(&r, green: &g, blue: &b, alpha: &a) else { return wax }
         let t: CGFloat = 0.38
+        return UIColor(
+            red: r + (1 - r) * t,
+            green: g + (1 - g) * t,
+            blue: b + (1 - b) * t,
+            alpha: a
+        )
+    }
+
+    /// Slightly lighter wax on the tip so one palette color still reads as tip + body.
+    private static func tipTint(from wax: UIColor) -> UIColor {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        guard wax.getRed(&r, green: &g, blue: &b, alpha: &a) else { return wax }
+        let t: CGFloat = 0.26
         return UIColor(
             red: r + (1 - r) * t,
             green: g + (1 - g) * t,
@@ -1681,12 +1743,14 @@ private final class HorizontalCrayonShapeView: UIView {
         guard let ctx = UIGraphicsGetCurrentContext() else { return }
         let W = bounds.width
         let H = bounds.height
-        let tipW = W * 0.22
+        let tipW = W * 0.24
         let rCap = min(H * 0.42, (W - tipW) * 0.48)
         let topY = H * 0.10
         let botY = H * 0.90
-        let dark = UIColor(red: 0.20, green: 0.12, blue: 0.22, alpha: 1)
-        let bandH = max(1.2, H * 0.09)
+        let bandW = max(1.0, H * 0.055)
+        let bodyLeft = tipW
+        let bodyRight = W - rCap
+        let bodyWidth = max(1, bodyRight - bodyLeft)
 
         let outline = UIBezierPath()
         outline.move(to: CGPoint(x: 0, y: H / 2))
@@ -1709,11 +1773,35 @@ private final class HorizontalCrayonShapeView: UIView {
         ctx.setFillColor(waxColor.cgColor)
         ctx.fill(bounds)
 
-        ctx.setFillColor(highlightColor.withAlphaComponent(0.95).cgColor)
-        ctx.fill(CGRect(x: tipW, y: topY, width: W - tipW - rCap * 0.2, height: (H / 2 - topY) + bandH * 0.2))
+        let tipPath = UIBezierPath()
+        tipPath.move(to: CGPoint(x: 0, y: H / 2))
+        tipPath.addLine(to: CGPoint(x: tipW, y: topY))
+        tipPath.addLine(to: CGPoint(x: tipW, y: botY))
+        tipPath.close()
+        ctx.setFillColor(Self.tipTint(from: waxColor).cgColor)
+        ctx.addPath(tipPath.cgPath)
+        ctx.fillPath()
 
-        ctx.setFillColor(dark.cgColor)
-        ctx.fill(CGRect(x: tipW + (W - tipW - rCap) * 0.38, y: topY + bandH, width: bandH * 0.75, height: (botY - topY) - bandH * 2))
+        ctx.setFillColor(highlightColor.withAlphaComponent(0.95).cgColor)
+        ctx.fill(CGRect(x: tipW, y: topY, width: W - tipW - rCap * 0.2, height: (H / 2 - topY) + bandW * 0.25))
+
+        ctx.setFillColor(Self.wrapperChrome.cgColor)
+        let bandHeight = botY - topY
+        ctx.fill(CGRect(x: tipW - bandW * 0.12, y: topY, width: bandW * 0.52, height: bandHeight))
+        ctx.fill(CGRect(x: bodyRight - bandW * 0.92, y: topY, width: bandW * 0.52, height: bandHeight))
+
+        let ovalW = bodyWidth * 0.42
+        let ovalH = (botY - topY) * 0.38
+        let oval = UIBezierPath(
+            ovalIn: CGRect(
+                x: bodyLeft + (bodyWidth - ovalW) / 2,
+                y: (H - ovalH) / 2,
+                width: ovalW,
+                height: ovalH
+            )
+        )
+        ctx.addPath(oval.cgPath)
+        ctx.fillPath()
 
         ctx.restoreGState()
 
@@ -1754,13 +1842,14 @@ private final class MagicCrayonControl: UIControl {
         shapeView.translatesAutoresizingMaskIntoConstraints = false
         addSubview(shapeView)
         NSLayoutConstraint.activate([
-            shapeView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 2),
-            shapeView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -2),
+            shapeView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 0),
+            shapeView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: 0),
             shapeView.centerYAnchor.constraint(equalTo: centerYAnchor),
-            shapeView.heightAnchor.constraint(equalTo: heightAnchor, multiplier: 0.62),
+            shapeView.heightAnchor.constraint(equalTo: heightAnchor, multiplier: ColoringCrayonPaletteLayout.shapeHeightMultiplier),
         ])
     }
 
+    /// Figma-aligned crayon template: geometry is fixed; only `wax` / `highlight` change per palette color.
     func setColors(wax: UIColor, highlight: UIColor) {
         shapeView.waxColor = wax
         shapeView.highlightColor = highlight
@@ -1773,7 +1862,7 @@ private final class MagicCrayonControl: UIControl {
                 self.layer.shadowOpacity = 0.95
                 self.layer.shadowRadius = 7
                 self.layer.shadowOffset = .zero
-                self.transform = CGAffineTransform(scaleX: 1.05, y: 1.05)
+                self.transform = CGAffineTransform(scaleX: 1.01, y: 1.05)
             } else {
                 self.layer.shadowOpacity = 0
                 self.transform = .identity
