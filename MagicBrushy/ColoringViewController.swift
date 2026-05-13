@@ -10,6 +10,8 @@ final class ColoringViewController: UIViewController {
         static let menuTopOffset: CGFloat = 0
         static let menuHorizontalInset: CGFloat = 2
         static let menuTrailingInset: CGFloat = 10
+        /// Nudge the home / tool row right so its leading edge matches the visible canvas edge (scaled page).
+        static let navRowCanvasLeadingAlignmentOffset: CGFloat = 6
         /// Slightly reduce system safe-area padding so content can sit closer to edges.
         static let additionalSafeAreaShrink = UIEdgeInsets(top: 0, left: -4, bottom: -6, right: -4)
     }
@@ -337,7 +339,8 @@ final class ColoringViewController: UIViewController {
         rightPanelStack.translatesAutoresizingMaskIntoConstraints = false
         rightPanelStack.setContentHuggingPriority(.defaultHigh, for: .horizontal)
         rightPanelStack.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
-        rightPanelStack.layer.zPosition = 1
+        // Above scaled canvas layer so crayons are not covered by the page edge / border.
+        rightPanelStack.layer.zPosition = 100
 
         // ── Top nav bar ───────────────────────────────────────────────────────
         func makeNavButton(icon: String, fill: UIColor, border: UIColor) -> UIButton {
@@ -400,6 +403,8 @@ final class ColoringViewController: UIViewController {
         let canvasContainer = UIView()
         canvasContainer.translatesAutoresizingMaskIntoConstraints = false
         canvasContainer.backgroundColor = .clear
+        // Keep the drawing stack below the right rail so crayon tips can overlap the canvas visually.
+        canvasContainer.layer.zPosition = 0
 
         templateView.translatesAutoresizingMaskIntoConstraints = false
         strokeView.translatesAutoresizingMaskIntoConstraints = false
@@ -528,11 +533,11 @@ final class ColoringViewController: UIViewController {
             cloudContainer.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 0.55),
 
             headerStack.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: TopChromeMetrics.menuTopOffset),
-            headerStack.leadingAnchor.constraint(equalTo: g.leadingAnchor, constant: TopChromeMetrics.menuHorizontalInset),
+            headerStack.leadingAnchor.constraint(equalTo: canvasContainer.leadingAnchor, constant: TopChromeMetrics.navRowCanvasLeadingAlignmentOffset),
             headerStack.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -TopChromeMetrics.menuTrailingInset),
 
             paintRow.topAnchor.constraint(equalTo: headerStack.bottomAnchor, constant: 8),
-            paintRow.leadingAnchor.constraint(equalTo: g.leadingAnchor, constant: 2),
+            paintRow.leadingAnchor.constraint(equalTo: g.leadingAnchor, constant: TopChromeMetrics.menuHorizontalInset),
             paintRow.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -10),
             paintRow.bottomAnchor.constraint(equalTo: g.bottomAnchor, constant: -6),
 
@@ -1657,12 +1662,12 @@ IMPORTANT: Reply with ONLY the words you say aloud—no rules, no quotes about y
 
 /// Layout for the coloring screen right rail (crayons + panel width). Tuned to match Figma-style chunky crayons.
 private enum ColoringCrayonPaletteLayout {
-    static let rightPanelWidth: CGFloat = 180
+    static let rightPanelWidth: CGFloat = 210
     static let crayonRowHeight: CGFloat = 65
     /// Fraction of row height used by `HorizontalCrayonShapeView` (rest is tap padding).
     static let shapeHeightMultiplier: CGFloat = 1.0
     static let stackSpacing: CGFloat = 0
-    static let scrollContainerMinHeight: CGFloat = 220
+    static let scrollContainerMinHeight: CGFloat = 210
     static let toolButtonHeight: CGFloat = 72
     /// Side gap between brush and eraser (~1 mm; scales with screen density).
     static var toolPairSpacing: CGFloat {
