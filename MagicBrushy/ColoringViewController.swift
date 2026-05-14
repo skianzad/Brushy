@@ -3,7 +3,7 @@ import Photos
 
 /// Full-screen coloring: built-in outlines, finger or Apple Pencil, on-device VLM feedback.
 /// No Bluetooth pen stack — input is multitouch / Pencil only.
-final class ColoringViewController: UIViewController {
+final class ColoringViewController: UIViewController, UIGestureRecognizerDelegate {
 
     private enum TopChromeMetrics {
         /// Pin the nav row to the safe-area top (no extra gap under the status bar).
@@ -24,6 +24,10 @@ final class ColoringViewController: UIViewController {
     private let templateLineOverlayView = UIImageView()
     private let mascotImageView = UIImageView()
     private let mascotLipSync = MascotLipSyncDriver()
+    /// Wraps mascot art, pause badge, mute chip, and the tap-for-cheer gesture.
+    private let mascotContainer = UIView()
+    /// 5 min quiet mode for automatic coach speech; overlaid on the mascot.
+    private let mascotMuteButton = UIButton(type: .system)
     /// Segments filled in `viewDidLoad`; avoids building outline bitmaps during storyboard instantiation.
     private let pageControl = UISegmentedControl()
     private let feedbackButton = UIButton(type: .system)
@@ -87,44 +91,17 @@ final class ColoringViewController: UIViewController {
     /// App-wide singleton model; loaded once at app startup from SceneDelegate.
     private let vlm = LeapVLMModel.shared
 
-    /// Same order as `palette` / `colors/01`…`28` — short words for a11y + VLM hints.
+    /// Same order as bundled `Colors/01-color.png` … `30-color.png` — short words for a11y + VLM hints.
     private let paletteKidNames = [
         "light pink", "dark gray", "sky blue", "green", "yellow", "orange", "red", "pink purple", "purple", "magenta",
         "violet", "purple blue", "blue", "royal blue", "bright blue", "navy", "teal blue", "aqua", "sea green", "mint",
         "forest green", "yellow green", "light yellow", "gold", "amber", "orange red", "rust red", "brown",
+        "terracotta", "sand",
     ]
 
-    /// Wax colors sampled from repo `colors/01-color.png` … `colors/28-color.png` (same order as filenames).
-    private let palette: [UIColor] = [
-        UIColor(red: 0.8043, green: 0.7425, blue: 0.7744, alpha: 1),
-        UIColor(red: 0.2886, green: 0.2822, blue: 0.2779, alpha: 1),
-        UIColor(red: 0.1693, green: 0.5531, blue: 0.8063, alpha: 1),
-        UIColor(red: 0.4560, green: 0.7312, blue: 0.2835, alpha: 1),
-        UIColor(red: 0.7809, green: 0.7494, blue: 0.1819, alpha: 1),
-        UIColor(red: 0.7937, green: 0.5062, blue: 0.2298, alpha: 1),
-        UIColor(red: 0.7505, green: 0.1500, blue: 0.2775, alpha: 1),
-        UIColor(red: 0.8277, green: 0.3460, blue: 0.7654, alpha: 1),
-        UIColor(red: 0.7104, green: 0.3460, blue: 0.8403, alpha: 1),
-        UIColor(red: 0.7295, green: 0.1691, blue: 0.7809, alpha: 1),
-        UIColor(red: 0.6093, green: 0.1691, blue: 0.8063, alpha: 1),
-        UIColor(red: 0.5248, green: 0.1691, blue: 0.8063, alpha: 1),
-        UIColor(red: 0.4097, green: 0.1691, blue: 0.8063, alpha: 1),
-        UIColor(red: 0.3094, green: 0.2027, blue: 0.8063, alpha: 1),
-        UIColor(red: 0.1884, green: 0.2860, blue: 0.8063, alpha: 1),
-        UIColor(red: 0.1741, green: 0.1845, blue: 0.4865, alpha: 1),
-        UIColor(red: 0.1884, green: 0.5035, blue: 0.8063, alpha: 1),
-        UIColor(red: 0.1884, green: 0.5792, blue: 0.8063, alpha: 1),
-        UIColor(red: 0.1884, green: 0.7234, blue: 0.7574, alpha: 1),
-        UIColor(red: 0.1884, green: 0.7744, blue: 0.6573, alpha: 1),
-        UIColor(red: 0.1329, green: 0.4962, blue: 0.3657, alpha: 1),
-        UIColor(red: 0.7554, green: 0.7475, blue: 0.2010, alpha: 1),
-        UIColor(red: 0.8013, green: 0.7648, blue: 0.5200, alpha: 1),
-        UIColor(red: 0.7873, green: 0.7140, blue: 0.2010, alpha: 1),
-        UIColor(red: 0.7937, green: 0.6141, blue: 0.2010, alpha: 1),
-        UIColor(red: 0.7937, green: 0.4135, blue: 0.2010, alpha: 1),
-        UIColor(red: 0.7937, green: 0.2520, blue: 0.2010, alpha: 1),
-        UIColor(red: 0.3896, green: 0.1888, blue: 0.1826, alpha: 1),
-    ]
+    /// Stroke colors averaged from each PNG in `MagicBrushy/Colors/` (see `MagicBrushyCrayonResources`).
+    private let palette: [UIColor] = MagicBrushyCrayonResources.strokeColors
+    private let crayonSwatchImages: [UIImage] = MagicBrushyCrayonResources.swatchImages
 
     private var pageIndex = 0 {
         didSet { applyCurrentPage() }
@@ -271,12 +248,9 @@ final class ColoringViewController: UIViewController {
             let c = MagicCrayonControl()
             c.tag = paletteIndex
             c.accessibilityLabel = paletteKidNames[paletteIndex.clamped(to: 0...(paletteKidNames.count - 1))]
-            c.setColors(
-                wax: palette[paletteIndex.clamped(to: 0...(palette.count - 1))],
-                highlight: HorizontalCrayonShapeView.defaultHighlight(
-                    for: palette[paletteIndex.clamped(to: 0...(palette.count - 1))]
-                )
-            )
+            let wax = palette[paletteIndex.clamped(to: 0...(palette.count - 1))]
+            let img = crayonSwatchImages.indices.contains(paletteIndex) ? crayonSwatchImages[paletteIndex] : nil
+            c.setSwatch(image: img, wax: wax)
             c.translatesAutoresizingMaskIntoConstraints = false
             c.heightAnchor.constraint(equalToConstant: ColoringCrayonPaletteLayout.crayonRowHeight).isActive = true
             c.addTarget(self, action: #selector(crayonTapped(_:)), for: .touchUpInside)
@@ -303,7 +277,7 @@ final class ColoringViewController: UIViewController {
                 ?? MascotReactionState.oMouth.loadImage()
         )
 
-        let mascotContainer = UIView()
+        let mascotContainer = self.mascotContainer
         mascotContainer.translatesAutoresizingMaskIntoConstraints = false
         mascotContainer.addSubview(mascotImageView)
 
@@ -317,7 +291,19 @@ final class ColoringViewController: UIViewController {
         mascotPauseBadge.isHidden = true
         mascotContainer.addSubview(mascotPauseBadge)
 
+        var muteCfg = UIButton.Configuration.plain()
+        muteCfg.image = UIImage(systemName: "speaker.wave.2.fill")
+        muteCfg.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 20, weight: .bold)
+        muteCfg.baseForegroundColor = .white
+        mascotMuteButton.configuration = muteCfg
+        styleChromeButton(mascotMuteButton, fill: FigmaTheme.actionBlue, border: FigmaTheme.actionBlueBorder, cornerRadius: 14)
+        mascotMuteButton.translatesAutoresizingMaskIntoConstraints = false
+        mascotMuteButton.addTarget(self, action: #selector(mascotMuteButtonTapped), for: .touchUpInside)
+        mascotMuteButton.accessibilityLabel = "Mute coach voice for five minutes"
+        mascotMuteButton.accessibilityHint = "Stops automatic spoken feedback for five minutes. Tap the mascot for a cheer about the whole picture."
+
         let mascotTap = UITapGestureRecognizer(target: self, action: #selector(mascotTapped))
+        mascotTap.delegate = self
         mascotContainer.addGestureRecognizer(mascotTap)
         mascotContainer.isUserInteractionEnabled = true
 
@@ -329,9 +315,12 @@ final class ColoringViewController: UIViewController {
 
             mascotPauseBadge.centerXAnchor.constraint(equalTo: mascotContainer.centerXAnchor),
             mascotPauseBadge.bottomAnchor.constraint(equalTo: mascotContainer.bottomAnchor, constant: -8),
-            mascotPauseBadge.widthAnchor.constraint(greaterThanOrEqualToConstant: 80),
+            mascotPauseBadge.widthAnchor.constraint(greaterThanOrEqualToConstant: 100),
             mascotPauseBadge.heightAnchor.constraint(equalToConstant: 26),
         ])
+
+        mascotContainer.bringSubviewToFront(mascotPauseBadge)
+        updateMascotMuteButtonAppearance()
 
         // ── Right panel ───────────────────────────────────────────────────────
         let rightPanelStack = UIStackView(arrangedSubviews: [mascotContainer, toolPairStack, crayonScrollContainer])
@@ -475,11 +464,20 @@ final class ColoringViewController: UIViewController {
         view.addSubview(headerStack)
         view.addSubview(paintRow)
 
-        // Stroke-size picker floats at the same vertical level as the nav bar (home/save row)
+        // Stroke-size picker floats at the same vertical level as the nav bar (home/save row).
+        // Mute is a sibling of `paintRow` (not a child of `mascotContainer`) so it stays hit-testable
+        // while aligned to `toolRow` — subviews outside the parent's bounds do not receive touches.
         view.addSubview(strokeSizeStack)
+        view.addSubview(mascotMuteButton)
         NSLayoutConstraint.activate([
             strokeSizeStack.centerYAnchor.constraint(equalTo: toolRow.centerYAnchor),
             strokeSizeStack.trailingAnchor.constraint(equalTo: templateView.trailingAnchor, constant: -10),
+
+            // Same vertical line as home + stroke-size chrome; 52pt matches nav / brush-size blobs.
+            mascotMuteButton.centerYAnchor.constraint(equalTo: toolRow.centerYAnchor),
+            mascotMuteButton.centerXAnchor.constraint(equalTo: mascotContainer.centerXAnchor),
+            mascotMuteButton.widthAnchor.constraint(equalToConstant: 52),
+            mascotMuteButton.heightAnchor.constraint(equalToConstant: 52),
         ])
 
         installClouds()
@@ -1102,11 +1100,28 @@ final class ColoringViewController: UIViewController {
         DispatchQueue.main.asyncAfter(deadline: .now() + Self.feedbackIdleTriggerDelay, execute: work)
     }
 
-    private static let feedbackPauseDuration: TimeInterval = 60
+    private static let feedbackPauseDuration: TimeInterval = 5 * 60
 
-    @objc private func mascotTapped() {
+    @objc private func mascotMuteButtonTapped() {
+        toggleCoachFeedbackMute()
+    }
+
+    private func updateMascotMuteButtonAppearance() {
+        let muted = (feedbackPausedUntil.map { Date() < $0 } ?? false)
+        var cfg = mascotMuteButton.configuration ?? .plain()
+        cfg.image = UIImage(systemName: muted ? "speaker.slash.fill" : "speaker.wave.2.fill")
+        cfg.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 20, weight: .bold)
+        cfg.baseForegroundColor = .white
+        mascotMuteButton.configuration = cfg
+        mascotMuteButton.accessibilityLabel = muted ? "Turn coach voice back on" : "Mute coach voice for five minutes"
+        mascotMuteButton.accessibilityHint = muted
+            ? "Ends the five minute quiet period early."
+            : "Stops automatic spoken feedback for five minutes."
+    }
+
+    /// Five-minute quiet mode for auto coach speech (mute button only).
+    private func toggleCoachFeedbackMute() {
         let now = Date()
-        // If already paused and still within the window, tapping again cancels the pause early.
         if let until = feedbackPausedUntil, now < until {
             feedbackPausedUntil = nil
             updateMascotPauseBadge()
@@ -1123,6 +1138,39 @@ final class ColoringViewController: UIViewController {
         applyMascotReaction(.sleepy)
         updateMascotPauseBadge()
         scheduleMascotPauseCountdown()
+    }
+
+    private func playMascotClapHaptics() {
+        let a = UIImpactFeedbackGenerator(style: .medium)
+        a.prepare()
+        a.impactOccurred()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.09) {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        }
+    }
+
+    /// Tapping the mascot (not the mute chip): haptic “clap”, then coach praise for the **entire** page via VLM.
+    @objc private func mascotTapped() {
+        playMascotClapHaptics()
+        applyMascotReaction(.celebrating)
+
+        feedbackGeneration &+= 1
+        let gen = feedbackGeneration
+        cancelFeedbackIdleTimer()
+        cancelPendingReactionWork()
+        FeedbackAlbaSpeech.stopSpeaking()
+        vlm.cancel()
+
+        runMascotWholeDrawingCheer(feedbackGen: gen)
+    }
+
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        let p = touch.location(in: mascotContainer)
+        let muteInMascot = mascotContainer.convert(mascotMuteButton.bounds, from: mascotMuteButton)
+        if muteInMascot.contains(p), mascotMuteButton.isUserInteractionEnabled, !mascotMuteButton.isHidden {
+            return false
+        }
+        return true
     }
 
     private var pauseCountdownTimer: Timer?
@@ -1145,11 +1193,25 @@ final class ColoringViewController: UIViewController {
     private func updateMascotPauseBadge() {
         guard let until = feedbackPausedUntil, Date() < until else {
             mascotPauseBadge.isHidden = true
+            updateMascotMuteButtonAppearance()
             return
         }
         let secs = max(0, Int(until.timeIntervalSinceNow.rounded(.up)))
-        mascotPauseBadge.text = "🤫 \(secs)s"
+        let badgeText: String
+        if secs >= 3600 {
+            let h = secs / 3600
+            let m = (secs % 3600) / 60
+            badgeText = "🤫 \(h)h \(m)m"
+        } else if secs >= 60 {
+            let m = secs / 60
+            let s = secs % 60
+            badgeText = "🤫 \(m)m \(s)s"
+        } else {
+            badgeText = "🤫 \(secs)s"
+        }
+        mascotPauseBadge.text = badgeText
         mascotPauseBadge.isHidden = false
+        updateMascotMuteButtonAppearance()
     }
 
     private func applyObservationSnapshot() {
@@ -1384,6 +1446,52 @@ final class ColoringViewController: UIViewController {
         }
     }
 
+    /// Mascot tap: full-page snapshot (no stroke zoom crop) and a prompt about the **entire** drawing.
+    private func runMascotWholeDrawingCheer(feedbackGen: UInt64) {
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            let model = self.modelForInference()
+            var spins = 0
+            while model.running, spins < 120 {
+                try? await Task.sleep(nanoseconds: 80_000_000)
+                spins += 1
+            }
+            guard !model.running else { return }
+            guard feedbackGen == self.feedbackGeneration else { return }
+            self.view.layoutIfNeeded()
+            let bounds = self.strokeView.bounds
+            guard bounds.width >= 16, bounds.height >= 16 else { return }
+
+            let img = self.captureCanvasForVLMFullPage()
+            let previewImage = model.prepareImageForModelPreview(img) ?? img
+            self.showVLMInputPreview(previewImage)
+            let prompt = self.composeWholeDrawingCheerPrompt()
+
+            model.maxTokens = 120
+            #if DEBUG
+            print("""
+            [Brushi][VLM][WholeDrawing] image \(Int(img.size.width))x\(Int(img.size.height)), max tokens 96
+            \(prompt)
+            """)
+            #endif
+            let task = await model.generate(
+                image: previewImage,
+                prompt: prompt,
+                maxOutputTokens: 96
+            )
+            await task.value
+            guard feedbackGen == self.feedbackGeneration else { return }
+            let raw = model.output.trimmingCharacters(in: .whitespacesAndNewlines)
+            let pose = Reaction.mascotPoseFromCoachResponse(raw, avoidingRepeatOf: self.lastMascotReaction)
+            self.applyMascotReaction(pose)
+
+            let spoken = MagicBrushyVLMOutputCleanup.sanitizeKidFeedback(raw)
+            guard !spoken.isEmpty, spoken != "…",
+                  !spoken.hasPrefix("Failed:") else { return }
+            await FeedbackAlbaSpeech.speakFeedback(spoken)
+        }
+    }
+
     private func applyMascotReaction(_ state: MascotReactionState) {
         guard let image = state.loadImage() else { return }
         lastMascotReaction = state
@@ -1469,6 +1577,11 @@ final class ColoringViewController: UIViewController {
         return UIGraphicsImageRenderer(size: r.size, format: format).image { _ in
             full.draw(at: CGPoint(x: -r.origin.x, y: -r.origin.y))
         }
+    }
+
+    /// Full coloring sheet for the vision model (no last-stroke zoom crop).
+    private func captureCanvasForVLMFullPage() -> UIImage {
+        captureCanvasBitmap(includeLineOverlay: true, displayScale: 1)
     }
 
     /// Full canvas at 1×, then cropped around the last finished stroke (half stroke width padding left/right, half stroke height up/down) when available so the model sees mostly that region.
@@ -1641,6 +1754,32 @@ IMPORTANT: Reply with ONLY the words you say aloud—no rules, no quotes about y
 """
     }
 
+    /// Coach prompt when the child taps the mascot: praise the **entire** page, not only the latest stroke.
+    private func composeWholeDrawingCheerPrompt() -> String {
+        let themeLine: String
+        if pageIndex >= 0, pageIndex < coloringBookPages.count {
+            let t = coloringBookPages[pageIndex].title
+            themeLine = "Page: \(t)."
+        } else {
+            themeLine = ""
+        }
+
+        let opener = themeLine.isEmpty
+            ? "A child colored this sheet (outlines + paint)."
+            : "A child colored this sheet (outlines + paint). \(themeLine)"
+
+        return """
+\(opener) The photo shows the **whole coloring page** together (all outlines and all paint).
+
+They just tapped their mascot buddy asking for a big cheer for their **entire drawing so far**—not only the newest dab of paint. Look at the full picture: how colors spread across the scene, how the page feels as one piece, and the subject of the line art if you can tell.
+
+Your job: one warm, very short message in simple kid words about **the whole picture**—what you like about how they filled the page overall. Use "you" or "your". If you can, mention **two** small things you like (for example a color choice **and** the character or scene), but keep it to one or two tiny sentences. Do not use map directions (no left, right, top, bottom, or “in the corner”).
+
+IMPORTANT: Reply with ONLY the words you say aloud—no rules, no quotes about yourself, no repeating this text, no bullets, no markdown, no symbols like <>. Never mention AI, robots, computers, phones, apps, or internet.
+
+"""
+    }
+
     /// Nearest app palette swatch name so "history" stays consistent with the picker.
     private func simpleKidColorName(for color: UIColor) -> String {
         var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
@@ -1676,13 +1815,61 @@ IMPORTANT: Reply with ONLY the words you say aloud—no rules, no quotes about y
     }
 }
 
+// MARK: - Bundled crayon PNG swatches (`MagicBrushy/Colors`)
+
+private enum MagicBrushyCrayonResources {
+    private static let bundleSubdirectory = "Colors"
+    private static let pngCount = 30
+
+    /// `01-color.png` … `30-color.png` in the app bundle (folder reference `Colors`).
+    static let swatchImages: [UIImage] = {
+        var out: [UIImage] = []
+        out.reserveCapacity(pngCount)
+        for i in 1...pngCount {
+            let name = String(format: "%02d-color", i)
+            guard let url = Bundle.main.url(forResource: name, withExtension: "png", subdirectory: bundleSubdirectory),
+                  let img = UIImage(contentsOfFile: url.path) else { continue }
+            out.append(img)
+        }
+        return out
+    }()
+
+    /// Brush / VLM stroke color: average of each swatch (opaque paint).
+    static let strokeColors: [UIColor] = swatchImages.map { averageARGBDownsample(from: $0) }
+
+    private static func averageARGBDownsample(from image: UIImage) -> UIColor {
+        guard let cgImage = image.cgImage else { return .darkGray }
+        let w = 1
+        let h = 1
+        var raw = [UInt8](repeating: 0, count: 4)
+        raw.withUnsafeMutableBytes { buf in
+            guard let ctx = CGContext(
+                data: buf.baseAddress,
+                width: w,
+                height: h,
+                bitsPerComponent: 8,
+                bytesPerRow: 4,
+                space: CGColorSpaceCreateDeviceRGB(),
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            ) else { return }
+            ctx.interpolationQuality = .low
+            ctx.draw(cgImage, in: CGRect(x: 0, y: 0, width: w, height: h))
+        }
+        let a = max(Int(raw[3]), 1)
+        let rf = CGFloat(raw[0]) / CGFloat(a)
+        let gf = CGFloat(raw[1]) / CGFloat(a)
+        let bf = CGFloat(raw[2]) / CGFloat(a)
+        return UIColor(red: min(1, rf), green: min(1, gf), blue: min(1, bf), alpha: 1)
+    }
+}
+
 // MARK: - Magic crayon palette (horizontal wax crayons, scrollable)
 
 /// Layout for the coloring screen right rail (crayons + panel width). Tuned to match Figma-style chunky crayons.
 private enum ColoringCrayonPaletteLayout {
     static let rightPanelWidth: CGFloat = 210
     static let crayonRowHeight: CGFloat = 65
-    /// Fraction of row height used by `HorizontalCrayonShapeView` (rest is tap padding).
+    /// Fraction of row height used by the PNG swatch (`MagicCrayonControl`, rest is tap padding).
     static let shapeHeightMultiplier: CGFloat = 1.0
     static let stackSpacing: CGFloat = 0
     static let scrollContainerMinHeight: CGFloat = 210
@@ -1715,136 +1902,18 @@ private final class CrayonPaletteScrollView: UIScrollView {
     }
 }
 
-/// Vector crayon template aligned to Figma group [4:2140](https://www.figma.com/design/URam8tXjBWNS5SZzVuvSGI/Untitled?node-id=4-2140&m=dev) (design exports a raster; we draw equivalent structure in code).
-/// Only `waxColor` / `highlightColor` vary per palette slot; wrapper bands and label oval use fixed chrome.
-private final class HorizontalCrayonShapeView: UIView {
+/*
+ Superseded crayon art (kept for reference; do not re-enable without removing PNG swatches):
 
-    var waxColor: UIColor = .systemBlue { didSet { setNeedsDisplay() } }
-    var highlightColor: UIColor = .white { didSet { setNeedsDisplay() } }
+ • `HorizontalCrayonShapeView` — CoreGraphics “wax crayon” vector (Figma-aligned).
+ • `Assets.xcassets` / `FigmaCrayon1`…`FigmaCrayon7` — SVG exports; never wired in Swift after vector path.
 
-    /// Wrapper bands + label field (from design; not tinted with wax).
-    private static let wrapperChrome = UIColor(red: 33 / 255, green: 26 / 255, blue: 49 / 255, alpha: 1)
-
-    static func defaultHighlight(for wax: UIColor) -> UIColor {
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        guard wax.getRed(&r, green: &g, blue: &b, alpha: &a) else { return wax }
-        let t: CGFloat = 0.38
-        return UIColor(
-            red: r + (1 - r) * t,
-            green: g + (1 - g) * t,
-            blue: b + (1 - b) * t,
-            alpha: a
-        )
-    }
-
-    /// Slightly lighter wax on the tip so one palette color still reads as tip + body.
-    private static func tipTint(from wax: UIColor) -> UIColor {
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        guard wax.getRed(&r, green: &g, blue: &b, alpha: &a) else { return wax }
-        let t: CGFloat = 0.26
-        return UIColor(
-            red: r + (1 - r) * t,
-            green: g + (1 - g) * t,
-            blue: b + (1 - b) * t,
-            alpha: a
-        )
-    }
-
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        backgroundColor = .clear
-        contentMode = .redraw
-        isOpaque = false
-    }
-
-    required init?(coder: NSCoder) {
-        super.init(coder: coder)
-        backgroundColor = .clear
-        contentMode = .redraw
-        isOpaque = false
-    }
-
-    override func draw(_ rect: CGRect) {
-        guard let ctx = UIGraphicsGetCurrentContext() else { return }
-        let W = bounds.width
-        let H = bounds.height
-        let tipW = W * 0.24
-        let rCap = min(H * 0.42, (W - tipW) * 0.48)
-        let topY = H * 0.10
-        let botY = H * 0.90
-        let bandW = max(1.0, H * 0.055)
-        let bodyLeft = tipW
-        let bodyRight = W - rCap
-        let bodyWidth = max(1, bodyRight - bodyLeft)
-
-        let outline = UIBezierPath()
-        outline.move(to: CGPoint(x: 0, y: H / 2))
-        outline.addLine(to: CGPoint(x: tipW, y: topY))
-        outline.addLine(to: CGPoint(x: W - rCap, y: topY))
-        outline.addArc(
-            withCenter: CGPoint(x: W - rCap, y: H / 2),
-            radius: rCap,
-            startAngle: -.pi / 2,
-            endAngle: .pi / 2,
-            clockwise: true
-        )
-        outline.addLine(to: CGPoint(x: tipW, y: botY))
-        outline.close()
-
-        ctx.saveGState()
-        ctx.addPath(outline.cgPath)
-        ctx.clip()
-
-        ctx.setFillColor(waxColor.cgColor)
-        ctx.fill(bounds)
-
-        let tipPath = UIBezierPath()
-        tipPath.move(to: CGPoint(x: 0, y: H / 2))
-        tipPath.addLine(to: CGPoint(x: tipW, y: topY))
-        tipPath.addLine(to: CGPoint(x: tipW, y: botY))
-        tipPath.close()
-        ctx.setFillColor(Self.tipTint(from: waxColor).cgColor)
-        ctx.addPath(tipPath.cgPath)
-        ctx.fillPath()
-
-        ctx.setFillColor(highlightColor.withAlphaComponent(0.95).cgColor)
-        ctx.fill(CGRect(x: tipW, y: topY, width: W - tipW - rCap * 0.2, height: (H / 2 - topY) + bandW * 0.25))
-
-        ctx.setFillColor(Self.wrapperChrome.cgColor)
-        let bandHeight = botY - topY
-        ctx.fill(CGRect(x: tipW - bandW * 0.12, y: topY, width: bandW * 0.52, height: bandHeight))
-        ctx.fill(CGRect(x: bodyRight - bandW * 0.92, y: topY, width: bandW * 0.52, height: bandHeight))
-
-        let ovalW = bodyWidth * 0.42
-        let ovalH = (botY - topY) * 0.38
-        let oval = UIBezierPath(
-            ovalIn: CGRect(
-                x: bodyLeft + (bodyWidth - ovalW) / 2,
-                y: (H - ovalH) / 2,
-                width: ovalW,
-                height: ovalH
-            )
-        )
-        ctx.addPath(oval.cgPath)
-        ctx.fillPath()
-
-        ctx.restoreGState()
-
-        ctx.setStrokeColor(UIColor.black.withAlphaComponent(0.18).cgColor)
-        ctx.setLineWidth(max(0.6, H * 0.04))
-        ctx.addPath(outline.cgPath)
-        ctx.strokePath()
-    }
-
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        setNeedsDisplay()
-    }
-}
+ Palette UI now uses `MagicBrushy/Colors/01-color.png` … `30-color.png` via `MagicBrushyCrayonResources` + `MagicCrayonControl`.
+*/
 
 private final class MagicCrayonControl: UIControl {
 
-    private let shapeView = HorizontalCrayonShapeView()
+    private let swatchView = UIImageView()
 
     override var isHighlighted: Bool {
         didSet { alpha = isHighlighted ? 0.88 : 1 }
@@ -1863,21 +1932,27 @@ private final class MagicCrayonControl: UIControl {
     private func commonInit() {
         backgroundColor = .clear
         isExclusiveTouch = false
-        shapeView.isUserInteractionEnabled = false
-        shapeView.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(shapeView)
+        swatchView.isUserInteractionEnabled = false
+        swatchView.contentMode = .scaleAspectFill
+        swatchView.clipsToBounds = true
+        swatchView.layer.cornerRadius = 12
+        swatchView.layer.borderWidth = 1
+        swatchView.layer.borderColor = UIColor.black.withAlphaComponent(0.12).cgColor
+        swatchView.backgroundColor = UIColor(white: 0.96, alpha: 1)
+        swatchView.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(swatchView)
         NSLayoutConstraint.activate([
-            shapeView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 0),
-            shapeView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: 0),
-            shapeView.centerYAnchor.constraint(equalTo: centerYAnchor),
-            shapeView.heightAnchor.constraint(equalTo: heightAnchor, multiplier: ColoringCrayonPaletteLayout.shapeHeightMultiplier),
+            swatchView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 2),
+            swatchView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -2),
+            swatchView.centerYAnchor.constraint(equalTo: centerYAnchor),
+            swatchView.heightAnchor.constraint(equalTo: heightAnchor, multiplier: ColoringCrayonPaletteLayout.shapeHeightMultiplier),
         ])
     }
 
-    /// Figma-aligned crayon template: geometry is fixed; only `wax` / `highlight` change per palette color.
-    func setColors(wax: UIColor, highlight: UIColor) {
-        shapeView.waxColor = wax
-        shapeView.highlightColor = highlight
+    /// `image` from `Colors/NN-color.png`; `wax` is the brush stroke tint (averaged from the PNG) — used lightly on the rim.
+    func setSwatch(image: UIImage?, wax: UIColor) {
+        swatchView.image = image
+        swatchView.layer.borderColor = wax.withAlphaComponent(0.45).cgColor
     }
 
     func setSelected(_ selected: Bool, animated: Bool) {

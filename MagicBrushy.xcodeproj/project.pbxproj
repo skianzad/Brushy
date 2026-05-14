@@ -34,6 +34,9 @@
 		B1EAD0000413 /* SherpaVLMPlayback.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1EAD0000403 /* SherpaVLMPlayback.swift */; };
 		B1EAD0000511 /* FeedbackAlbaSpeech.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1EAD0000501 /* FeedbackAlbaSpeech.swift */; };
 		B1EAD0000611 /* PiperAlba in Resources */ = {isa = PBXBuildFile; fileRef = B1EAD0000601 /* PiperAlba */; };
+		B1BGM000000000000000001 /* MagicBrushyBackgroundMusic.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1BGM000000000000000101 /* MagicBrushyBackgroundMusic.swift */; };
+		B1BGM000000000000000002 /* MagicBrushyBackgroundTrack.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = B1BGM000000000000000102 /* MagicBrushyBackgroundTrack.mp3 */; };
+		C1CLR000000000000000001 /* Colors in Resources */ = {isa = PBXBuildFile; fileRef = C1CLR000000000000000101 /* Colors */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -78,6 +81,9 @@
 		B1EAD0000403 /* SherpaVLMPlayback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SherpaVLMPlayback.swift; path = ../ASU/SmartDraw/SmartDraw/SherpaVLMPlayback.swift; sourceTree = SOURCE_ROOT; };
 		B1EAD0000501 /* FeedbackAlbaSpeech.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackAlbaSpeech.swift; sourceTree = "<group>"; };
 		B1EAD0000601 /* PiperAlba */ = {isa = PBXFileReference; lastKnownFileType = folder; name = PiperAlba; path = ../ASU/SmartDraw/SmartDraw/PiperAlba; sourceTree = SOURCE_ROOT; };
+		B1BGM000000000000000101 /* MagicBrushyBackgroundMusic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagicBrushyBackgroundMusic.swift; sourceTree = "<group>"; };
+		B1BGM000000000000000102 /* MagicBrushyBackgroundTrack.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = MagicBrushyBackgroundTrack.mp3; sourceTree = "<group>"; };
+		C1CLR000000000000000101 /* Colors */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Colors; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -122,9 +128,12 @@
 				C1F700000000000000000107 /* LandscapeLetterboxHostViewController.swift */,
 				S1SUB000000000000000101 /* SubscriptionManager.swift */,
 				B1EAD0000501 /* FeedbackAlbaSpeech.swift */,
+				B1BGM000000000000000101 /* MagicBrushyBackgroundMusic.swift */,
+				B1BGM000000000000000102 /* MagicBrushyBackgroundTrack.mp3 */,
 				A1B100000000000000000103 /* VLM */,
 				A1B200000000000000009 /* Main.storyboard */,
 				A1B200000000000000011 /* Assets.xcassets */,
+				C1CLR000000000000000101 /* Colors */,
 				A1B200000000000000013 /* LaunchScreen.storyboard */,
 				A1B200000000000000008 /* Info.plist */,
 			);
@@ -231,6 +240,8 @@
 				A1B200000000000000000010 /* Assets.xcassets in Resources */,
 				A1B200000000000000000008 /* Main.storyboard in Resources */,
 				B1EAD0000611 /* PiperAlba in Resources */,
+				B1BGM000000000000000002 /* MagicBrushyBackgroundTrack.mp3 in Resources */,
+				C1CLR000000000000000001 /* Colors in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -299,6 +310,7 @@
 				S1SUB000000000000000001 /* SubscriptionManager.swift in Sources */,
 				A1B200000000000000000006 /* LeapVLMModel.swift in Sources */,
 				B1EAD0000511 /* FeedbackAlbaSpeech.swift in Sources */,
+				B1BGM000000000000000001 /* MagicBrushyBackgroundMusic.swift in Sources */,
 				B1EAD0000411 /* SherpaOnnx.swift in Sources */,
 				B1EAD0000412 /* SherpaPiperAlbaVoice.swift in Sources */,
 				B1EAD0000413 /* SherpaVLMPlayback.swift in Sources */,

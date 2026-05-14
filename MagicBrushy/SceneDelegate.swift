@@ -26,5 +26,21 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         window.rootViewController = root
         window.makeKeyAndVisible()
         self.window = window
+
+        Task { @MainActor in
+            MagicBrushyBackgroundMusic.startIfNeeded()
+        }
+    }
+
+    func sceneDidBecomeActive(_ scene: UIScene) {
+        Task { @MainActor in
+            MagicBrushyBackgroundMusic.resumeIfNeeded()
+        }
+    }
+
+    func sceneWillResignActive(_ scene: UIScene) {
+        Task { @MainActor in
+            MagicBrushyBackgroundMusic.pause()
+        }
     }
 }

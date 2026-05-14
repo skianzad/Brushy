@@ -33,6 +33,8 @@ enum FeedbackAlbaSpeech {
         guard !clean.isEmpty else { return }
 
         stopSpeaking()
+        MagicBrushyBackgroundMusic.duckForMascotSpeech()
+        defer { MagicBrushyBackgroundMusic.restoreVolumeAfterMascotSpeech() }
 
         if SherpaPiperAlbaVoice.isBundledVoiceAvailable {
             do {
@@ -52,6 +54,7 @@ enum FeedbackAlbaSpeech {
         Self.mascotLipSync?.sessionEnded()
         SherpaVLMPlayback.stopPlayback()
         AppleFeedbackSynth.shared.stop()
+        MagicBrushyBackgroundMusic.restoreVolumeAfterMascotSpeech()
     }
 
     /// Single shared synth so `stopSpeaking` can interrupt Apple fallback playback.
