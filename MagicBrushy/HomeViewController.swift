@@ -64,12 +64,17 @@ final class HomeViewController: UIViewController {
             }
         }
 
-        var isFree: Bool {
-            self == .animals || self == .freeDrawing
+        var isFreeTier: Bool {
+            switch self {
+            case .freeDrawing, .ocean, .animals:
+                return true
+            default:
+                return false
+            }
         }
     }
 
-    static let unlockDefaultsKey = "MagicBrushyUnlockAllCategories"
+    private var subscriptionAccessObserver: NSObjectProtocol?
 
     private let scrollView = UIScrollView()
     private let contentView = UIView()
@@ -317,7 +322,18 @@ final class HomeViewController: UIViewController {
             gridStack.bottomAnchor.constraint(equalTo: categoryGridContentView.bottomAnchor),
         ])
 
+        subscriptionAccessObserver = NotificationCenter.default.addObserver(
+            forName: .magicBrushySubscriptionAccessDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.populateCategoryGrid()
+            self?.applySubscribeButtonEnabledState()
+        }
+        SubscriptionManager.shared.start()
         populateCategoryGrid()
+        applySubscribeButtonEnabledState()
+        Task { await SubscriptionManager.shared.refreshEntitlements() }
         contentView.bringSubviewToFront(mascotColumn)
         view.bringSubviewToFront(headerView)
 
@@ -327,6 +343,9 @@ final class HomeViewController: UIViewController {
     deinit {
         if let assetsLoadPanelObserver {
             NotificationCenter.default.removeObserver(assetsLoadPanelObserver)
+        }
+        if let subscriptionAccessObserver {
+            NotificationCenter.default.removeObserver(subscriptionAccessObserver)
         }
     }
 
@@ -520,6 +539,8 @@ final class HomeViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         refreshAssetsLoadOverlay()
+        Task { await SubscriptionManager.shared.refreshEntitlements() }
+        applySubscribeButtonEnabledState()
     }
 
     private var isCompactHeight: Bool {
@@ -562,9 +583,23 @@ final class HomeViewController: UIViewController {
     }
 
     private func configureUnlockButton() {
+        unlockButton.layer.shadowColor = UIColor.black.cgColor
+        unlockButton.layer.shadowOpacity = 0.22
+        unlockButton.layer.shadowRadius = 8
+        unlockButton.layer.shadowOffset = CGSize(width: 0, height: 3)
+        applySubscribeButtonEnabledState()
+    }
+
+    private func applySubscribeButtonEnabledState() {
+        let full = SubscriptionManager.shared.hasFullLibraryAccess
+        unlockButton.isEnabled = !full
+        unlockButton.alpha = full ? 0.55 : 1
+
         var cfg = UIButton.Configuration.filled()
-        cfg.title = "Unlock all"
-        cfg.image = UIImage(systemName: "lock.open.fill")
+        cfg.title = full ? "Unlocked" : "Unlock all"
+        let symbolName = full ? "lock.open.fill" : "lock.fill"
+        let symCfg = UIImage.SymbolConfiguration(pointSize: 17, weight: .semibold)
+        cfg.image = UIImage(systemName: symbolName, withConfiguration: symCfg)
         cfg.imagePlacement = .leading
         cfg.imagePadding = 8
         cfg.contentInsets = NSDirectionalEdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16)
@@ -579,10 +614,6 @@ final class HomeViewController: UIViewController {
             return out
         }
         unlockButton.configuration = cfg
-        unlockButton.layer.shadowColor = UIColor.black.cgColor
-        unlockButton.layer.shadowOpacity = 0.22
-        unlockButton.layer.shadowRadius = 8
-        unlockButton.layer.shadowOffset = CGSize(width: 0, height: 3)
     }
 
     private func makeTile(for category: Category) -> UIView {
@@ -598,7 +629,7 @@ final class HomeViewController: UIViewController {
         card.layer.borderColor = category.accent.cgColor
         FigmaTheme.applyCardShadow(to: card.layer)
 
-        let unlockedAll = UserDefaults.standard.bool(forKey: Self.unlockDefaultsKey)
+        let unlockedAll = SubscriptionManager.shared.hasFullLibraryAccess
         let preview = UIImageView(image: BuiltInColoringPages.previewImage(packId: category.packId))
         preview.contentMode = .scaleAspectFit
         preview.translatesAutoresizingMaskIntoConstraints = false
@@ -619,10 +650,11 @@ final class HomeViewController: UIViewController {
         let lockHost = UIView()
         lockHost.translatesAutoresizingMaskIntoConstraints = false
         lockHost.backgroundColor = UIColor.white.withAlphaComponent(0.55)
-        lockHost.isHidden = category.isFree || unlockedAll
+        lockHost.isHidden = category.isFreeTier || unlockedAll
 
-        let lock = UIImageView(image: UIImage(systemName: "lock.fill"))
-        lock.tintColor = UIColor.label.withAlphaComponent(0.35)
+        let lockSym = UIImage.SymbolConfiguration(pointSize: HomeCategoryTileMetrics.lockSize * 0.55, weight: .semibold)
+        let lock = UIImageView(image: UIImage(systemName: "lock.fill", withConfiguration: lockSym))
+        lock.tintColor = category.accent
         lock.contentMode = .scaleAspectFit
         lock.translatesAutoresizingMaskIntoConstraints = false
 
@@ -720,12 +752,12 @@ final class HomeViewController: UIViewController {
               let category = Category(rawValue: v.tag)
         else { return }
 
-        let unlocked = UserDefaults.standard.bool(forKey: Self.unlockDefaultsKey)
-        guard category.isFree || unlocked else {
+        let unlocked = SubscriptionManager.shared.hasFullLibraryAccess
+        guard category.isFreeTier || unlocked else {
             UIImpactFeedbackGenerator(style: .medium).impactOccurred()
             let sheet = UIAlertController(
                 title: "Locked",
-                message: "This pack is still locked. Tap Unlock all and enter the code to try it.",
+                message: "Subscribe on the home screen to open every category, or try Free draw, Ocean, and Animals in the top row.",
                 preferredStyle: .alert
             )
             sheet.addAction(UIAlertAction(title: "OK", style: .default))
@@ -739,19 +771,55 @@ final class HomeViewController: UIViewController {
     }
 
     @objc private func unlockTapped() {
-        let sheet = UIAlertController(title: "Unlock", message: "Enter 3 × 7 to unlock every category.", preferredStyle: .alert)
+        guard !SubscriptionManager.shared.hasFullLibraryAccess else { return }
+        let sheet = UIAlertController(
+            title: "Full library",
+            message: "Subscribe with your Apple ID, restore a past purchase, or solve a quick multiplication puzzle to unlock every category. The top row (Free draw, Ocean, Animals) stays free.",
+            preferredStyle: .actionSheet
+        )
+        sheet.addAction(UIAlertAction(title: "Subscribe", style: .default, handler: { [weak self] _ in
+            guard let self else { return }
+            Task { await SubscriptionManager.shared.purchase(from: self) }
+        }))
+        sheet.addAction(UIAlertAction(title: "Restore purchases", style: .default, handler: { [weak self] _ in
+            guard let self else { return }
+            Task { await SubscriptionManager.shared.restorePurchases(from: self) }
+        }))
+        sheet.addAction(UIAlertAction(title: "Solve puzzle", style: .default, handler: { [weak self] _ in
+            self?.presentPuzzleCodeUnlock()
+        }))
+        sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        if let pop = sheet.popoverPresentationController {
+            pop.sourceView = unlockButton
+            pop.sourceRect = unlockButton.bounds
+        }
+        present(sheet, animated: true)
+    }
+
+    private func presentPuzzleCodeUnlock() {
+        let a = Int.random(in: 3...9)
+        let b = Int.random(in: 3...9)
+        let expectedAnswer = a * b
+        let sheet = UIAlertController(
+            title: "Unlock",
+            message: "What is \(a) × \(b)? Enter the answer to unlock every category.",
+            preferredStyle: .alert
+        )
         sheet.addTextField { $0.keyboardType = .numberPad }
         sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
         sheet.addAction(UIAlertAction(title: "Unlock", style: .default, handler: { [weak self] _ in
-            guard let t = sheet.textFields?.first?.text?.trimmingCharacters(in: .whitespacesAndNewlines),
-                  t == "21"
+            guard let raw = sheet.textFields?.first?.text?.trimmingCharacters(in: .whitespacesAndNewlines),
+                  let userAnswer = Int(raw),
+                  userAnswer == expectedAnswer
             else {
                 UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
                 return
             }
-            UserDefaults.standard.set(true, forKey: Self.unlockDefaultsKey)
+            UserDefaults.standard.set(true, forKey: SubscriptionManager.legacyUnlockAllKey)
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            NotificationCenter.default.post(name: .magicBrushySubscriptionAccessDidChange, object: nil)
             self?.populateCategoryGrid()
+            self?.applySubscribeButtonEnabledState()
         }))
         present(sheet, animated: true)
     }

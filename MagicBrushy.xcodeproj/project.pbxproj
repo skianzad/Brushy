@@ -21,6 +21,7 @@
 		C1F700000000000000000003 /* CategoryGridViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F700000000000000000103 /* CategoryGridViewController.swift */; };
 		C1F700000000000000000104 /* FigmaAlignedHeroBackgroundView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F700000000000000000105 /* FigmaAlignedHeroBackgroundView.swift */; };
 		C1F700000000000000000106 /* LandscapeLetterboxHostViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F700000000000000000107 /* LandscapeLetterboxHostViewController.swift */; };
+		S1SUB000000000000000001 /* SubscriptionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = S1SUB000000000000000101 /* SubscriptionManager.swift */; };
 		A1B200000000000000000006 /* LeapVLMModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B200000000000000007 /* LeapVLMModel.swift */; };
 		A1B200000000000000000008 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A1B200000000000000009 /* Main.storyboard */; };
 		A1B200000000000000000010 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1B200000000000000011 /* Assets.xcassets */; };
@@ -64,6 +65,7 @@
 		C1F700000000000000000103 /* CategoryGridViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryGridViewController.swift; sourceTree = "<group>"; };
 		C1F700000000000000000105 /* FigmaAlignedHeroBackgroundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FigmaAlignedHeroBackgroundView.swift; sourceTree = "<group>"; };
 		C1F700000000000000000107 /* LandscapeLetterboxHostViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LandscapeLetterboxHostViewController.swift; sourceTree = "<group>"; };
+		S1SUB000000000000000101 /* SubscriptionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionManager.swift; sourceTree = "<group>"; };
 		A1B200000000000000007 /* LeapVLMModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeapVLMModel.swift; sourceTree = "<group>"; };
 		A1B200000000000000008 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A1B200000000000000011 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -118,6 +120,7 @@
 				C1F700000000000000000103 /* CategoryGridViewController.swift */,
 				C1F700000000000000000105 /* FigmaAlignedHeroBackgroundView.swift */,
 				C1F700000000000000000107 /* LandscapeLetterboxHostViewController.swift */,
+				S1SUB000000000000000101 /* SubscriptionManager.swift */,
 				B1EAD0000501 /* FeedbackAlbaSpeech.swift */,
 				A1B100000000000000000103 /* VLM */,
 				A1B200000000000000009 /* Main.storyboard */,
@@ -293,6 +296,7 @@
 				C1F700000000000000000003 /* CategoryGridViewController.swift in Sources */,
 				C1F700000000000000000104 /* FigmaAlignedHeroBackgroundView.swift in Sources */,
 				C1F700000000000000000106 /* LandscapeLetterboxHostViewController.swift in Sources */,
+				S1SUB000000000000000001 /* SubscriptionManager.swift in Sources */,
 				A1B200000000000000000006 /* LeapVLMModel.swift in Sources */,
 				B1EAD0000511 /* FeedbackAlbaSpeech.swift in Sources */,
 				B1EAD0000411 /* SherpaOnnx.swift in Sources */,

@@ -1,3 +1,4 @@
+import CoreImage
 import UIKit
 
 /// Finger / Pencil strokes drawn above the template image.
@@ -215,7 +216,114 @@ final class ColoringStrokeView: UIView {
         }
     }
 
-    func snapshotComposite(underneath template: UIImage?, lineOverlay: UIImage?, in bounds: CGRect) -> UIImage {
+    /// Same size and stacking as `strokesOnlyImage`, but when the user has a **finished** last stroke in the live
+    /// buffer (`strokes` non-empty, no in-progress `current`), older paint is desaturated to gray and drawn at
+    /// `fadedAlpha` so the model can focus on the newest color. Does not change on-screen drawing.
+    func strokesOnlyImageEmphasizingLastFinishedStroke(displayScale: CGFloat, fadedAlpha: CGFloat = 0.11) -> UIImage? {
+        guard current == nil, !strokes.isEmpty else {
+            return strokesOnlyImage(displayScale: displayScale)
+        }
+        let sz = bounds.size
+        guard sz.width > 1, sz.height > 1 else { return nil }
+        let format = UIGraphicsImageRendererFormat.default()
+        format.scale = max(1, displayScale)
+        format.opaque = false
+        let r = CGRect(origin: .zero, size: sz)
+        let fa = max(0, min(1, fadedAlpha))
+        return UIGraphicsImageRenderer(size: sz, format: format).image { _ in
+            guard let ctx = UIGraphicsGetCurrentContext() else { return }
+            if let oldPaint = oldPaintOnlyImage(displayScale: format.scale) {
+                let toned = Self.grayToneAndFadeUIImage(oldPaint, overallOpacity: fa)
+                toned.draw(in: r)
+            }
+            if strokes.count == 1 {
+                paintStroke(strokes[0], in: ctx)
+            } else if let last = strokes.last {
+                paintStroke(last, in: ctx)
+            }
+        }
+    }
+
+    /// Baked layer plus every finished stroke except the last (view coordinates). `nil` if there is nothing older than the last stroke.
+    private func oldPaintOnlyImage(displayScale: CGFloat) -> UIImage? {
+        let hasBaked = bakedLayer != nil
+        let hasPriorLive = strokes.count > 1
+        guard hasBaked || hasPriorLive else { return nil }
+        let sz = bounds.size
+        guard sz.width > 1, sz.height > 1 else { return nil }
+        let format = UIGraphicsImageRendererFormat.default()
+        format.scale = max(1, displayScale)
+        format.opaque = false
+        let r = CGRect(origin: .zero, size: sz)
+        return UIGraphicsImageRenderer(size: sz, format: format).image { _ in
+            if let baked = bakedLayer { baked.draw(in: r) }
+            guard let ctx = UIGraphicsGetCurrentContext(), hasPriorLive else { return }
+            for s in strokes.dropLast() { paintStroke(s, in: ctx) }
+        }
+    }
+
+    private static let vlmOldPaintCIContext = CIContext(options: [.cacheIntermediates: false])
+
+    /// Desaturates to gray, then applies `overallOpacity` when drawing (for VLM input only).
+    private static func grayToneAndFadeUIImage(_ image: UIImage, overallOpacity: CGFloat) -> UIImage {
+        let op = max(0, min(1, overallOpacity))
+        let size = image.size
+        let scale = image.scale
+        let format = UIGraphicsImageRendererFormat.default()
+        format.scale = scale
+        format.opaque = false
+
+        guard op > 0.001,
+              let ci = CIImage(image: image),
+              let filter = CIFilter(name: "CIColorControls") else {
+            return UIGraphicsImageRenderer(size: size, format: format).image { ctx in
+                ctx.cgContext.setAlpha(op)
+                image.draw(in: CGRect(origin: .zero, size: size))
+            }
+        }
+        filter.setValue(ci, forKey: kCIInputImageKey)
+        filter.setValue(0, forKey: kCIInputSaturationKey)
+        filter.setValue(0.88, forKey: kCIInputContrastKey)
+        filter.setValue(-0.04, forKey: kCIInputBrightnessKey)
+        guard let out = filter.outputImage,
+              let cgOut = vlmOldPaintCIContext.createCGImage(out, from: out.extent.integral) else {
+            return UIGraphicsImageRenderer(size: size, format: format).image { ctx in
+                ctx.cgContext.setAlpha(op)
+                image.draw(in: CGRect(origin: .zero, size: size))
+            }
+        }
+        let gray = UIImage(cgImage: cgOut, scale: scale, orientation: .up)
+        return UIGraphicsImageRenderer(size: size, format: format).image { ctx in
+            ctx.cgContext.setAlpha(op)
+            gray.draw(in: CGRect(origin: .zero, size: size))
+        }
+    }
+
+    /// Old paint (baked + prior live strokes) in snapshot pixel space for VLM emphasis.
+    private func oldPaintOnlySnapshotImage(pixelSize: CGSize, pixelRect: CGRect, contentScale: CGFloat) -> UIImage? {
+        let hasBaked = bakedLayer != nil
+        let hasPrior = strokes.count > 1
+        guard hasBaked || hasPrior else { return nil }
+        let format = UIGraphicsImageRendererFormat.default()
+        format.opaque = false
+        format.scale = 1
+        return UIGraphicsImageRenderer(size: pixelSize, format: format).image { _ in
+            if let baked = bakedLayer { baked.draw(in: pixelRect) }
+            guard let ctx = UIGraphicsGetCurrentContext(), hasPrior else { return }
+            ctx.saveGState()
+            ctx.scaleBy(x: contentScale, y: contentScale)
+            for s in strokes.dropLast() { paintStroke(s, in: ctx) }
+            ctx.restoreGState()
+        }
+    }
+
+    func snapshotComposite(
+        underneath template: UIImage?,
+        lineOverlay: UIImage?,
+        in bounds: CGRect,
+        emphasizeLastFinishedStroke: Bool = false,
+        fadedPreviousPaintAlpha: CGFloat = 0.11
+    ) -> UIImage {
         let w = bounds.width.rounded(.down)
         let h = bounds.height.rounded(.down)
         guard w > 0.5, h > 0.5 else {
@@ -238,20 +346,33 @@ final class ColoringStrokeView: UIView {
         format.opaque = true
         format.scale = 1   // already in physical pixels
         let renderer = UIGraphicsImageRenderer(size: pixelSize, format: format)
+        let fa = max(0, min(1, fadedPreviousPaintAlpha))
+        let emphasizePaint = emphasizeLastFinishedStroke && current == nil && !strokes.isEmpty
         return renderer.image { _ in
             UIColor.white.setFill()
             UIBezierPath(rect: rect).fill()
             if let img = template { img.draw(in: Self.aspectFitRect(for: img, in: rect)) }
-            // Baked historical strokes (drawn as a flat image, scales to pixelSize).
-            if let baked = bakedLayer { baked.draw(in: rect) }
             guard let ctx = UIGraphicsGetCurrentContext() else { return }
-            // Live strokes are stored in view-space points; scale context so they align
-            // with the downscaled snapshot size.
-            ctx.saveGState()
-            ctx.scaleBy(x: scale, y: scale)
-            for s in strokes { paintStroke(s, in: ctx) }
-            if let cur = current { paintStroke(cur, in: ctx) }
-            ctx.restoreGState()
+            if emphasizePaint,
+               let oldSnap = oldPaintOnlySnapshotImage(pixelSize: pixelSize, pixelRect: rect, contentScale: scale) {
+                let toned = Self.grayToneAndFadeUIImage(oldSnap, overallOpacity: fa)
+                toned.draw(in: rect)
+                ctx.saveGState()
+                ctx.scaleBy(x: scale, y: scale)
+                if strokes.count == 1 {
+                    paintStroke(strokes[0], in: ctx)
+                } else if let last = strokes.last {
+                    paintStroke(last, in: ctx)
+                }
+                ctx.restoreGState()
+            } else {
+                if let baked = bakedLayer { baked.draw(in: rect) }
+                ctx.saveGState()
+                ctx.scaleBy(x: scale, y: scale)
+                for s in strokes { paintStroke(s, in: ctx) }
+                if let cur = current { paintStroke(cur, in: ctx) }
+                ctx.restoreGState()
+            }
             if let line = lineOverlay { line.draw(in: Self.aspectFitRect(for: line, in: rect)) }
         }
     }

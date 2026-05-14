@@ -72,7 +72,8 @@ final class ColoringViewController: UIViewController {
     private var crayonPaletteDisplayOrder: [Int] { Array(0..<palette.count) }
     private var isEraserMode = false
     /// Index in `palette` when brush mode.
-    private var strokePaletteIndex: Int = 4
+    /// Default wax: strong blue (`colors/13-color.png`), similar to former system blue.
+    private var strokePaletteIndex: Int = 12
     private var brushToolButton: UIButton?
     private var eraserToolButton: UIButton?
 
@@ -86,41 +87,43 @@ final class ColoringViewController: UIViewController {
     /// App-wide singleton model; loaded once at app startup from SceneDelegate.
     private let vlm = LeapVLMModel.shared
 
-    /// Same order as `palette` — short words kids know.
+    /// Same order as `palette` / `colors/01`…`28` — short words for a11y + VLM hints.
     private let paletteKidNames = [
-        "red", "orange", "yellow", "green", "blue", "deep blue", "purple", "pink", "brown", "black",
-        "cyan", "coral", "gold", "light green", "lavender", "rose",
-        "lime", "peach", "sky", "lilac", "maroon", "navy", "olive", "tan",
-        "cream", "gray", "magenta", "turquoise",
+        "light pink", "dark gray", "sky blue", "green", "yellow", "orange", "red", "pink purple", "purple", "magenta",
+        "violet", "purple blue", "blue", "royal blue", "bright blue", "navy", "teal blue", "aqua", "sea green", "mint",
+        "forest green", "yellow green", "light yellow", "gold", "amber", "orange red", "rust red", "brown",
     ]
 
-    private enum CrayonPaletteFigma {
-        /// Wax fill from Figma crayon template (217×217 artboard swatch).
-        static let purpleWax = UIColor(red: 0.739, green: 0.079, blue: 1, alpha: 1)
-    }
-
+    /// Wax colors sampled from repo `colors/01-color.png` … `colors/28-color.png` (same order as filenames).
     private let palette: [UIColor] = [
-        .systemRed, .systemOrange, .systemYellow, .systemGreen,
-        .systemBlue, .systemIndigo, CrayonPaletteFigma.purpleWax, .systemPink,
-        .brown, .black,
-        UIColor(red: 0, green: 0.75, blue: 0.83, alpha: 1),
-        UIColor(red: 1, green: 0.45, blue: 0.42, alpha: 1),
-        UIColor(red: 0.85, green: 0.65, blue: 0.13, alpha: 1),
-        UIColor(red: 0.56, green: 0.93, blue: 0.56, alpha: 1),
-        UIColor(red: 0.58, green: 0.44, blue: 0.86, alpha: 1),
-        UIColor(red: 0.97, green: 0.51, blue: 0.75, alpha: 1),
-        UIColor(red: 0.55, green: 0.94, blue: 0.25, alpha: 1),
-        UIColor(red: 1, green: 0.72, blue: 0.56, alpha: 1),
-        UIColor(red: 0.53, green: 0.81, blue: 0.98, alpha: 1),
-        UIColor(red: 0.78, green: 0.64, blue: 0.86, alpha: 1),
-        UIColor(red: 0.55, green: 0.1, blue: 0.2, alpha: 1),
-        UIColor(red: 0.0, green: 0.2, blue: 0.45, alpha: 1),
-        UIColor(red: 0.45, green: 0.52, blue: 0.18, alpha: 1),
-        UIColor(red: 0.82, green: 0.71, blue: 0.55, alpha: 1),
-        UIColor(red: 0.98, green: 0.95, blue: 0.82, alpha: 1),
-        UIColor(red: 0.55, green: 0.57, blue: 0.6, alpha: 1),
-        UIColor(red: 0.86, green: 0.2, blue: 0.65, alpha: 1),
-        UIColor(red: 0.25, green: 0.88, blue: 0.82, alpha: 1),
+        UIColor(red: 0.8043, green: 0.7425, blue: 0.7744, alpha: 1),
+        UIColor(red: 0.2886, green: 0.2822, blue: 0.2779, alpha: 1),
+        UIColor(red: 0.1693, green: 0.5531, blue: 0.8063, alpha: 1),
+        UIColor(red: 0.4560, green: 0.7312, blue: 0.2835, alpha: 1),
+        UIColor(red: 0.7809, green: 0.7494, blue: 0.1819, alpha: 1),
+        UIColor(red: 0.7937, green: 0.5062, blue: 0.2298, alpha: 1),
+        UIColor(red: 0.7505, green: 0.1500, blue: 0.2775, alpha: 1),
+        UIColor(red: 0.8277, green: 0.3460, blue: 0.7654, alpha: 1),
+        UIColor(red: 0.7104, green: 0.3460, blue: 0.8403, alpha: 1),
+        UIColor(red: 0.7295, green: 0.1691, blue: 0.7809, alpha: 1),
+        UIColor(red: 0.6093, green: 0.1691, blue: 0.8063, alpha: 1),
+        UIColor(red: 0.5248, green: 0.1691, blue: 0.8063, alpha: 1),
+        UIColor(red: 0.4097, green: 0.1691, blue: 0.8063, alpha: 1),
+        UIColor(red: 0.3094, green: 0.2027, blue: 0.8063, alpha: 1),
+        UIColor(red: 0.1884, green: 0.2860, blue: 0.8063, alpha: 1),
+        UIColor(red: 0.1741, green: 0.1845, blue: 0.4865, alpha: 1),
+        UIColor(red: 0.1884, green: 0.5035, blue: 0.8063, alpha: 1),
+        UIColor(red: 0.1884, green: 0.5792, blue: 0.8063, alpha: 1),
+        UIColor(red: 0.1884, green: 0.7234, blue: 0.7574, alpha: 1),
+        UIColor(red: 0.1884, green: 0.7744, blue: 0.6573, alpha: 1),
+        UIColor(red: 0.1329, green: 0.4962, blue: 0.3657, alpha: 1),
+        UIColor(red: 0.7554, green: 0.7475, blue: 0.2010, alpha: 1),
+        UIColor(red: 0.8013, green: 0.7648, blue: 0.5200, alpha: 1),
+        UIColor(red: 0.7873, green: 0.7140, blue: 0.2010, alpha: 1),
+        UIColor(red: 0.7937, green: 0.6141, blue: 0.2010, alpha: 1),
+        UIColor(red: 0.7937, green: 0.4135, blue: 0.2010, alpha: 1),
+        UIColor(red: 0.7937, green: 0.2520, blue: 0.2010, alpha: 1),
+        UIColor(red: 0.3896, green: 0.1888, blue: 0.1826, alpha: 1),
     ]
 
     private var pageIndex = 0 {
@@ -1353,7 +1356,7 @@ final class ColoringViewController: UIViewController {
 
             let img = self.captureCanvasForVLM()
             let previewImage = model.prepareImageForModelPreview(img) ?? img
-            // self.showVLMInputPreview(previewImage)
+            self.showVLMInputPreview(previewImage)
             let prompt = self.composeFeedbackPrompt()
 
             model.maxTokens = 120
@@ -1409,14 +1412,16 @@ final class ColoringViewController: UIViewController {
     /// - Parameters:
     ///   - includeLineOverlay: When false, produces a resume underlay (no black outlines) so outlines can stay in `templateLineOverlayView` above strokes.
     ///   - displayScale: `1` keeps VLM captures smaller; use screen scale for Photos export.
-    private func captureCanvasBitmap(includeLineOverlay: Bool, displayScale: CGFloat) -> UIImage {
+    ///   - emphasizeLastFinishedStroke: For VLM only — fades older paint in the capture so the model can focus on the newest stroke; does not change the on-screen canvas.
+    private func captureCanvasBitmap(includeLineOverlay: Bool, displayScale: CGFloat, emphasizeLastFinishedStroke: Bool = false) -> UIImage {
         view.layoutIfNeeded()
         let size = strokeView.bounds.size
         guard size.width > 1, size.height > 1 else {
             return strokeView.snapshotComposite(
                 underneath: templateView.image,
                 lineOverlay: includeLineOverlay ? templateLineOverlayView.image : nil,
-                in: strokeView.bounds
+                in: strokeView.bounds,
+                emphasizeLastFinishedStroke: emphasizeLastFinishedStroke
             )
         }
 
@@ -1440,7 +1445,15 @@ final class ColoringViewController: UIViewController {
                 tpl.draw(in: aspectFitRect(for: tpl, in: drawRect))
             }
 
-            if let strokes = strokeView.strokesOnlyImage(displayScale: format.scale) {
+            let strokeScale = format.scale
+            let strokes: UIImage?
+            if emphasizeLastFinishedStroke {
+                strokes = strokeView.strokesOnlyImageEmphasizingLastFinishedStroke(displayScale: strokeScale)
+                    ?? strokeView.strokesOnlyImage(displayScale: strokeScale)
+            } else {
+                strokes = strokeView.strokesOnlyImage(displayScale: strokeScale)
+            }
+            if let strokes {
                 strokes.draw(in: drawRect)
             }
 
@@ -1455,9 +1468,9 @@ final class ColoringViewController: UIViewController {
         }
     }
 
-    /// Capture for the vision model (1× scale to limit memory).
+    /// Capture for the vision model (1× scale to limit memory). Older paint is faded vs. the last finished stroke so the model sees the new color clearly; the live canvas is unchanged.
     private func captureCanvasForVLM() -> UIImage {
-        captureCanvasBitmap(includeLineOverlay: true, displayScale: 1)
+        captureCanvasBitmap(includeLineOverlay: true, displayScale: 1, emphasizeLastFinishedStroke: true)
     }
 
     /// Capture for saving to Photos (Retina resolution).
@@ -1578,16 +1591,16 @@ final class ColoringViewController: UIViewController {
         let paletteHintBlock: String
         if lastPoints > 30, let c = lastColor {
             let paintWord = simpleKidColorName(for: c)
-            paletteHintBlock = "Their most recent big brush used palette color “\(paintWord)”—celebrate that color if you see it in the photo."
+            paletteHintBlock = "Their most recent big brush used palette color “\(paintWord)”—cheer that choice **on the thing they are coloring**, not by describing what the snapshot looks like."
 
         } else if lastPoints > 0, let c = lastColor {
             let paintWord = simpleKidColorName(for: c)
-            paletteHintBlock = "Their most recent brush used palette color “\(paintWord)”—celebrate that color if you see it in the photo."
+            paletteHintBlock = "Their most recent brush used palette color “\(paintWord)”—cheer that choice **on the thing they are coloring**, not by describing what the snapshot looks like."
 
         } else if lastPoints > 0 {
-            paletteHintBlock = "They added a little paint recently; give a warm cheer without insisting on a specific color name."
+            paletteHintBlock = "They added a little paint recently; cheer what they did for **the picture’s subject** with warm, simple words—do not narrate the image like a photo."
         } else {
-            paletteHintBlock = "No new stroke tracked; peek at the picture and cheer gently."
+            paletteHintBlock = "No new stroke tracked; still give a gentle cheer about **their coloring and the page’s subject**—not a description of the picture."
         }
 
         /*
@@ -1600,23 +1613,30 @@ final class ColoringViewController: UIViewController {
         */
 
         let themeLine: String
+        let subjectFocusLine: String
         if pageIndex >= 0, pageIndex < coloringBookPages.count {
             let t = coloringBookPages[pageIndex].title
             themeLine = "Page: \(t)."
+            subjectFocusLine = "The **thing they are coloring** is whatever that page title names (animal, person, vehicle, scene, etc.). Comment on that **subject** and how they dressed it in color—not on artifacts of the picture (no gray areas, faded bits, outlines, corners, or “what I see in the image”)."
         } else {
             themeLine = ""
+            subjectFocusLine = "Comment on **what they are coloring as a scene or character**, not on the snapshot itself (no gray areas, faded bits, outlines, corners, or “what I see in the image”)."
         }
 
-        let opener = themeLine.isEmpty ? "A child colored this sheet (outlines + paint)." : "A child colored this sheet (outlines + paint). \(themeLine)"
+        let opener = themeLine.isEmpty
+            ? "A child colored this sheet (outlines + paint)."
+            : "A child colored this sheet (outlines + paint). \(themeLine)"
 
         return """
-\(opener) Look at the picture.
+\(opener)
+
+\(subjectFocusLine)
 
 \(paletteHintBlock)
 
-Your job: say one cheery thing that names the color they just added, in simple kid words. If the photo makes it obvious what they colored, name that thing too—only when you are fairly sure; do not guess random objects. Do not use map directions (no left, right, top, bottom, or “in the corner”).
+Your job: say one cheery thing in simple kid words about **how they colored the subject of the page**—their color choice and the object or character they are working on. Do **not** describe the image like a photograph or label regions of the page. Do not use map directions (no left, right, top, bottom, or “in the corner”). If the page title names something concrete, you may name it; if not, keep it general (“your picture”, “your drawing”).
 
-Speak to THEM: one or two very short sentences, easy words, use "you" or "your". Start with compliment inspired by the color. Sound warm. You may add a tiny color-feeling phrase that fits that color—avoid repeating the same opening every time (do not always start with “You are so bright”).
+Speak to THEM: one or two very short sentences, easy words, use "you" or "your". Sound warm. You may add a tiny color-feeling phrase that fits that color—avoid repeating the same opening every time (do not always start with “You are so bright”).
 
 IMPORTANT: Reply with ONLY the words you say aloud—no rules, no quotes about yourself, no repeating this text, no bullets, no markdown, no symbols like <>. Never mention AI, robots, computers, phones, apps, or internet.
 

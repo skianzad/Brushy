@@ -4,8 +4,6 @@ import Photos
 /// Browse shelves: diamond back + white stroked title in one header row, page grid, then saved drawings at bottom (pack chips commented out).
 final class CategoryGridViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate {
 
-    private static let unlockDefaultsKey = "MagicBrushyUnlockAllCategories"
-
     /// Set before the controller loads (e.g. from the home tile) to open on a specific shelf.
     var initialPackId: String?
 
@@ -457,13 +455,12 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
         guard displayedSavedRecords.indices.contains(index) else { return }
         let rec = displayedSavedRecords[index]
         guard let pack = BuiltInColoringPages.library.first(where: { $0.id == rec.packId }) else { return }
-        let unlocked = UserDefaults.standard.bool(forKey: Self.unlockDefaultsKey)
-        let packUnlocked = pack.id == "animals" || unlocked
+        let packUnlocked = SubscriptionManager.shared.canOpenPack(id: pack.id)
         guard packUnlocked else {
             UIImpactFeedbackGenerator(style: .medium).impactOccurred()
             let sheet = UIAlertController(
                 title: "Locked",
-                message: "Unlock categories on the home screen to open this picture again.",
+                message: "Subscribe on the home screen to open drawings from this pack again.",
                 preferredStyle: .alert
             )
             sheet.addAction(UIAlertAction(title: "OK", style: .default))
