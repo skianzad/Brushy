@@ -58,6 +58,48 @@ enum LastDrawingStore {
         return !loadIndex().isEmpty
     }
 
+    /// Gallery strip only lists the free-drawing pack; use this for empty-state checks tied to that shelf.
+    static var hasAnySavedFreeDrawing: Bool {
+        migrateLegacyV1IfNeeded()
+        return loadIndex().contains { $0.packId == BuiltInColoringPages.savedDrawingsPackId }
+    }
+
+    /// Newest first, only rows from `BuiltInColoringPages.savedDrawingsPackId`.
+    static func allSavedGalleryRecordsNewestFirst() -> [SavedDrawingRecord] {
+        migrateLegacyV1IfNeeded()
+        return loadIndex()
+            .filter { $0.packId == BuiltInColoringPages.savedDrawingsPackId }
+            .sorted { $0.updatedAt > $1.updatedAt }
+    }
+
+    /// Removes every saved row for one pack (and its image files).
+    static func deleteAllRecords(withPackId packId: String) {
+        migrateLegacyV1IfNeeded()
+        var entries = loadIndex()
+        let removed = entries.filter { $0.packId == packId }
+        entries.removeAll { $0.packId == packId }
+        for r in removed { deleteFiles(for: r) }
+        saveIndex(entries)
+    }
+
+    /// One-time cleanup: older builds saved any pack; those composites hid template ink. Drop non–free-drawing rows.
+    static func purgeLegacyNonFreeDrawingSavesIfNeeded() {
+        let key = "MagicBrushyPurgeNonFreeDrawingSavesV1"
+        guard !UserDefaults.standard.bool(forKey: key) else { return }
+        migrateLegacyV1IfNeeded()
+        var entries = loadIndex()
+        let target = BuiltInColoringPages.savedDrawingsPackId
+        let removed = entries.filter { $0.packId != target }
+        guard !removed.isEmpty else {
+            UserDefaults.standard.set(true, forKey: key)
+            return
+        }
+        entries.removeAll { $0.packId != target }
+        for r in removed { deleteFiles(for: r) }
+        saveIndex(entries)
+        UserDefaults.standard.set(true, forKey: key)
+    }
+
     /// Newest first.
     static func allRecordsNewestFirst() -> [SavedDrawingRecord] {
         migrateLegacyV1IfNeeded()

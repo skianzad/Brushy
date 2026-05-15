@@ -217,6 +217,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         crayonScrollView.canCancelContentTouches = true
         crayonScrollView.delaysContentTouches = true
         crayonScrollView.clipsToBounds = true
+        crayonScrollView.backgroundColor = .clear
         crayonScrollView.keyboardDismissMode = .onDrag
         crayonScrollView.panGestureRecognizer.cancelsTouchesInView = true
 
@@ -235,6 +236,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         crayonStack.alignment = .fill
         crayonStack.distribution = .fill
         crayonStack.translatesAutoresizingMaskIntoConstraints = false
+        crayonStack.backgroundColor = .clear
         crayonScrollView.addSubview(crayonStack)
         NSLayoutConstraint.activate([
             crayonStack.topAnchor.constraint(equalTo: crayonScrollView.contentLayoutGuide.topAnchor),
@@ -855,6 +857,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
 
     @objc private func homeTapped() {
         if let packId = sessionPackId,
+           packId == BuiltInColoringPages.savedDrawingsPackId,
            strokeView.hasUserPaint,
            coloringBookPages.indices.contains(pageIndex) {
             let title = coloringBookPages[pageIndex].title
@@ -1938,7 +1941,7 @@ private final class MagicCrayonControl: UIControl {
         swatchView.layer.cornerRadius = 12
         swatchView.layer.borderWidth = 1
         swatchView.layer.borderColor = UIColor.black.withAlphaComponent(0.12).cgColor
-        swatchView.backgroundColor = UIColor(white: 0.96, alpha: 1)
+        swatchView.backgroundColor = .clear
         swatchView.translatesAutoresizingMaskIntoConstraints = false
         addSubview(swatchView)
         NSLayoutConstraint.activate([

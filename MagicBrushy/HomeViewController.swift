@@ -34,7 +34,7 @@ final class HomeViewController: UIViewController {
 
         var packId: String {
             switch self {
-            case .freeDrawing: return "free_drawing"
+            case .freeDrawing: return BuiltInColoringPages.savedDrawingsPackId
             case .ocean: return "ocean"
             case .animals: return "animals"
             case .dinosaurs: return "dinosaurs"

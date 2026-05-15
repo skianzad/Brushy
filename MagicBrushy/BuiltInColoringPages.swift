@@ -17,10 +17,13 @@ enum BuiltInColoringPages {
         let pages: [Page]
     }
 
+    /// Home / grid “Your drawings” and `LastDrawingStore` writes are limited to this pack so other shelves keep full-color templates under the user’s strokes.
+    static let savedDrawingsPackId = "free_drawing"
+
     /// All shelves, in the order they appear in the horizontal category bar (matches home tiles + extras).
     static let library: [CategoryPack] = {
         [
-            CategoryPack(id: "free_drawing", title: "Free drawing", symbolName: "pencil.and.outline", pages: [
+            CategoryPack(id: BuiltInColoringPages.savedDrawingsPackId, title: "Free drawing", symbolName: "pencil.and.outline", pages: [
                 Page(title: "Blank paper", image: renderBlankFreeDrawingPaper()),
             ]),
             CategoryPack(id: "ocean", title: "Ocean", symbolName: "water.waves", pages: [

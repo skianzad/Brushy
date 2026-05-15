@@ -76,6 +76,7 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        LastDrawingStore.purgeLegacyNonFreeDrawingSavesIfNeeded()
         if let id = initialPackId,
            let idx = BuiltInColoringPages.library.firstIndex(where: { $0.id == id }) {
             selectedPackIndex = idx
@@ -288,7 +289,7 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
         lastDrawingCard.layer.shadowOffset = CGSize(width: 0, height: 4)
 
         savedDrawingsSectionTitle.translatesAutoresizingMaskIntoConstraints = false
-        savedDrawingsSectionTitle.text = "Your drawings"
+        savedDrawingsSectionTitle.text = "Free drawings"
         savedDrawingsSectionTitle.font = FigmaTheme.bodyFont(size: 14, weight: .bold)
         savedDrawingsSectionTitle.textColor = FigmaTheme.titleStroke.withAlphaComponent(0.88)
 
@@ -332,7 +333,7 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
             savedDrawingsStack.removeArrangedSubview($0)
             $0.removeFromSuperview()
         }
-        displayedSavedRecords = LastDrawingStore.allRecordsNewestFirst()
+        displayedSavedRecords = LastDrawingStore.allSavedGalleryRecordsNewestFirst()
         guard !displayedSavedRecords.isEmpty else {
             lastDrawingCard.isHidden = true
             return
@@ -438,13 +439,13 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
 
     private func confirmDeleteAllSavedDrawings() {
         let confirm = UIAlertController(
-            title: "Delete all drawings?",
-            message: "This removes every saved picture from this device. You can’t undo it.",
+            title: "Delete all free drawings?",
+            message: "This removes every saved blank-paper picture from this device. You can’t undo it.",
             preferredStyle: .alert
         )
         confirm.addAction(UIAlertAction(title: "Cancel", style: .cancel))
         confirm.addAction(UIAlertAction(title: "Delete all", style: .destructive, handler: { [weak self] _ in
-            LastDrawingStore.clearAll()
+            LastDrawingStore.deleteAllRecords(withPackId: BuiltInColoringPages.savedDrawingsPackId)
             UIImpactFeedbackGenerator(style: .medium).impactOccurred()
             self?.refreshSavedDrawingsStrip()
         }))
@@ -454,6 +455,7 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
     private func openSavedDrawing(at index: Int) {
         guard displayedSavedRecords.indices.contains(index) else { return }
         let rec = displayedSavedRecords[index]
+        guard rec.packId == BuiltInColoringPages.savedDrawingsPackId else { return }
         guard let pack = BuiltInColoringPages.library.first(where: { $0.id == rec.packId }) else { return }
         let packUnlocked = SubscriptionManager.shared.canOpenPack(id: pack.id)
         guard packUnlocked else {
