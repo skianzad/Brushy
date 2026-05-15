@@ -72,8 +72,49 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     private let crayonScrollView = CrayonPaletteScrollView()
     private let crayonStack = UIStackView()
     private var crayonControls: [MagicCrayonControl] = []
-    /// Display order (top → bottom): maps to indices in `palette`.
-    private var crayonPaletteDisplayOrder: [Int] { Array(0..<palette.count) }
+    /// Display order (top → bottom): vivid primaries first, neutrals / lights last.
+    /// Each value is a 0-based index into `palette` / `Colors/NN-color.png` (01→0, 02→1 …).
+    private var crayonPaletteDisplayOrder: [Int] {
+        guard palette.count == 30 else { return Array(0..<palette.count) }
+        return [
+            // ── Reds & warm ─────────────────────────────────────
+            6,   // red
+            5,   // orange
+            25,  // orange red
+            26,  // rust red
+            4,   // yellow
+            23,  // gold
+            24,  // amber
+            // ── Greens ───────────────────────────────────────────
+            3,   // green
+            20,  // forest green
+            18,  // sea green
+            19,  // mint
+            21,  // yellow green
+            16,  // teal blue
+            17,  // aqua
+            // ── Blues ────────────────────────────────────────────
+            2,   // sky blue
+            14,  // bright blue
+            12,  // blue
+            13,  // royal blue
+            15,  // navy
+            11,  // purple blue
+            // ── Purples & pinks ──────────────────────────────────
+            8,   // purple
+            10,  // violet
+            9,   // magenta
+            7,   // pink purple
+            // ── Earth tones ──────────────────────────────────────
+            27,  // brown
+            28,  // terracotta
+            // ── Neutrals & lights last ───────────────────────────
+            0,   // light pink
+            22,  // light yellow
+            29,  // sand
+            1,   // dark gray
+        ]
+    }
     private var isEraserMode = false
     /// Index in `palette` when brush mode.
     /// Default wax: strong blue (`colors/13-color.png`), similar to former system blue.
@@ -856,10 +897,15 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     }
 
     @objc private func homeTapped() {
-        if let packId = sessionPackId,
-           packId == BuiltInColoringPages.savedDrawingsPackId,
-           strokeView.hasUserPaint,
-           coloringBookPages.indices.contains(pageIndex) {
+        guard let packId = sessionPackId else {
+            navigationController?.popToRootViewController(animated: true)
+            return
+        }
+
+        let isFreeDrawing = packId == BuiltInColoringPages.savedDrawingsPackId
+
+        if isFreeDrawing, strokeView.hasUserPaint, coloringBookPages.indices.contains(pageIndex) {
+            // Persist free-drawing session to LastDrawingStore so it appears in the grid.
             let title = coloringBookPages[pageIndex].title
             let pxScale = view.window?.screen.scale ?? UIScreen.main.scale
             // Legacy flat resume hides the line overlay; outlines live inside the JPEG — no true line-free underlay to save.
@@ -898,7 +944,12 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
                 )
             }
             LastDrawingStore.clearContinueDrawingSession()
+
+        } else if !isFreeDrawing {
+            // Persist template coloring so the child's work remains when they return.
+            saveCurrentTemplateProgressIfNeeded()
         }
+
         navigationController?.popToRootViewController(animated: true)
     }
 
@@ -1007,6 +1058,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         super.viewWillDisappear(animated)
         if isMovingFromParent {
             LastDrawingStore.clearContinueDrawingSession()
+            MagicBrushyBackgroundMusic.resumeAfterCoachMuteSilence()
         }
         FeedbackAlbaSpeech.stopSpeaking()
         FeedbackAlbaSpeech.mascotLipSync = nil
@@ -1089,6 +1141,8 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     private func scheduleFeedbackIdleTimer() {
         cancelFeedbackIdleTimer()
         guard !strokeView.chronologicalStrokeColors.isEmpty else { return }
+        // Eraser pen-lift: do not schedule idle coach VLM.
+        guard !isEraserMode else { return }
         // Mascot-mute: skip auto-feedback while paused.
         if let until = feedbackPausedUntil, Date() < until { return }
 
@@ -1097,6 +1151,8 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             self.pendingAutoFeedbackWork = nil
             // Re-check pause at fire time (user may have muted after stroke ended).
             if let until = self.feedbackPausedUntil, Date() < until { return }
+            // User may have switched to eraser before the idle delay elapsed.
+            guard !self.isEraserMode else { return }
             self.runSpeechFeedbackPipeline()
         }
         pendingAutoFeedbackWork = work
@@ -1130,6 +1186,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             updateMascotPauseBadge()
             applyMascotReaction(.hello)
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            MagicBrushyBackgroundMusic.resumeAfterCoachMuteSilence()
             return
         }
 
@@ -1141,6 +1198,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         applyMascotReaction(.sleepy)
         updateMascotPauseBadge()
         scheduleMascotPauseCountdown()
+        MagicBrushyBackgroundMusic.pauseForCoachMuteSilence()
     }
 
     private func playMascotClapHaptics() {
@@ -1187,6 +1245,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
                 self.feedbackPausedUntil = nil
                 self.updateMascotPauseBadge()
                 self.applyMascotReaction(.hello)
+                MagicBrushyBackgroundMusic.resumeAfterCoachMuteSilence()
                 t.invalidate()
                 self.pauseCountdownTimer = nil
             }
@@ -1265,7 +1324,24 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     }
 
     @objc private func pageChanged() {
-        pageIndex = pageControl.selectedSegmentIndex
+        let newIndex = pageControl.selectedSegmentIndex
+        guard newIndex != pageIndex else { return }
+        // Save the current page's progress before switching away.
+        saveCurrentTemplateProgressIfNeeded()
+        pageIndex = newIndex
+    }
+
+    /// Saves strokes for the current template page (non-free-drawing) so they survive a page switch or home tap.
+    private func saveCurrentTemplateProgressIfNeeded() {
+        guard let packId = sessionPackId,
+              packId != BuiltInColoringPages.savedDrawingsPackId else { return }
+        let hasPaint = strokeView.hasUserPaint || !resumeSnapshotView.isHidden
+        guard hasPaint else { return }
+        let canSaveLineFreeUnderlay = resumeSnapshotView.isHidden || !templateLineOverlayView.isHidden
+        guard canSaveLineFreeUnderlay else { return }
+        let pxScale = view.window?.screen.scale ?? UIScreen.main.scale
+        let underlay = captureCanvasBitmap(includeLineOverlay: false, displayScale: pxScale)
+        TemplateProgressStore.save(packId: packId, pageIndex: pageIndex, underlay: underlay)
     }
 
     private func clearResumeSnapshot() {
@@ -1308,6 +1384,17 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         templateView.image = page.image
         templateLineOverlayView.image = page.image.magicBrushyLineArtOverlay()
         strokeView.clearStrokes()
+        // On mid-session page switches (no pending resume set by the caller), restore saved template progress.
+        // The initial page load uses pendingResumeComposite instead (applied after layout via applyPendingResumeCompositeIfNeeded).
+        if pendingResumeComposite == nil,
+           let packId = sessionPackId,
+           packId != BuiltInColoringPages.savedDrawingsPackId,
+           let underlay = TemplateProgressStore.load(packId: packId, pageIndex: pageIndex) {
+            resumeSnapshotView.image = underlay
+            resumeSnapshotView.isHidden = false
+            templateView.isHidden = true
+            // Line overlay stays visible above the snapshot.
+        }
     }
 
     @objc private func strokeSizeTouchDown(_ sender: UIButton) {
@@ -1837,32 +1924,60 @@ private enum MagicBrushyCrayonResources {
         return out
     }()
 
-    /// Brush / VLM stroke color: average of each swatch (opaque paint).
-    static let strokeColors: [UIColor] = swatchImages.map { averageARGBDownsample(from: $0) }
+    /// Brush / VLM stroke color: dominant non-white color from each swatch PNG.
+    static let strokeColors: [UIColor] = swatchImages.map { dominantColor(from: $0) }
 
-    private static func averageARGBDownsample(from image: UIImage) -> UIColor {
+    /// Samples the center 50% of the image at a modest resolution, discards near-white / near-transparent
+    /// pixels, and returns the average of what remains — so white backgrounds don't pollute the result.
+    private static func dominantColor(from image: UIImage) -> UIColor {
         guard let cgImage = image.cgImage else { return .darkGray }
-        let w = 1
-        let h = 1
-        var raw = [UInt8](repeating: 0, count: 4)
+
+        // Render into a 40×40 thumbnail for fast per-pixel iteration.
+        let side = 40
+        var raw = [UInt8](repeating: 0, count: side * side * 4)
         raw.withUnsafeMutableBytes { buf in
             guard let ctx = CGContext(
                 data: buf.baseAddress,
-                width: w,
-                height: h,
+                width: side,
+                height: side,
                 bitsPerComponent: 8,
-                bytesPerRow: 4,
+                bytesPerRow: side * 4,
                 space: CGColorSpaceCreateDeviceRGB(),
                 bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
             ) else { return }
-            ctx.interpolationQuality = .low
-            ctx.draw(cgImage, in: CGRect(x: 0, y: 0, width: w, height: h))
+            ctx.interpolationQuality = .medium
+            ctx.draw(cgImage, in: CGRect(x: 0, y: 0, width: side, height: side))
         }
-        let a = max(Int(raw[3]), 1)
-        let rf = CGFloat(raw[0]) / CGFloat(a)
-        let gf = CGFloat(raw[1]) / CGFloat(a)
-        let bf = CGFloat(raw[2]) / CGFloat(a)
-        return UIColor(red: min(1, rf), green: min(1, gf), blue: min(1, bf), alpha: 1)
+
+        // Sample only the center half of the image (avoids tip and cap regions).
+        let lo = side / 4
+        let hi = side - side / 4
+
+        var rSum: CGFloat = 0, gSum: CGFloat = 0, bSum: CGFloat = 0
+        var count: CGFloat = 0
+
+        for row in lo..<hi {
+            for col in lo..<hi {
+                let base = (row * side + col) * 4
+                let a = raw[base + 3]
+                guard a > 10 else { continue }           // skip transparent
+                let rf = CGFloat(raw[base])   / CGFloat(a)
+                let gf = CGFloat(raw[base + 1]) / CGFloat(a)
+                let bf = CGFloat(raw[base + 2]) / CGFloat(a)
+                // Skip near-white pixels (all channels > 0.88).
+                guard !(rf > 0.88 && gf > 0.88 && bf > 0.88) else { continue }
+                rSum += rf; gSum += gf; bSum += bf
+                count += 1
+            }
+        }
+
+        guard count > 0 else { return .darkGray }
+        return UIColor(
+            red: min(1, rSum / count),
+            green: min(1, gSum / count),
+            blue: min(1, bSum / count),
+            alpha: 1
+        )
     }
 }
 
@@ -1939,8 +2054,8 @@ private final class MagicCrayonControl: UIControl {
         swatchView.contentMode = .scaleAspectFill
         swatchView.clipsToBounds = true
         swatchView.layer.cornerRadius = 12
-        swatchView.layer.borderWidth = 1
-        swatchView.layer.borderColor = UIColor.black.withAlphaComponent(0.12).cgColor
+        swatchView.layer.borderWidth = 0
+        swatchView.layer.borderColor = nil
         swatchView.backgroundColor = .clear
         swatchView.translatesAutoresizingMaskIntoConstraints = false
         addSubview(swatchView)
@@ -1952,10 +2067,8 @@ private final class MagicCrayonControl: UIControl {
         ])
     }
 
-    /// `image` from `Colors/NN-color.png`; `wax` is the brush stroke tint (averaged from the PNG) — used lightly on the rim.
-    func setSwatch(image: UIImage?, wax: UIColor) {
+    func setSwatch(image: UIImage?, wax _: UIColor) {
         swatchView.image = image
-        swatchView.layer.borderColor = wax.withAlphaComponent(0.45).cgColor
     }
 
     func setSelected(_ selected: Bool, animated: Bool) {

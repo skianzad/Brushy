@@ -74,6 +74,24 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
         return BuiltInColoringPages.library[selectedPackIndex].pages
     }
 
+    private enum GridItem {
+        case templatePage(page: BuiltInColoringPages.Page, pageIndex: Int)
+        case savedFreeDrawing(record: LastDrawingStore.SavedDrawingRecord, recordIndex: Int)
+    }
+
+    private var currentGridItems: [GridItem] {
+        guard selectedPackIndex >= 0, selectedPackIndex < BuiltInColoringPages.library.count else { return [] }
+        let pack = BuiltInColoringPages.library[selectedPackIndex]
+        let pages = pack.pages.enumerated().map { GridItem.templatePage(page: $0.element, pageIndex: $0.offset) }
+        if pack.id == BuiltInColoringPages.savedDrawingsPackId {
+            let saved = displayedSavedRecords.enumerated().map {
+                GridItem.savedFreeDrawing(record: $0.element, recordIndex: $0.offset)
+            }
+            return pages + saved
+        }
+        return pages
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
         LastDrawingStore.purgeLegacyNonFreeDrawingSavesIfNeeded()
@@ -191,12 +209,12 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
         mainColumn.translatesAutoresizingMaskIntoConstraints = false
         // mainColumn.addArrangedSubview(categoryScroll)
         mainColumn.addArrangedSubview(gridFill)
-        mainColumn.addArrangedSubview(lastDrawingCard)
+        // mainColumn.addArrangedSubview(lastDrawingCard)   // saved-strip commented out
 
         gridFill.setContentHuggingPriority(.defaultLow, for: .vertical)
-        lastDrawingCard.setContentHuggingPriority(.defaultHigh, for: .vertical)
+        // lastDrawingCard.setContentHuggingPriority(.defaultHigh, for: .vertical)
 
-        installSavedDrawingsStrip()
+        // installSavedDrawingsStrip()   // saved-strip commented out
 
         view.addSubview(backgroundImageView)
         view.addSubview(blurEffectView)
@@ -273,7 +291,10 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        refreshSavedDrawingsStrip()
+        // refreshSavedDrawingsStrip()   // saved-strip commented out
+        // Reload so saved free drawings appear inline in the free-drawing grid.
+        displayedSavedRecords = LastDrawingStore.allSavedGalleryRecordsNewestFirst()
+        collectionView.reloadData()
     }
 
     private func installSavedDrawingsStrip() {
@@ -329,19 +350,9 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
     }
 
     private func refreshSavedDrawingsStrip() {
-        savedDrawingsStack.arrangedSubviews.forEach {
-            savedDrawingsStack.removeArrangedSubview($0)
-            $0.removeFromSuperview()
-        }
+        // Saved-strip UI is commented out; refresh the collection view instead.
         displayedSavedRecords = LastDrawingStore.allSavedGalleryRecordsNewestFirst()
-        guard !displayedSavedRecords.isEmpty else {
-            lastDrawingCard.isHidden = true
-            return
-        }
-        lastDrawingCard.isHidden = false
-        for (index, rec) in displayedSavedRecords.enumerated() {
-            savedDrawingsStack.addArrangedSubview(makeSavedDrawingMiniCard(record: rec, index: index))
-        }
+        collectionView.reloadData()
     }
 
     private func makeSavedDrawingMiniCard(record: LastDrawingStore.SavedDrawingRecord, index: Int) -> UIView {
@@ -413,7 +424,7 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
         openSavedDrawing(at: v.tag)
     }
 
-    @objc private func savedDrawingMenuTapped(_ sender: UIButton) {
+    @objc func savedDrawingMenuTapped(_ sender: UIButton) {
         let index = sender.tag
         guard displayedSavedRecords.indices.contains(index) else { return }
         let rec = displayedSavedRecords[index]
@@ -647,24 +658,54 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
     }
 
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        currentPages.count
+        currentGridItems.count
     }
 
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: Cell.reuseId, for: indexPath) as! Cell
-        let page = currentPages[indexPath.item]
-        cell.imageView.image = page.image
-        cell.titleLabel.text = page.title
+        switch currentGridItems[indexPath.item] {
+        case .templatePage(let page, let pageIndex):
+            let pack = BuiltInColoringPages.library[selectedPackIndex]
+            let thumb: UIImage
+            if pack.id != BuiltInColoringPages.savedDrawingsPackId,
+               let underlay = TemplateProgressStore.load(packId: pack.id, pageIndex: pageIndex) {
+                thumb = TemplateProgressStore.shelfPreviewImage(templatePageImage: page.image, savedUnderlay: underlay)
+            } else {
+                thumb = page.image
+            }
+            cell.configure(image: thumb, title: page.title, isSavedDrawing: false, menuTarget: nil, menuTag: 0)
+        case .savedFreeDrawing(let rec, let idx):
+            cell.configure(
+                image: LastDrawingStore.loadThumbnail(id: rec.id),
+                title: rec.pageTitle,
+                isSavedDrawing: true,
+                menuTarget: self,
+                menuTag: idx
+            )
+        }
         return cell
     }
 
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        switch currentGridItems[indexPath.item] {
+        case .templatePage(_, let pageIndex):
+            openTemplatePage(pageIndex: pageIndex)
+        case .savedFreeDrawing(_, let recordIndex):
+            openSavedDrawing(at: recordIndex)
+        }
+    }
+
+    private func openTemplatePage(pageIndex: Int) {
         LastDrawingStore.clearContinueDrawingSession()
+        let pack = BuiltInColoringPages.library[selectedPackIndex]
         let canvas = ColoringViewController()
         canvas.coloringBookPages = currentPages
-        canvas.pinnedPageIndex = indexPath.item
-        if BuiltInColoringPages.library.indices.contains(selectedPackIndex) {
-            canvas.sessionPackId = BuiltInColoringPages.library[selectedPackIndex].id
+        canvas.pinnedPageIndex = pageIndex
+        canvas.sessionPackId = pack.id
+        if pack.id != BuiltInColoringPages.savedDrawingsPackId,
+           let underlay = TemplateProgressStore.load(packId: pack.id, pageIndex: pageIndex) {
+            canvas.pendingResumeComposite = underlay
+            canvas.pendingResumeHasSeparateLineOverlay = true
         }
         navigationController?.pushViewController(canvas, animated: true)
     }
@@ -678,6 +719,8 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
 
         let imageView = UIImageView()
         let titleLabel = UILabel()
+        private let menuButton = UIButton(type: .system)
+        private var menuButtonAction: UIAction?
 
         override init(frame: CGRect) {
             super.init(frame: frame)
@@ -698,8 +741,17 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
             titleLabel.lineBreakMode = .byTruncatingTail
             titleLabel.translatesAutoresizingMaskIntoConstraints = false
 
+            var menuCfg = UIButton.Configuration.plain()
+            menuCfg.image = UIImage(systemName: "ellipsis.circle.fill")
+            menuCfg.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 18, weight: .semibold)
+            menuCfg.baseForegroundColor = FigmaTheme.actionBlue
+            menuButton.configuration = menuCfg
+            menuButton.translatesAutoresizingMaskIntoConstraints = false
+            menuButton.isHidden = true
+
             contentView.addSubview(imageView)
             contentView.addSubview(titleLabel)
+            contentView.addSubview(menuButton)
 
             NSLayoutConstraint.activate([
                 imageView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 10),
@@ -710,7 +762,29 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
                 titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 6),
                 titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -6),
                 titleLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -6),
+
+                menuButton.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 2),
+                menuButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -2),
+                menuButton.widthAnchor.constraint(equalToConstant: 30),
+                menuButton.heightAnchor.constraint(equalToConstant: 30),
             ])
+        }
+
+        func configure(image: UIImage?, title: String, isSavedDrawing: Bool, menuTarget: AnyObject?, menuTag: Int) {
+            imageView.image = image
+            titleLabel.text = title
+            imageView.contentMode = isSavedDrawing ? .scaleAspectFill : .scaleAspectFit
+            imageView.clipsToBounds = isSavedDrawing
+            imageView.layer.cornerRadius = isSavedDrawing ? 6 : 0
+            contentView.layer.borderColor = isSavedDrawing
+                ? FigmaTheme.primaryOrange.withAlphaComponent(0.55).cgColor
+                : FigmaTheme.primaryOrange.cgColor
+            menuButton.isHidden = !isSavedDrawing
+            if let target = menuTarget as? CategoryGridViewController, isSavedDrawing {
+                menuButton.tag = menuTag
+                menuButton.removeTarget(nil, action: nil, for: .touchUpInside)
+                menuButton.addTarget(target, action: #selector(CategoryGridViewController.savedDrawingMenuTapped(_:)), for: .touchUpInside)
+            }
         }
 
         required init?(coder: NSCoder) {

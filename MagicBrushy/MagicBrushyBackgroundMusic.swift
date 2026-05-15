@@ -5,10 +5,12 @@ enum MagicBrushyBackgroundMusic {
 
     private static var player: AVAudioPlayer?
     private static var didAttemptStart = false
+    /// When true, `resumeIfNeeded()` is a no-op so scene-active / other callers do not restart music during coach mute.
+    private static var coachMuteSilencesMusic = false
 
     /// Normal loop level (mascot speech ducks lower).
-    private static let defaultPlaybackVolume: Float = 0.14
-    private static let duckedDuringSpeechVolume: Float = 0.035
+    private static let defaultPlaybackVolume: Float = 0.084
+    private static let duckedDuringSpeechVolume: Float = 0.021
 
     /// Starts the bundled track once; safe to call multiple times.
     @MainActor
@@ -40,6 +42,7 @@ enum MagicBrushyBackgroundMusic {
                 queue: .main
             ) { _ in
                 Task { @MainActor in
+                    guard !coachMuteSilencesMusic else { return }
                     guard let pl = player, !pl.isPlaying else { return }
                     pl.play()
                 }
@@ -61,7 +64,12 @@ enum MagicBrushyBackgroundMusic {
                     let shouldResume = (info[AVAudioSessionInterruptionOptionKey] as? UInt).map {
                         AVAudioSession.InterruptionOptions(rawValue: $0).contains(.shouldResume)
                     } ?? true
-                    if shouldResume { player?.play() }
+                    if shouldResume {
+                        Task { @MainActor in
+                            guard !coachMuteSilencesMusic else { return }
+                            player?.play()
+                        }
+                    }
                 @unknown default:
                     break
                 }
@@ -78,11 +86,26 @@ enum MagicBrushyBackgroundMusic {
 
     @MainActor
     static func resumeIfNeeded() {
+        guard !coachMuteSilencesMusic else { return }
         guard player != nil else {
             startIfNeeded()
             return
         }
         player?.play()
+    }
+
+    /// Pauses loop while the user has muted coach feedback (speaker); cleared by `resumeAfterCoachMuteSilence`.
+    @MainActor
+    static func pauseForCoachMuteSilence() {
+        coachMuteSilencesMusic = true
+        pause()
+    }
+
+    /// Call when coach mute ends (user or timer) so music can play again.
+    @MainActor
+    static func resumeAfterCoachMuteSilence() {
+        coachMuteSilencesMusic = false
+        resumeIfNeeded()
     }
 
     /// Lowers music while the mascot / coach voice plays.
