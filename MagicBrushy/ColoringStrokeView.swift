@@ -92,15 +92,15 @@ final class ColoringStrokeView: UIView {
 
     /// Flatten strokes older than the live window into a bitmap so the strokes array stays small.
     private func bakeOldStrokesIfNeeded() {
-        let window = Self.liveStrokeWindow
-        guard strokes.count > window else { return }
-        let toBake = Array(strokes.prefix(strokes.count - window))
-        strokes = Array(strokes.suffix(window))
+        let liveWindow = Self.liveStrokeWindow
+        guard strokes.count > liveWindow else { return }
+        let toBake = Array(strokes.prefix(strokes.count - liveWindow))
+        strokes = Array(strokes.suffix(liveWindow))
         let sz = bounds.size
         guard sz.width > 1, sz.height > 1 else { return }
         let format = UIGraphicsImageRendererFormat.default()
         format.opaque = false
-        format.scale = 1
+        format.scale = self.window?.screen.scale ?? contentScaleFactor
         bakedLayer = UIGraphicsImageRenderer(size: sz, format: format).image { ctx in
             bakedLayer?.draw(in: CGRect(origin: .zero, size: sz))
             let c = ctx.cgContext

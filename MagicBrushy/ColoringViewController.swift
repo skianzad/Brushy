@@ -2039,13 +2039,13 @@ private enum MagicBrushyCrayonResources {
 
 /// Layout for the coloring screen right rail (crayons + panel width). Tuned to match Figma-style chunky crayons.
 private enum ColoringCrayonPaletteLayout {
-    /// Right rail width; each crayon row spans this width (swatch uses nearly full width minus small insets).
-    static let rightPanelWidth: CGFloat = 231 // was 210; +10% for wider crayon chips
-    static let crayonRowHeight: CGFloat = 65
+    static let rightPanelWidth: CGFloat = 210
+    /// Vertical pitch per crayon row (smaller = tighter list in the scroll rail).
+    static let crayonRowHeight: CGFloat = 57
     /// Fraction of row height used by the PNG swatch (`MagicCrayonControl`, rest is tap padding).
     static let shapeHeightMultiplier: CGFloat = 1.0
     static let stackSpacing: CGFloat = 0
-    static let scrollContainerMinHeight: CGFloat = 231
+    static let scrollContainerMinHeight: CGFloat = 180
     static let toolButtonHeight: CGFloat = 72
     /// Side gap between brush and eraser (~1 mm; scales with screen density).
     static var toolPairSpacing: CGFloat {
