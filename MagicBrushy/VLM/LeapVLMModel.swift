@@ -484,6 +484,31 @@ enum MagicBrushyVLMOutputCleanup {
 
         while s.contains("  ") { s = s.replacingOccurrences(of: "  ", with: " ") }
 
+        s = stripStaleYouHaveOpeners(s)
+
         return s.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Models often echo “You have a …” when naming the scene; prompt discourages it—strip if it still leaks through.
+    private static func stripStaleYouHaveOpeners(_ raw: String) -> String {
+        let t = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !t.isEmpty else { return t }
+        let lower = t.lowercased()
+        let prefixes = [
+            "you have a ",
+            "you have an ",
+            "you've got a ",
+            "you've got an ",
+            "you have the ",
+        ]
+        for p in prefixes where lower.hasPrefix(p) {
+            var rest = String(t.dropFirst(p.count)).trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !rest.isEmpty else { return t }
+            if let first = rest.first {
+                rest = String(first).uppercased() + rest.dropFirst()
+            }
+            return rest
+        }
+        return t
     }
 }

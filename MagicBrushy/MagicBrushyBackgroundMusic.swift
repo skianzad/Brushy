@@ -7,10 +7,45 @@ enum MagicBrushyBackgroundMusic {
     private static var didAttemptStart = false
     /// When true, `resumeIfNeeded()` is a no-op so scene-active / other callers do not restart music during coach mute.
     private static var coachMuteSilencesMusic = false
+    /// While mascot/coach TTS is playing, volume tracks the ducked reference × user scale.
+    private static var isSpeechDucked = false
 
-    /// Normal loop level (mascot speech ducks lower).
-    private static let defaultPlaybackVolume: Float = 0.084
-    private static let duckedDuringSpeechVolume: Float = 0.021
+    private static let userDefaultsVolumeScaleKey = "MagicBrushy.backgroundMusicVolumeScale"
+
+    /// Reference loop level at user scale 1 (mascot speech ducks lower).
+    private static let referenceNormalVolume: Float = 0.084
+    private static let referenceDuckedVolume: Float = 0.021
+
+    /// 0…1 multiplier from UserDefaults (default 1). Applied to reference normal / ducked levels.
+    static func storedUserVolumeScale() -> Float {
+        if let v = UserDefaults.standard.object(forKey: userDefaultsVolumeScaleKey) as? Float {
+            return max(0, min(1, v))
+        }
+        return 1
+    }
+
+    /// Persists scale and updates the live player volume (call from main thread, e.g. home slider).
+    @MainActor
+    static func setUserVolumeScaleFromHome(_ scale: Float) {
+        let c = max(0, min(1, scale))
+        UserDefaults.standard.set(c, forKey: userDefaultsVolumeScaleKey)
+        applyCurrentVolumeToPlayer()
+    }
+
+    private static func effectiveNormalVolume() -> Float {
+        referenceNormalVolume * storedUserVolumeScale()
+    }
+
+    private static func effectiveDuckedVolume() -> Float {
+        referenceDuckedVolume * storedUserVolumeScale()
+    }
+
+    @MainActor
+    private static func applyCurrentVolumeToPlayer() {
+        guard let p = player else { return }
+        let v = isSpeechDucked ? effectiveDuckedVolume() : effectiveNormalVolume()
+        p.setVolume(v, fadeDuration: 0.12)
+    }
 
     /// Starts the bundled track once; safe to call multiple times.
     @MainActor
@@ -28,7 +63,8 @@ enum MagicBrushyBackgroundMusic {
 
             let p = try AVAudioPlayer(contentsOf: url)
             p.numberOfLoops = -1
-            p.volume = defaultPlaybackVolume
+            isSpeechDucked = false
+            p.volume = effectiveNormalVolume()
             p.prepareToPlay()
             guard p.play() else {
                 didAttemptStart = false
@@ -92,6 +128,7 @@ enum MagicBrushyBackgroundMusic {
             return
         }
         player?.play()
+        applyCurrentVolumeToPlayer()
     }
 
     /// Pauses loop while the user has muted coach feedback (speaker); cleared by `resumeAfterCoachMuteSilence`.
@@ -111,11 +148,13 @@ enum MagicBrushyBackgroundMusic {
     /// Lowers music while the mascot / coach voice plays.
     @MainActor
     static func duckForMascotSpeech() {
-        player?.setVolume(duckedDuringSpeechVolume, fadeDuration: 0.22)
+        isSpeechDucked = true
+        player?.setVolume(effectiveDuckedVolume(), fadeDuration: 0.22)
     }
 
     @MainActor
     static func restoreVolumeAfterMascotSpeech() {
-        player?.setVolume(defaultPlaybackVolume, fadeDuration: 0.38)
+        isSpeechDucked = false
+        player?.setVolume(effectiveNormalVolume(), fadeDuration: 0.38)
     }
 }

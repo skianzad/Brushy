@@ -94,6 +94,10 @@ final class HomeViewController: UIViewController {
     private var categoryGridViewportHeightConstraint: NSLayoutConstraint!
     private let unlockButton = UIButton(type: .custom)
 
+    private let musicVolumeStack = UIStackView()
+    private let musicVolumeIcon = UIImageView()
+    private let musicVolumeSlider = UISlider()
+
     private let assetsLoadChip = UIView()
     private let assetsLoadSpinner = UIActivityIndicatorView(style: .medium)
     private let assetsLoadLabel = UILabel()
@@ -215,6 +219,34 @@ final class HomeViewController: UIViewController {
         unlockButton.translatesAutoresizingMaskIntoConstraints = false
         unlockButton.addTarget(self, action: #selector(unlockTapped), for: .touchUpInside)
 
+        musicVolumeStack.axis = .horizontal
+        musicVolumeStack.alignment = .center
+        musicVolumeStack.spacing = 6
+        musicVolumeStack.translatesAutoresizingMaskIntoConstraints = false
+        musicVolumeIcon.translatesAutoresizingMaskIntoConstraints = false
+        musicVolumeIcon.tintColor = FigmaTheme.primaryOrange
+        musicVolumeIcon.contentMode = .scaleAspectFit
+        musicVolumeIcon.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 17, weight: .semibold)
+        musicVolumeIcon.image = UIImage(systemName: "speaker.wave.2.fill")
+        musicVolumeIcon.setContentHuggingPriority(.required, for: .horizontal)
+        musicVolumeIcon.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+        musicVolumeSlider.translatesAutoresizingMaskIntoConstraints = false
+        musicVolumeSlider.minimumValue = 0
+        musicVolumeSlider.maximumValue = 1
+        musicVolumeSlider.value = MagicBrushyBackgroundMusic.storedUserVolumeScale()
+        musicVolumeSlider.minimumTrackTintColor = FigmaTheme.primaryOrange
+        musicVolumeSlider.maximumTrackTintColor = UIColor.white.withAlphaComponent(0.28)
+        musicVolumeSlider.setContentCompressionResistancePriority(.required, for: .horizontal)
+        musicVolumeSlider.accessibilityLabel = "Background music"
+        musicVolumeSlider.accessibilityHint = "Adjusts the quiet background tune on this screen and while coloring."
+        musicVolumeSlider.addTarget(self, action: #selector(musicVolumeChanged), for: .valueChanged)
+
+        musicVolumeStack.addArrangedSubview(musicVolumeIcon)
+        musicVolumeStack.addArrangedSubview(musicVolumeSlider)
+        applyMusicVolumeIconForCurrentSlider()
+
+        headerView.addSubview(musicVolumeStack)
         headerView.addSubview(unlockButton)
 
         scrollView.translatesAutoresizingMaskIntoConstraints = false
@@ -262,10 +294,17 @@ final class HomeViewController: UIViewController {
             headerView.leadingAnchor.constraint(equalTo: g.leadingAnchor, constant: 18),
             headerView.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -18),
 
+            musicVolumeStack.leadingAnchor.constraint(equalTo: categoryGridPanelWrapper.leadingAnchor),
+            musicVolumeStack.centerYAnchor.constraint(equalTo: unlockButton.centerYAnchor),
+            musicVolumeStack.trailingAnchor.constraint(lessThanOrEqualTo: unlockButton.leadingAnchor, constant: -12),
+            musicVolumeIcon.widthAnchor.constraint(equalToConstant: 26),
+            musicVolumeIcon.heightAnchor.constraint(equalToConstant: 26),
+            musicVolumeSlider.widthAnchor.constraint(equalToConstant: 128),
+
             unlockButton.topAnchor.constraint(equalTo: headerView.topAnchor, constant: 2),
             unlockButton.trailingAnchor.constraint(equalTo: headerView.trailingAnchor),
             unlockButton.bottomAnchor.constraint(equalTo: headerView.bottomAnchor, constant: -4),
-            unlockButton.leadingAnchor.constraint(greaterThanOrEqualTo: headerView.leadingAnchor),
+            unlockButton.leadingAnchor.constraint(greaterThanOrEqualTo: musicVolumeStack.trailingAnchor, constant: 12),
             unlockButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 44),
 
             titleLabel.topAnchor.constraint(equalTo: mascotColumn.topAnchor, constant: 2),
@@ -350,8 +389,6 @@ final class HomeViewController: UIViewController {
     }
 
     private func installAssetsLoadPanel() {
-        let g = view.safeAreaLayoutGuide
-
         assetsLoadChip.translatesAutoresizingMaskIntoConstraints = false
         assetsLoadChip.backgroundColor = UIColor(white: 0.1, alpha: 0.88)
         assetsLoadChip.layer.cornerRadius = 14
@@ -380,7 +417,7 @@ final class HomeViewController: UIViewController {
         assetsLoadProgress.translatesAutoresizingMaskIntoConstraints = false
         assetsLoadProgress.progressTintColor = FigmaTheme.primaryOrange
         assetsLoadProgress.trackTintColor = UIColor.white.withAlphaComponent(0.28)
-        assetsLoadProgress.layer.cornerRadius = 2
+        assetsLoadProgress.layer.cornerRadius = 13
         assetsLoadProgress.clipsToBounds = true
         assetsLoadProgress.progress = 0
 
@@ -391,24 +428,24 @@ final class HomeViewController: UIViewController {
 
         let stack = UIStackView(arrangedSubviews: [row, assetsLoadProgress])
         stack.axis = .vertical
-        stack.spacing = 8
+        stack.spacing = 6
         stack.alignment = .fill
         stack.translatesAutoresizingMaskIntoConstraints = false
 
         assetsLoadChip.addSubview(stack)
-        view.addSubview(assetsLoadChip)
+        categoryGridPanel.addSubview(assetsLoadChip)
 
         NSLayoutConstraint.activate([
-            assetsLoadChip.topAnchor.constraint(equalTo: unlockButton.bottomAnchor, constant: 10),
-            assetsLoadChip.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -20),
-            assetsLoadChip.widthAnchor.constraint(lessThanOrEqualToConstant: 158),
+            assetsLoadChip.centerXAnchor.constraint(equalTo: categoryGridPanel.centerXAnchor),
+            assetsLoadChip.centerYAnchor.constraint(equalTo: categoryGridPanel.centerYAnchor),
+            assetsLoadChip.widthAnchor.constraint(equalTo: categoryGridPanel.widthAnchor, constant: -32),
 
-            stack.topAnchor.constraint(equalTo: assetsLoadChip.topAnchor, constant: 10),
-            stack.leadingAnchor.constraint(equalTo: assetsLoadChip.leadingAnchor, constant: 12),
-            stack.trailingAnchor.constraint(equalTo: assetsLoadChip.trailingAnchor, constant: -12),
-            stack.bottomAnchor.constraint(equalTo: assetsLoadChip.bottomAnchor, constant: -10),
+            stack.topAnchor.constraint(equalTo: assetsLoadChip.topAnchor, constant: 8),
+            stack.leadingAnchor.constraint(equalTo: assetsLoadChip.leadingAnchor, constant: 10),
+            stack.trailingAnchor.constraint(equalTo: assetsLoadChip.trailingAnchor, constant: -10),
+            stack.bottomAnchor.constraint(equalTo: assetsLoadChip.bottomAnchor, constant: -8),
 
-            assetsLoadProgress.heightAnchor.constraint(equalToConstant: 4),
+            assetsLoadProgress.heightAnchor.constraint(equalToConstant: 26),
         ])
 
         assetsLoadPanelObserver = NotificationCenter.default.addObserver(
@@ -419,7 +456,7 @@ final class HomeViewController: UIViewController {
             self?.refreshAssetsLoadOverlay()
         }
 
-        view.bringSubviewToFront(assetsLoadChip)
+        categoryGridPanel.bringSubviewToFront(assetsLoadChip)
         view.bringSubviewToFront(headerView)
     }
 
@@ -449,7 +486,7 @@ final class HomeViewController: UIViewController {
             stopAssetsLoadChipAnimations()
             UIView.animate(withDuration: 0.22, delay: 0, options: [.curveEaseIn]) {
                 self.assetsLoadChip.alpha = 0
-                self.assetsLoadChip.transform = CGAffineTransform(translationX: 0, y: -6).scaledBy(x: 0.96, y: 0.96)
+                self.assetsLoadChip.transform = CGAffineTransform(scaleX: 0.96, y: 0.96)
             } completion: { _ in
                 self.assetsLoadChip.isHidden = true
                 self.assetsLoadChip.transform = .identity
@@ -461,7 +498,8 @@ final class HomeViewController: UIViewController {
         if wasHidden {
             assetsLoadChip.isHidden = false
             assetsLoadChip.alpha = 0
-            assetsLoadChip.transform = CGAffineTransform(translationX: 0, y: -10).scaledBy(x: 0.92, y: 0.92)
+            assetsLoadChip.transform = CGAffineTransform(scaleX: 0.92, y: 0.92)
+            categoryGridPanel.bringSubviewToFront(assetsLoadChip)
             UIView.animate(
                 withDuration: 0.42,
                 delay: 0,
@@ -482,6 +520,7 @@ final class HomeViewController: UIViewController {
             assetsLoadLabel.text = "Couldn't load"
             assetsLoadLabel.textColor = UIColor.systemYellow
             assetsLoadProgress.isHidden = true
+            categoryGridPanel.bringSubviewToFront(assetsLoadChip)
             return
         }
 
@@ -506,6 +545,7 @@ final class HomeViewController: UIViewController {
             assetsLoadChip.layer.removeAnimation(forKey: "assetsLoadShimmer")
             assetsLoadSpinner.startAnimating()
         }
+        categoryGridPanel.bringSubviewToFront(assetsLoadChip)
     }
 
     override func viewDidLayoutSubviews() {
@@ -538,6 +578,8 @@ final class HomeViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        musicVolumeSlider.value = MagicBrushyBackgroundMusic.storedUserVolumeScale()
+        applyMusicVolumeIconForCurrentSlider()
         refreshAssetsLoadOverlay()
         Task { await SubscriptionManager.shared.refreshEntitlements() }
         applySubscribeButtonEnabledState()
@@ -768,6 +810,17 @@ final class HomeViewController: UIViewController {
         let grid = CategoryGridViewController()
         grid.initialPackId = category.packId
         navigationController?.pushViewController(grid, animated: true)
+    }
+
+    private func applyMusicVolumeIconForCurrentSlider() {
+        let quiet = musicVolumeSlider.value < 0.04
+        let name = quiet ? "speaker.slash.fill" : "speaker.wave.2.fill"
+        musicVolumeIcon.image = UIImage(systemName: name)
+    }
+
+    @objc private func musicVolumeChanged(_ sender: UISlider) {
+        MagicBrushyBackgroundMusic.setUserVolumeScaleFromHome(sender.value)
+        applyMusicVolumeIconForCurrentSlider()
     }
 
     @objc private func unlockTapped() {

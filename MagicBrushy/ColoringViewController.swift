@@ -539,6 +539,8 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         loadOverlay.addSubview(loadLabel)
         loadOverlay.addSubview(loadProgress)
         view.addSubview(loadOverlay)
+        // VLM input preview (debug) — entire setup commented out (not deleted). Uncomment this block + the constraint block + `showVLMInputPreview` body to restore.
+        /*
         vlmInputPreviewImageView.translatesAutoresizingMaskIntoConstraints = false
         vlmInputPreviewImageView.contentMode = .scaleAspectFit
         vlmInputPreviewImageView.backgroundColor = UIColor.black.withAlphaComponent(0.65)
@@ -559,6 +561,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         vlmInputPreviewLabel.isHidden = true
         view.addSubview(vlmInputPreviewImageView)
         view.addSubview(vlmInputPreviewLabel)
+        */
 
         let canvasAspect = canvasContainer.widthAnchor.constraint(equalTo: canvasContainer.heightAnchor, multiplier: 4 / 5)
         canvasAspect.priority = .defaultHigh
@@ -623,7 +626,8 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             loadProgress.leadingAnchor.constraint(equalTo: loadOverlay.leadingAnchor, constant: 48),
             loadProgress.trailingAnchor.constraint(equalTo: loadOverlay.trailingAnchor, constant: -48),
 
-            vlmInputPreviewImageView.leadingAnchor.constraint(equalTo: g.leadingAnchor, constant: 14),
+            // VLM input preview constraints — commented out (not deleted). Pair with `viewDidLoad` block + `showVLMInputPreview`.
+            /*
             vlmInputPreviewImageView.bottomAnchor.constraint(equalTo: g.bottomAnchor, constant: -14),
             vlmInputPreviewImageView.widthAnchor.constraint(equalToConstant: 112),
             vlmInputPreviewImageView.heightAnchor.constraint(equalToConstant: 112),
@@ -631,6 +635,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             vlmInputPreviewLabel.leadingAnchor.constraint(equalTo: vlmInputPreviewImageView.leadingAnchor),
             vlmInputPreviewLabel.trailingAnchor.constraint(equalTo: vlmInputPreviewImageView.trailingAnchor),
             vlmInputPreviewLabel.bottomAnchor.constraint(equalTo: vlmInputPreviewImageView.topAnchor, constant: -6),
+            */
         ])
 
         let cvScale = ColoringCrayonPaletteLayout.canvasVisualScale
@@ -1752,6 +1757,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     }
 
     private func hideVLMInputPreviewImmediate() {
+        // When VLM preview is re-enabled, this pairs with the commented body in `showVLMInputPreview`.
         vlmInputPreviewHideWork?.cancel()
         vlmInputPreviewHideWork = nil
         vlmInputPreviewImageView.layer.removeAllAnimations()
@@ -1763,6 +1769,9 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     }
 
     private func showVLMInputPreview(_ image: UIImage) {
+        // Full implementation kept below (commented). Re-enable with the `viewDidLoad` + constraint `/* … */` blocks for these views.
+        _ = image
+        /*
         vlmInputPreviewHideWork?.cancel()
         vlmInputPreviewImageView.image = image
         vlmInputPreviewLabel.text = "VLM input\n\(Int(image.size.width))×\(Int(image.size.height))"
@@ -1788,6 +1797,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         }
         vlmInputPreviewHideWork = work
         DispatchQueue.main.asyncAfter(deadline: .now() + 3.0, execute: work)
+        */
     }
 
     private func composeFeedbackPrompt() -> String {
@@ -1835,9 +1845,9 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
 
 \(paletteHintBlock)
 
-Your job: say one cheery thing that names the color they just added, in simple kid words. If the photo makes it obvious what they colored, name that thing too—only when you are fairly sure; do not guess random objects. Do not use map directions (no left, right, top, bottom, or “in the corner”).
+Your job: say one cheery thing that names the color they just added, in simple kid words. If the subject is very obvious, you may weave it in briefly—do not guess random objects. Do not use map directions (no left, right, top, bottom, or “in the corner”).
 
-Speak to THEM: one or two very short sentences, easy words, use "you" or "your". Start with compliment inspired by the color. Sound warm. You may add a tiny color-feeling phrase that fits that color—avoid repeating the same opening every time (do not always start with “You are so bright”).
+Speak to THEM: one or two very short sentences, easy words, use "you" or "your". Open with varied praise —never start with the stock phrase “You have a” or “You have an” or “You’ve got a”. Sound warm; you may add a tiny color-feeling phrase that fits that color.
 
 IMPORTANT: Reply with ONLY the words you say aloud—no rules, no quotes about yourself, no repeating this text, no bullets, no markdown, no symbols like <>. Never mention AI, robots, computers, phones, apps, or internet.
 
@@ -1863,7 +1873,7 @@ IMPORTANT: Reply with ONLY the words you say aloud—no rules, no quotes about y
 
 They just tapped their mascot buddy asking for a big cheer for their **entire drawing so far**—not only the newest dab of paint. Look at the full picture: how colors spread across the scene, how the page feels as one piece, and the subject of the line art if you can tell.
 
-Your job: one warm, very short message in simple kid words about **the whole picture**—what you like about how they filled the page overall. Use "you" or "your". If you can, mention **two** small things you like (for example a color choice **and** the character or scene), but keep it to one or two tiny sentences. Do not use map directions (no left, right, top, bottom, or “in the corner”).
+Your job: one warm, very short message in simple kid words about **the whole picture**—what you like about how they filled the page overall. Use "you" or "your". If you can, mention **two** small things you like (for example a color choice **and** the character or scene), but keep it to one or two tiny sentences. Vary how you start (never open with “You have a”, “You have an”, or “You’ve got a”). Do not use map directions (no left, right, top, bottom, or “in the corner”).
 
 IMPORTANT: Reply with ONLY the words you say aloud—no rules, no quotes about yourself, no repeating this text, no bullets, no markdown, no symbols like <>. Never mention AI, robots, computers, phones, apps, or internet.
 
