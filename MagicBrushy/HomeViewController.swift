@@ -391,7 +391,7 @@ final class HomeViewController: UIViewController {
     private func installAssetsLoadPanel() {
         assetsLoadChip.translatesAutoresizingMaskIntoConstraints = false
         assetsLoadChip.backgroundColor = UIColor(white: 0.1, alpha: 0.88)
-        assetsLoadChip.layer.cornerRadius = 14
+        assetsLoadChip.layer.cornerRadius = 9
         if #available(iOS 13.0, *) {
             assetsLoadChip.layer.cornerCurve = .continuous
         }
@@ -405,10 +405,11 @@ final class HomeViewController: UIViewController {
         assetsLoadSpinner.translatesAutoresizingMaskIntoConstraints = false
         assetsLoadSpinner.color = FigmaTheme.primaryOrange
         assetsLoadSpinner.hidesWhenStopped = true
+        assetsLoadSpinner.transform = CGAffineTransform(scaleX: 0.72, y: 0.72)
 
         assetsLoadLabel.translatesAutoresizingMaskIntoConstraints = false
         assetsLoadLabel.textColor = .white
-        assetsLoadLabel.font = FigmaTheme.bodyFont(size: 12, weight: .semibold)
+        assetsLoadLabel.font = FigmaTheme.bodyFont(size: 9, weight: .semibold)
         assetsLoadLabel.numberOfLines = 1
         assetsLoadLabel.textAlignment = .natural
         assetsLoadLabel.adjustsFontSizeToFitWidth = true
@@ -417,35 +418,36 @@ final class HomeViewController: UIViewController {
         assetsLoadProgress.translatesAutoresizingMaskIntoConstraints = false
         assetsLoadProgress.progressTintColor = FigmaTheme.primaryOrange
         assetsLoadProgress.trackTintColor = UIColor.white.withAlphaComponent(0.28)
-        assetsLoadProgress.layer.cornerRadius = 13
+        assetsLoadProgress.layer.cornerRadius = 2
         assetsLoadProgress.clipsToBounds = true
         assetsLoadProgress.progress = 0
 
         let row = UIStackView(arrangedSubviews: [assetsLoadSpinner, assetsLoadLabel])
         row.axis = .horizontal
-        row.spacing = 8
+        row.spacing = 4
         row.alignment = .center
 
         let stack = UIStackView(arrangedSubviews: [row, assetsLoadProgress])
         stack.axis = .vertical
-        stack.spacing = 6
+        stack.spacing = 3
         stack.alignment = .fill
         stack.translatesAutoresizingMaskIntoConstraints = false
 
         assetsLoadChip.addSubview(stack)
         categoryGridPanel.addSubview(assetsLoadChip)
 
+        let topInset = HomeCategoryTileMetrics.panelContentInset + 2
         NSLayoutConstraint.activate([
             assetsLoadChip.centerXAnchor.constraint(equalTo: categoryGridPanel.centerXAnchor),
-            assetsLoadChip.centerYAnchor.constraint(equalTo: categoryGridPanel.centerYAnchor),
-            assetsLoadChip.widthAnchor.constraint(equalTo: categoryGridPanel.widthAnchor, constant: -32),
+            assetsLoadChip.topAnchor.constraint(equalTo: categoryGridPanel.topAnchor, constant: topInset),
+            assetsLoadChip.widthAnchor.constraint(equalToConstant: 108),
 
-            stack.topAnchor.constraint(equalTo: assetsLoadChip.topAnchor, constant: 8),
-            stack.leadingAnchor.constraint(equalTo: assetsLoadChip.leadingAnchor, constant: 10),
-            stack.trailingAnchor.constraint(equalTo: assetsLoadChip.trailingAnchor, constant: -10),
-            stack.bottomAnchor.constraint(equalTo: assetsLoadChip.bottomAnchor, constant: -8),
+            stack.topAnchor.constraint(equalTo: assetsLoadChip.topAnchor, constant: 4),
+            stack.leadingAnchor.constraint(equalTo: assetsLoadChip.leadingAnchor, constant: 5),
+            stack.trailingAnchor.constraint(equalTo: assetsLoadChip.trailingAnchor, constant: -5),
+            stack.bottomAnchor.constraint(equalTo: assetsLoadChip.bottomAnchor, constant: -4),
 
-            assetsLoadProgress.heightAnchor.constraint(equalToConstant: 26),
+            assetsLoadProgress.heightAnchor.constraint(equalToConstant: 4),
         ])
 
         assetsLoadPanelObserver = NotificationCenter.default.addObserver(

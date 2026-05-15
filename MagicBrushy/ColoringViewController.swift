@@ -140,7 +140,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         "terracotta", "sand",
     ]
 
-    /// Stroke colors averaged from each PNG in `MagicBrushy/Colors/` (see `MagicBrushyCrayonResources`).
+    /// Stroke colors from each PNG in `MagicBrushy/Colors/` — sampled at the **wax tip** (see `MagicBrushyCrayonResources`).
     private let palette: [UIColor] = MagicBrushyCrayonResources.strokeColors
     private let crayonSwatchImages: [UIImage] = MagicBrushyCrayonResources.swatchImages
 
@@ -1934,18 +1934,48 @@ private enum MagicBrushyCrayonResources {
         return out
     }()
 
-    /// Brush / VLM stroke color: dominant non-white color from each swatch PNG.
-    static let strokeColors: [UIColor] = swatchImages.map { dominantColor(from: $0) }
+    /// Brush / VLM stroke color: sampled from the **tip** of each swatch PNG (ends of the crayon), not the body/wrapper.
+    static let strokeColors: [UIColor] = swatchImages.map { strokeColorFromSwatchTip($0) }
 
-    /// Samples the center 50% of the image at a modest resolution, discards near-white / near-transparent
-    /// pixels, and returns the average of what remains — so white backgrounds don't pollute the result.
-    private static func dominantColor(from image: UIImage) -> UIColor {
-        guard let cgImage = image.cgImage else { return .darkGray }
+    /// Renders a small RGBA thumbnail, then averages non-white / non-transparent pixels in `col` / `row` ranges.
+    private static func averageColor(
+        raw: [UInt8],
+        side: Int,
+        colRange: Range<Int>,
+        rowRange: Range<Int>
+    ) -> UIColor? {
+        var rSum: CGFloat = 0, gSum: CGFloat = 0, bSum: CGFloat = 0
+        var count: CGFloat = 0
 
-        // Render into a 40×40 thumbnail for fast per-pixel iteration.
-        let side = 40
+        for row in rowRange {
+            for col in colRange {
+                guard col >= 0, col < side, row >= 0, row < side else { continue }
+                let base = (row * side + col) * 4
+                let a = raw[base + 3]
+                guard a > 10 else { continue }
+                let rf = CGFloat(raw[base]) / CGFloat(a)
+                let gf = CGFloat(raw[base + 1]) / CGFloat(a)
+                let bf = CGFloat(raw[base + 2]) / CGFloat(a)
+                guard !(rf > 0.88 && gf > 0.88 && bf > 0.88) else { continue }
+                rSum += rf
+                gSum += gf
+                bSum += bf
+                count += 1
+            }
+        }
+        guard count > 2 else { return nil }
+        return UIColor(
+            red: min(1, rSum / count),
+            green: min(1, gSum / count),
+            blue: min(1, bSum / count),
+            alpha: 1
+        )
+    }
+
+    private static func renderThumbnailRGBA(image: UIImage, side: Int) -> [UInt8]? {
+        guard let cgImage = image.cgImage else { return nil }
         var raw = [UInt8](repeating: 0, count: side * side * 4)
-        raw.withUnsafeMutableBytes { buf in
+        let ok: Bool = raw.withUnsafeMutableBytes { buf in
             guard let ctx = CGContext(
                 data: buf.baseAddress,
                 width: side,
@@ -1954,40 +1984,54 @@ private enum MagicBrushyCrayonResources {
                 bytesPerRow: side * 4,
                 space: CGColorSpaceCreateDeviceRGB(),
                 bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
-            ) else { return }
+            ) else { return false }
             ctx.interpolationQuality = .medium
             ctx.draw(cgImage, in: CGRect(x: 0, y: 0, width: side, height: side))
+            return true
+        }
+        return ok ? raw : nil
+    }
+
+    private static func saturationScore(_ color: UIColor) -> CGFloat {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        guard color.getRed(&r, green: &g, blue: &b, alpha: &a) else { return 0 }
+        let mx = max(r, g, b)
+        let mn = min(r, g, b)
+        return mx - mn
+    }
+
+    /// Tip is at one end of the horizontal crayon art; compare left vs right bands, then fall back to center.
+    private static func strokeColorFromSwatchTip(_ image: UIImage) -> UIColor {
+        let side = 40
+        guard let raw = renderThumbnailRGBA(image: image, side: side) else { return .darkGray }
+
+        // Vertical band: ignore top/bottom cap / label noise.
+        let rowLo = side * 20 / 100
+        let rowHi = side * 80 / 100
+
+        let rightStart = side * 65 / 100
+        let rightC = averageColor(raw: raw, side: side, colRange: rightStart..<side, rowRange: rowLo..<rowHi)
+
+        let leftEnd = side * 35 / 100
+        let leftC = averageColor(raw: raw, side: side, colRange: 0..<leftEnd, rowRange: rowLo..<rowHi)
+
+        switch (rightC, leftC) {
+        case let (r?, l?):
+            return saturationScore(r) >= saturationScore(l) ? r : l
+        case let (r?, nil):
+            return r
+        case let (nil, l?):
+            return l
+        default:
+            break
         }
 
-        // Sample only the center half of the image (avoids tip and cap regions).
-        let lo = side / 4
-        let hi = side - side / 4
-
-        var rSum: CGFloat = 0, gSum: CGFloat = 0, bSum: CGFloat = 0
-        var count: CGFloat = 0
-
-        for row in lo..<hi {
-            for col in lo..<hi {
-                let base = (row * side + col) * 4
-                let a = raw[base + 3]
-                guard a > 10 else { continue }           // skip transparent
-                let rf = CGFloat(raw[base])   / CGFloat(a)
-                let gf = CGFloat(raw[base + 1]) / CGFloat(a)
-                let bf = CGFloat(raw[base + 2]) / CGFloat(a)
-                // Skip near-white pixels (all channels > 0.88).
-                guard !(rf > 0.88 && gf > 0.88 && bf > 0.88) else { continue }
-                rSum += rf; gSum += gf; bSum += bf
-                count += 1
-            }
+        let midLo = side / 4
+        let midHi = side - side / 4
+        if let c = averageColor(raw: raw, side: side, colRange: midLo..<midHi, rowRange: midLo..<midHi) {
+            return c
         }
-
-        guard count > 0 else { return .darkGray }
-        return UIColor(
-            red: min(1, rSum / count),
-            green: min(1, gSum / count),
-            blue: min(1, bSum / count),
-            alpha: 1
-        )
+        return .darkGray
     }
 }
 
@@ -1995,12 +2039,13 @@ private enum MagicBrushyCrayonResources {
 
 /// Layout for the coloring screen right rail (crayons + panel width). Tuned to match Figma-style chunky crayons.
 private enum ColoringCrayonPaletteLayout {
-    static let rightPanelWidth: CGFloat = 210
+    /// Right rail width; each crayon row spans this width (swatch uses nearly full width minus small insets).
+    static let rightPanelWidth: CGFloat = 231 // was 210; +10% for wider crayon chips
     static let crayonRowHeight: CGFloat = 65
     /// Fraction of row height used by the PNG swatch (`MagicCrayonControl`, rest is tap padding).
     static let shapeHeightMultiplier: CGFloat = 1.0
     static let stackSpacing: CGFloat = 0
-    static let scrollContainerMinHeight: CGFloat = 210
+    static let scrollContainerMinHeight: CGFloat = 231
     static let toolButtonHeight: CGFloat = 72
     /// Side gap between brush and eraser (~1 mm; scales with screen density).
     static var toolPairSpacing: CGFloat {
