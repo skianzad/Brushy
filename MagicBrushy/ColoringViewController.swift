@@ -157,6 +157,8 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     private var feedbackGeneration: UInt64 = 0
     /// Last mascot pose applied after coach VLM — passed into semantic mapping to reduce back-to-back duplicates.
     private var lastMascotReaction: MascotReactionState?
+    /// Last cleaned sentence the VLM actually spoke — fed back as context so responses feel like a conversation.
+    private var lastSpokenFeedback: String?
     /// Bumped on page change / clear / undo only — **not** on every new stroke, so debounced mascot reactions can still apply after pen lift.
     private var reactionSession: UInt64 = 0
     private var vlmInputPreviewHideWork: DispatchWorkItem?
@@ -1111,6 +1113,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         feedbackGeneration &+= 1
         reactionSession &+= 1
         lastMascotReaction = nil
+        lastSpokenFeedback = nil
         cancelFeedbackIdleTimer()
         cancelPendingReactionWork()
         vlm.cancel()
@@ -1540,6 +1543,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             let spoken = MagicBrushyVLMOutputCleanup.sanitizeKidFeedback(raw)
             guard !spoken.isEmpty, spoken != "…",
                   !spoken.hasPrefix("Failed:") else { return }
+            self.lastSpokenFeedback = spoken
             await FeedbackAlbaSpeech.speakFeedback(spoken)
         }
     }
@@ -1586,6 +1590,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             let spoken = MagicBrushyVLMOutputCleanup.sanitizeKidFeedback(raw)
             guard !spoken.isEmpty, spoken != "…",
                   !spoken.hasPrefix("Failed:") else { return }
+            self.lastSpokenFeedback = spoken
             await FeedbackAlbaSpeech.speakFeedback(spoken)
         }
     }
@@ -1843,13 +1848,19 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
 
         let opener = themeLine.isEmpty ? "A child colored this sheet (outlines + paint)." : "A child colored this sheet (outlines + paint). \(themeLine)"
         let langInstruction = MagicBrushyLanguage.stored().promptInstruction
+        let continuityBlock: String
+        if let last = lastSpokenFeedback {
+            continuityBlock = "Last thing you said to them: \"\(last)\"\nContinue naturally from there — say something fresh and don\'t repeat those exact words."
+        } else {
+            continuityBlock = ""
+        }
 
         return """
 \(opener) Look at the picture.
 
 \(paletteHintBlock)
 
-Your job: say one cheery thing that names the color they just added, in simple kid words. If the subject is very obvious, you may weave it in briefly—do not guess random objects. Do not use map directions (no left, right, top, bottom, or “in the corner”).
+\(continuityBlock.isEmpty ? "" : continuityBlock + "\n\n")Your job: say one cheery thing that names the color they just added, in simple kid words. If the subject is very obvious, you may weave it in briefly—do not guess random objects. Do not use map directions (no left, right, top, bottom, or “in the corner”).
 
 Speak to THEM: one or two very short sentences, easy words, use "you" or "your". Open with varied praise —never start with the stock phrase “You have a” or “You have an” or “You’ve got a”. Sound warm; you may add a tiny color-feeling phrase that fits that color.
 
@@ -1872,11 +1883,17 @@ IMPORTANT: Reply with ONLY the words you say aloud—no rules, no quotes about y
             ? "A child colored this sheet (outlines + paint)."
             : "A child colored this sheet (outlines + paint). \(themeLine)"
         let langInstruction = MagicBrushyLanguage.stored().promptInstruction
+        let continuityBlock: String
+        if let last = lastSpokenFeedback {
+            continuityBlock = "Last thing you said to them: \"\(last)\"\nContinue naturally from there — say something fresh and don\'t repeat those exact words."
+        } else {
+            continuityBlock = ""
+        }
 
         return """
 \(opener) The photo shows the **whole coloring page** together (all outlines and all paint).
 
-They just tapped their mascot buddy asking for a big cheer for their **entire drawing so far**—not only the newest dab of paint. Look at the full picture: how colors spread across the scene, how the page feels as one piece, and the subject of the line art if you can tell.
+\(continuityBlock.isEmpty ? "" : continuityBlock + "\n\n")They just tapped their mascot buddy asking for a big cheer for their **entire drawing so far**—not only the newest dab of paint. Look at the full picture: how colors spread across the scene, how the page feels as one piece, and the subject of the line art if you can tell.
 
 Your job: one warm, very short message in simple kid words about **the whole picture**—what you like about how they filled the page overall. Use "you" or "your". If you can, mention **two** small things you like (for example a color choice **and** the character or scene), but keep it to one or two tiny sentences. Vary how you start (never open with “You have a”, “You have an”, or “You’ve got a”). Do not use map directions (no left, right, top, bottom, or “in the corner”).
 
