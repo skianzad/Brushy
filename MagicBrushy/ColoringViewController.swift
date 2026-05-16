@@ -418,6 +418,8 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         saveBtn.accessibilityLabel = "Save to Photos"
         saveBtn.addTarget(self, action: #selector(saveColoringTapped), for: .touchUpInside)
 
+        let settingsBtn = makeMagicBrushySettingsGearButton()
+
         let navSpacer = UIView()
         navSpacer.setContentHuggingPriority(UILayoutPriority(1), for: .horizontal)
         toolRow.axis = .horizontal
@@ -427,6 +429,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         toolRow.addArrangedSubview(prevBtn)
         toolRow.addArrangedSubview(nextBtn)
         toolRow.addArrangedSubview(saveBtn)
+        toolRow.addArrangedSubview(settingsBtn)
         toolRow.addArrangedSubview(navSpacer)
         modelStatusStack.isHidden = true
 

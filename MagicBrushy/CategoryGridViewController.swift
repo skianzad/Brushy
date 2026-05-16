@@ -32,7 +32,8 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
     private let titleLabel = UILabel()
     private let headerRow = UIStackView()
     private let headerLeadingContainer = UIView()
-    private let headerTrailingSpacer = UIView()
+    private let headerTrailingContainer = UIView()
+    private lazy var settingsButton: UIButton = makeMagicBrushySettingsGearButton()
     private let backButtonChrome = UIView()
     private let backDiamondRotator = UIView()
     private let backButtonStroke = UIView()
@@ -127,13 +128,13 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
         headerRow.clipsToBounds = false
         headerLeadingContainer.translatesAutoresizingMaskIntoConstraints = false
         headerLeadingContainer.backgroundColor = .clear
-        headerTrailingSpacer.translatesAutoresizingMaskIntoConstraints = false
-        headerTrailingSpacer.backgroundColor = .clear
-        headerTrailingSpacer.isUserInteractionEnabled = false
+        headerTrailingContainer.translatesAutoresizingMaskIntoConstraints = false
+        headerTrailingContainer.backgroundColor = .clear
+        headerTrailingContainer.addSubview(settingsButton)
 
         headerRow.addArrangedSubview(headerLeadingContainer)
         headerRow.addArrangedSubview(titleLabel)
-        headerRow.addArrangedSubview(headerTrailingSpacer)
+        headerRow.addArrangedSubview(headerTrailingContainer)
 
         headerLeadingContainer.addSubview(backButtonChrome)
 
@@ -241,7 +242,10 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
             backButtonChrome.heightAnchor.constraint(equalToConstant: BackChromeMetrics.size),
 
             headerLeadingContainer.widthAnchor.constraint(equalToConstant: BackChromeMetrics.size),
-            headerTrailingSpacer.widthAnchor.constraint(equalTo: headerLeadingContainer.widthAnchor),
+            headerTrailingContainer.widthAnchor.constraint(equalTo: headerLeadingContainer.widthAnchor),
+
+            settingsButton.centerXAnchor.constraint(equalTo: headerTrailingContainer.centerXAnchor),
+            settingsButton.centerYAnchor.constraint(equalTo: headerTrailingContainer.centerYAnchor),
 
             backButtonChrome.leadingAnchor.constraint(equalTo: headerLeadingContainer.leadingAnchor),
             backButtonChrome.trailingAnchor.constraint(equalTo: headerLeadingContainer.trailingAnchor),
@@ -673,12 +677,21 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
             } else {
                 thumb = page.image
             }
-            cell.configure(image: thumb, title: page.title, isSavedDrawing: false, menuTarget: nil, menuTag: 0)
+            let isBlankPaperStarter = pack.id == BuiltInColoringPages.savedDrawingsPackId && pageIndex == 0
+            cell.configure(
+                image: thumb,
+                title: page.title,
+                isSavedDrawing: false,
+                showsNewDrawingPlus: isBlankPaperStarter,
+                menuTarget: nil,
+                menuTag: 0
+            )
         case .savedFreeDrawing(let rec, let idx):
             cell.configure(
                 image: LastDrawingStore.loadThumbnail(id: rec.id),
                 title: rec.pageTitle,
                 isSavedDrawing: true,
+                showsNewDrawingPlus: false,
                 menuTarget: self,
                 menuTag: idx
             )
@@ -719,6 +732,8 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
 
         let imageView = UIImageView()
         let titleLabel = UILabel()
+        private let newDrawingBadge = UIView()
+        private let newDrawingPlus = UIImageView()
         private let menuButton = UIButton(type: .system)
         private var menuButtonAction: UIAction?
 
@@ -749,8 +764,29 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
             menuButton.translatesAutoresizingMaskIntoConstraints = false
             menuButton.isHidden = true
 
+            newDrawingBadge.translatesAutoresizingMaskIntoConstraints = false
+            newDrawingBadge.backgroundColor = FigmaTheme.primaryOrange
+            newDrawingBadge.layer.cornerRadius = 26
+            newDrawingBadge.layer.borderWidth = 3
+            newDrawingBadge.layer.borderColor = FigmaTheme.primaryOrangeBorder.cgColor
+            newDrawingBadge.isHidden = true
+            newDrawingBadge.isUserInteractionEnabled = false
+            FigmaTheme.applyCardShadow(to: newDrawingBadge.layer)
+
+            newDrawingPlus.translatesAutoresizingMaskIntoConstraints = false
+            newDrawingPlus.tintColor = .white
+            newDrawingPlus.contentMode = .scaleAspectFit
+            newDrawingPlus.image = UIImage(
+                systemName: "plus",
+                withConfiguration: UIImage.SymbolConfiguration(pointSize: 28, weight: .bold)
+            )
+            newDrawingPlus.isUserInteractionEnabled = false
+
+            newDrawingBadge.addSubview(newDrawingPlus)
+
             contentView.addSubview(imageView)
             contentView.addSubview(titleLabel)
+            contentView.addSubview(newDrawingBadge)
             contentView.addSubview(menuButton)
 
             NSLayoutConstraint.activate([
@@ -767,10 +803,30 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
                 menuButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -2),
                 menuButton.widthAnchor.constraint(equalToConstant: 30),
                 menuButton.heightAnchor.constraint(equalToConstant: 30),
+
+                newDrawingBadge.centerXAnchor.constraint(equalTo: imageView.centerXAnchor),
+                newDrawingBadge.centerYAnchor.constraint(equalTo: imageView.centerYAnchor),
+                newDrawingBadge.widthAnchor.constraint(equalToConstant: 52),
+                newDrawingBadge.heightAnchor.constraint(equalToConstant: 52),
+
+                newDrawingPlus.centerXAnchor.constraint(equalTo: newDrawingBadge.centerXAnchor),
+                newDrawingPlus.centerYAnchor.constraint(equalTo: newDrawingBadge.centerYAnchor),
             ])
         }
 
-        func configure(image: UIImage?, title: String, isSavedDrawing: Bool, menuTarget: AnyObject?, menuTag: Int) {
+        override func prepareForReuse() {
+            super.prepareForReuse()
+            newDrawingBadge.isHidden = true
+        }
+
+        func configure(
+            image: UIImage?,
+            title: String,
+            isSavedDrawing: Bool,
+            showsNewDrawingPlus: Bool,
+            menuTarget: AnyObject?,
+            menuTag: Int
+        ) {
             imageView.image = image
             titleLabel.text = title
             imageView.contentMode = isSavedDrawing ? .scaleAspectFill : .scaleAspectFit
@@ -779,6 +835,9 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
             contentView.layer.borderColor = isSavedDrawing
                 ? FigmaTheme.primaryOrange.withAlphaComponent(0.55).cgColor
                 : FigmaTheme.primaryOrange.cgColor
+            newDrawingBadge.isHidden = !showsNewDrawingPlus
+            accessibilityLabel = showsNewDrawingPlus ? "New blank drawing" : title
+            accessibilityHint = showsNewDrawingPlus ? "Starts a fresh sheet to draw on." : nil
             menuButton.isHidden = !isSavedDrawing
             if let target = menuTarget as? CategoryGridViewController, isSavedDrawing {
                 menuButton.tag = menuTag

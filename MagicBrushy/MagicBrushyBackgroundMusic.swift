@@ -24,9 +24,9 @@ enum MagicBrushyBackgroundMusic {
         return 1
     }
 
-    /// Persists scale and updates the live player volume (call from main thread, e.g. home slider).
+    /// Persists scale and updates the live player volume (call from main thread, e.g. settings slider).
     @MainActor
-    static func setUserVolumeScaleFromHome(_ scale: Float) {
+    static func setUserVolumeScale(_ scale: Float) {
         let c = max(0, min(1, scale))
         UserDefaults.standard.set(c, forKey: userDefaultsVolumeScaleKey)
         applyCurrentVolumeToPlayer()

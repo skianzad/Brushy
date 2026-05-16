@@ -1,6 +1,6 @@
 import UIKit
 
-/// Home — landscape layout: unlock in header; title over mascot; category grid ~3.5×3 visible (clipped row hints scroll).
+/// Home — landscape layout: unlock in header; fixed mascot column; category grid scrolls inside the blue panel only.
 final class HomeViewController: UIViewController {
 
     private enum Category: Int, CaseIterable {
@@ -76,10 +76,9 @@ final class HomeViewController: UIViewController {
 
     private var subscriptionAccessObserver: NSObjectProtocol?
 
-    private let scrollView = UIScrollView()
-    private let contentView = UIView()
     private let heroView = FigmaAlignedHeroBackgroundView()
-    private let headerView = UIView()
+    /// Settings + unlock, aligned with the category panel’s top-trailing edge.
+    private let topChromeRow = UIStackView()
     private let mascotColumn = UIView()
     /// Holds stroke (behind) + fill + scroll; stroke extends past fill like Figma export.
     private let categoryGridPanelWrapper = UIView()
@@ -94,9 +93,7 @@ final class HomeViewController: UIViewController {
     private var categoryGridViewportHeightConstraint: NSLayoutConstraint!
     private let unlockButton = UIButton(type: .custom)
 
-    private let musicVolumeStack = UIStackView()
-    private let musicVolumeIcon = UIImageView()
-    private let musicVolumeSlider = UISlider()
+    private lazy var settingsButton: UIButton = makeMagicBrushySettingsGearButton()
 
     private let assetsLoadChip = UIView()
     private let assetsLoadSpinner = UIActivityIndicatorView(style: .medium)
@@ -104,9 +101,8 @@ final class HomeViewController: UIViewController {
     private let assetsLoadProgress = UIProgressView(progressViewStyle: .bar)
     private var assetsLoadPanelObserver: NSObjectProtocol?
 
-    private var mainStackTopConstraint: NSLayoutConstraint!
-    private var mainStackBottomConstraint: NSLayoutConstraint!
-    private var scrollViewTopToHeaderConstraint: NSLayoutConstraint!
+    private var bodyTopToHeaderConstraint: NSLayoutConstraint!
+    private var bodyBottomConstraint: NSLayoutConstraint!
 
     private let homeMainStack = UIStackView()
 
@@ -144,9 +140,6 @@ final class HomeViewController: UIViewController {
 
         heroView.heroImage = UIImage(named: "HomeHero")
         heroView.translatesAutoresizingMaskIntoConstraints = false
-
-        headerView.translatesAutoresizingMaskIntoConstraints = false
-        headerView.backgroundColor = .clear
 
         mascotColumn.translatesAutoresizingMaskIntoConstraints = false
         mascotColumn.clipsToBounds = false
@@ -205,7 +198,7 @@ final class HomeViewController: UIViewController {
         categoryGridPanel.addSubview(categoryGridScrollView)
 
         bodyStack.axis = .horizontal
-        bodyStack.alignment = .bottom
+        bodyStack.alignment = .fill
         bodyStack.spacing = HomeCategoryTileMetrics.bodyStackSpacing
         bodyStack.distribution = .fill
         bodyStack.translatesAutoresizingMaskIntoConstraints = false
@@ -218,71 +211,42 @@ final class HomeViewController: UIViewController {
         configureUnlockButton()
         unlockButton.translatesAutoresizingMaskIntoConstraints = false
         unlockButton.addTarget(self, action: #selector(unlockTapped), for: .touchUpInside)
+        unlockButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+        unlockButton.setContentHuggingPriority(.required, for: .horizontal)
 
-        musicVolumeStack.axis = .horizontal
-        musicVolumeStack.alignment = .center
-        musicVolumeStack.spacing = 6
-        musicVolumeStack.translatesAutoresizingMaskIntoConstraints = false
-        musicVolumeIcon.translatesAutoresizingMaskIntoConstraints = false
-        musicVolumeIcon.tintColor = FigmaTheme.primaryOrange
-        musicVolumeIcon.contentMode = .scaleAspectFit
-        musicVolumeIcon.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 17, weight: .semibold)
-        musicVolumeIcon.image = UIImage(systemName: "speaker.wave.2.fill")
-        musicVolumeIcon.setContentHuggingPriority(.required, for: .horizontal)
-        musicVolumeIcon.setContentCompressionResistancePriority(.required, for: .horizontal)
-
-        musicVolumeSlider.translatesAutoresizingMaskIntoConstraints = false
-        musicVolumeSlider.minimumValue = 0
-        musicVolumeSlider.maximumValue = 1
-        musicVolumeSlider.value = MagicBrushyBackgroundMusic.storedUserVolumeScale()
-        musicVolumeSlider.minimumTrackTintColor = FigmaTheme.primaryOrange
-        musicVolumeSlider.maximumTrackTintColor = UIColor.white.withAlphaComponent(0.28)
-        musicVolumeSlider.setContentCompressionResistancePriority(.required, for: .horizontal)
-        musicVolumeSlider.accessibilityLabel = "Background music"
-        musicVolumeSlider.accessibilityHint = "Adjusts the quiet background tune on this screen and while coloring."
-        musicVolumeSlider.addTarget(self, action: #selector(musicVolumeChanged), for: .valueChanged)
-
-        musicVolumeStack.addArrangedSubview(musicVolumeIcon)
-        musicVolumeStack.addArrangedSubview(musicVolumeSlider)
-        applyMusicVolumeIconForCurrentSlider()
-
-        headerView.addSubview(musicVolumeStack)
-        headerView.addSubview(unlockButton)
-
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
-        scrollView.alwaysBounceVertical = true
-        scrollView.showsVerticalScrollIndicator = true
-        scrollView.showsHorizontalScrollIndicator = false
-        scrollView.backgroundColor = .clear
-        contentView.translatesAutoresizingMaskIntoConstraints = false
-        contentView.backgroundColor = .clear
+        topChromeRow.axis = .horizontal
+        topChromeRow.spacing = 10
+        topChromeRow.alignment = .center
+        topChromeRow.distribution = .fill
+        topChromeRow.translatesAutoresizingMaskIntoConstraints = false
+        topChromeRow.addArrangedSubview(settingsButton)
+        topChromeRow.addArrangedSubview(unlockButton)
 
         homeMainStack.axis = .vertical
         homeMainStack.spacing = 16
         homeMainStack.alignment = .fill
+        homeMainStack.distribution = .fill
         homeMainStack.translatesAutoresizingMaskIntoConstraints = false
         homeMainStack.addArrangedSubview(bodyStack)
-        contentView.addSubview(homeMainStack)
 
         NSLayoutConstraint.activate([
-            mascotColumn.widthAnchor.constraint(equalTo: contentView.widthAnchor, multiplier: HomeCategoryTileMetrics.mascotColumnWidthFraction),
-            mascotColumn.heightAnchor.constraint(equalTo: categoryGridPanelWrapper.heightAnchor),
+            mascotColumn.widthAnchor.constraint(equalTo: homeMainStack.widthAnchor, multiplier: HomeCategoryTileMetrics.mascotColumnWidthFraction),
         ])
 
         mascotView.isUserInteractionEnabled = false
 
         view.addSubview(heroView)
-        view.addSubview(scrollView)
-        scrollView.addSubview(contentView)
-        view.addSubview(headerView)
+        view.addSubview(homeMainStack)
+        view.addSubview(topChromeRow)
 
+        // viewport height is now driven by the panel size (scroll view fills the panel)
         categoryGridViewportHeightConstraint = categoryGridScrollView.heightAnchor.constraint(equalToConstant: 240)
+        categoryGridViewportHeightConstraint.priority = .defaultLow
 
         let g = view.safeAreaLayoutGuide
 
-        scrollViewTopToHeaderConstraint = scrollView.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 8)
-        mainStackTopConstraint = homeMainStack.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 10)
-        mainStackBottomConstraint = homeMainStack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -22)
+        bodyTopToHeaderConstraint = homeMainStack.topAnchor.constraint(equalTo: topChromeRow.bottomAnchor, constant: 8)
+        bodyBottomConstraint = homeMainStack.bottomAnchor.constraint(equalTo: g.bottomAnchor, constant: -22)
 
         NSLayoutConstraint.activate([
             heroView.topAnchor.constraint(equalTo: view.topAnchor),
@@ -290,21 +254,9 @@ final class HomeViewController: UIViewController {
             heroView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             heroView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
-            headerView.topAnchor.constraint(equalTo: g.topAnchor, constant: 4),
-            headerView.leadingAnchor.constraint(equalTo: g.leadingAnchor, constant: 18),
-            headerView.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -18),
-
-            musicVolumeStack.leadingAnchor.constraint(equalTo: categoryGridPanelWrapper.leadingAnchor),
-            musicVolumeStack.centerYAnchor.constraint(equalTo: unlockButton.centerYAnchor),
-            musicVolumeStack.trailingAnchor.constraint(lessThanOrEqualTo: unlockButton.leadingAnchor, constant: -12),
-            musicVolumeIcon.widthAnchor.constraint(equalToConstant: 26),
-            musicVolumeIcon.heightAnchor.constraint(equalToConstant: 26),
-            musicVolumeSlider.widthAnchor.constraint(equalToConstant: 128),
-
-            unlockButton.topAnchor.constraint(equalTo: headerView.topAnchor, constant: 2),
-            unlockButton.trailingAnchor.constraint(equalTo: headerView.trailingAnchor),
-            unlockButton.bottomAnchor.constraint(equalTo: headerView.bottomAnchor, constant: -4),
-            unlockButton.leadingAnchor.constraint(greaterThanOrEqualTo: musicVolumeStack.trailingAnchor, constant: 12),
+                topChromeRow.topAnchor.constraint(equalTo: g.topAnchor, constant: 4),
+            topChromeRow.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -16),
+            topChromeRow.leadingAnchor.constraint(greaterThanOrEqualTo: g.leadingAnchor, constant: 16),
             unlockButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 44),
 
             titleLabel.topAnchor.constraint(equalTo: mascotColumn.topAnchor, constant: 2),
@@ -317,21 +269,10 @@ final class HomeViewController: UIViewController {
             mascotView.trailingAnchor.constraint(equalTo: mascotColumn.trailingAnchor, constant: -2),
             mascotView.bottomAnchor.constraint(equalTo: mascotColumn.bottomAnchor),
 
-            scrollViewTopToHeaderConstraint,
-            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-
-            contentView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
-            contentView.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor),
-            contentView.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor),
-            contentView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
-            contentView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor),
-
-            mainStackTopConstraint,
-            homeMainStack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            homeMainStack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            mainStackBottomConstraint,
+            bodyTopToHeaderConstraint,
+            bodyBottomConstraint,
+            homeMainStack.leadingAnchor.constraint(equalTo: g.leadingAnchor, constant: 16),
+            homeMainStack.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -16),
 
             categoryGridPanel.topAnchor.constraint(equalTo: categoryGridPanelWrapper.topAnchor),
             categoryGridPanel.leadingAnchor.constraint(equalTo: categoryGridPanelWrapper.leadingAnchor),
@@ -347,7 +288,6 @@ final class HomeViewController: UIViewController {
             categoryGridScrollView.leadingAnchor.constraint(equalTo: categoryGridPanel.leadingAnchor, constant: HomeCategoryTileMetrics.panelContentInset),
             categoryGridScrollView.trailingAnchor.constraint(equalTo: categoryGridPanel.trailingAnchor, constant: -HomeCategoryTileMetrics.panelContentInset),
             categoryGridScrollView.bottomAnchor.constraint(equalTo: categoryGridPanel.bottomAnchor, constant: -HomeCategoryTileMetrics.panelContentInset),
-            categoryGridViewportHeightConstraint,
 
             categoryGridContentView.topAnchor.constraint(equalTo: categoryGridScrollView.contentLayoutGuide.topAnchor),
             categoryGridContentView.leadingAnchor.constraint(equalTo: categoryGridScrollView.contentLayoutGuide.leadingAnchor),
@@ -373,8 +313,7 @@ final class HomeViewController: UIViewController {
         populateCategoryGrid()
         applySubscribeButtonEnabledState()
         Task { await SubscriptionManager.shared.refreshEntitlements() }
-        contentView.bringSubviewToFront(mascotColumn)
-        view.bringSubviewToFront(headerView)
+        view.bringSubviewToFront(topChromeRow)
 
         installAssetsLoadPanel()
     }
@@ -459,7 +398,7 @@ final class HomeViewController: UIViewController {
         }
 
         categoryGridPanel.bringSubviewToFront(assetsLoadChip)
-        view.bringSubviewToFront(headerView)
+        view.bringSubviewToFront(topChromeRow)
     }
 
     private func stopAssetsLoadChipAnimations() {
@@ -555,21 +494,8 @@ final class HomeViewController: UIViewController {
         applyLayoutMetricsForCurrentTraits()
     }
 
-    /// Three columns; `categoryGridVisibleRows*` sets how many rows (fractional = clipped row).
-    private func updateCategoryGridViewportHeightIfNeeded() {
-        let w = categoryGridScrollView.bounds.width
-        guard w > 1 else { return }
-        let col = HomeCategoryTileMetrics.columnSpacing
-        let aspect = HomeCategoryTileMetrics.cardAspectHeightPerWidth
-        let tileWidth = (w - 2 * col) / 3
-        let rowHeight = tileWidth * aspect
-        let visibleRows: CGFloat = isCompactHeight
-            ? HomeCategoryTileMetrics.categoryGridVisibleRowsCompact
-            : HomeCategoryTileMetrics.categoryGridVisibleRowsRegular
-        let visible = visibleRows * rowHeight + (ceil(visibleRows) - 1) * HomeCategoryTileMetrics.rowSpacing
-        guard abs(categoryGridViewportHeightConstraint.constant - visible) > 0.5 else { return }
-        categoryGridViewportHeightConstraint.constant = visible
-    }
+    /// The scroll view now fills the panel directly; no fixed viewport height needed.
+    private func updateCategoryGridViewportHeightIfNeeded() { }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
@@ -580,8 +506,6 @@ final class HomeViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        musicVolumeSlider.value = MagicBrushyBackgroundMusic.storedUserVolumeScale()
-        applyMusicVolumeIconForCurrentSlider()
         refreshAssetsLoadOverlay()
         Task { await SubscriptionManager.shared.refreshEntitlements() }
         applySubscribeButtonEnabledState()
@@ -593,9 +517,8 @@ final class HomeViewController: UIViewController {
 
     private func applyLayoutMetricsForCurrentTraits() {
         let compact = isCompactHeight
-        scrollViewTopToHeaderConstraint?.constant = compact ? 4 : 8
-        mainStackTopConstraint?.constant = compact ? 6 : 10
-        mainStackBottomConstraint?.constant = compact ? -10 : -22
+        bodyTopToHeaderConstraint?.constant = compact ? 4 : 8
+        bodyBottomConstraint?.constant = compact ? -10 : -22
         homeMainStack.spacing = compact ? 10 : 16
         bodyStack.spacing = compact ? 8 : HomeCategoryTileMetrics.bodyStackSpacing
         applyTitleAttributedText()
@@ -709,6 +632,39 @@ final class HomeViewController: UIViewController {
         card.addSubview(lockHost)
         lockHost.addSubview(lock)
 
+        if category == .freeDrawing {
+            let plusBadge = UIView()
+            plusBadge.translatesAutoresizingMaskIntoConstraints = false
+            plusBadge.backgroundColor = FigmaTheme.primaryOrange
+            plusBadge.layer.cornerRadius = 22
+            plusBadge.layer.borderWidth = 3
+            plusBadge.layer.borderColor = FigmaTheme.primaryOrangeBorder.cgColor
+            plusBadge.isUserInteractionEnabled = false
+            FigmaTheme.applyCardShadow(to: plusBadge.layer)
+
+            let plusIcon = UIImageView(
+                image: UIImage(
+                    systemName: "plus",
+                    withConfiguration: UIImage.SymbolConfiguration(pointSize: 22, weight: .bold)
+                )
+            )
+            plusIcon.translatesAutoresizingMaskIntoConstraints = false
+            plusIcon.tintColor = .white
+            plusIcon.contentMode = .scaleAspectFit
+            plusBadge.addSubview(plusIcon)
+            card.addSubview(plusBadge)
+
+            NSLayoutConstraint.activate([
+                plusBadge.centerXAnchor.constraint(equalTo: preview.centerXAnchor),
+                plusBadge.centerYAnchor.constraint(equalTo: preview.centerYAnchor),
+                plusBadge.widthAnchor.constraint(equalToConstant: 44),
+                plusBadge.heightAnchor.constraint(equalToConstant: 44),
+                plusIcon.centerXAnchor.constraint(equalTo: plusBadge.centerXAnchor),
+                plusIcon.centerYAnchor.constraint(equalTo: plusBadge.centerYAnchor),
+            ])
+            card.bringSubviewToFront(plusBadge)
+        }
+
         let tap = UITapGestureRecognizer(target: self, action: #selector(categoryTapped(_:)))
         container.addGestureRecognizer(tap)
 
@@ -812,17 +768,6 @@ final class HomeViewController: UIViewController {
         let grid = CategoryGridViewController()
         grid.initialPackId = category.packId
         navigationController?.pushViewController(grid, animated: true)
-    }
-
-    private func applyMusicVolumeIconForCurrentSlider() {
-        let quiet = musicVolumeSlider.value < 0.04
-        let name = quiet ? "speaker.slash.fill" : "speaker.wave.2.fill"
-        musicVolumeIcon.image = UIImage(systemName: name)
-    }
-
-    @objc private func musicVolumeChanged(_ sender: UISlider) {
-        MagicBrushyBackgroundMusic.setUserVolumeScaleFromHome(sender.value)
-        applyMusicVolumeIconForCurrentSlider()
     }
 
     @objc private func unlockTapped() {
