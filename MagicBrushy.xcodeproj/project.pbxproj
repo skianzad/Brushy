@@ -37,6 +37,7 @@
 		B1EAD0000611 /* PiperAlba in Resources */ = {isa = PBXBuildFile; fileRef = B1EAD0000601 /* PiperAlba */; };
 		B1BGM000000000000000001 /* MagicBrushyBackgroundMusic.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1BGM000000000000000101 /* MagicBrushyBackgroundMusic.swift */; };
 		B1SET000000000000000001 /* MagicBrushySettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1SET000000000000000101 /* MagicBrushySettingsViewController.swift */; };
+		B1LNG000000000000000001 /* MagicBrushyLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1LNG000000000000000101 /* MagicBrushyLanguage.swift */; };
 		B1BGM000000000000000002 /* MagicBrushyBackgroundTrack.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = B1BGM000000000000000102 /* MagicBrushyBackgroundTrack.mp3 */; };
 		C1CLR000000000000000001 /* Colors in Resources */ = {isa = PBXBuildFile; fileRef = C1CLR000000000000000101 /* Colors */; };
 /* End PBXBuildFile section */
@@ -86,6 +87,7 @@
 		B1EAD0000601 /* PiperAlba */ = {isa = PBXFileReference; lastKnownFileType = folder; name = PiperAlba; path = ../ASU/SmartDraw/SmartDraw/PiperAlba; sourceTree = SOURCE_ROOT; };
 		B1BGM000000000000000101 /* MagicBrushyBackgroundMusic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagicBrushyBackgroundMusic.swift; sourceTree = "<group>"; };
 		B1SET000000000000000101 /* MagicBrushySettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagicBrushySettingsViewController.swift; sourceTree = "<group>"; };
+		B1LNG000000000000000101 /* MagicBrushyLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagicBrushyLanguage.swift; sourceTree = "<group>"; };
 		B1BGM000000000000000102 /* MagicBrushyBackgroundTrack.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = MagicBrushyBackgroundTrack.mp3; sourceTree = "<group>"; };
 		C1CLR000000000000000101 /* Colors */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Colors; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -135,6 +137,7 @@
 				B1EAD0000501 /* FeedbackAlbaSpeech.swift */,
 				B1BGM000000000000000101 /* MagicBrushyBackgroundMusic.swift */,
 				B1SET000000000000000101 /* MagicBrushySettingsViewController.swift */,
+				B1LNG000000000000000101 /* MagicBrushyLanguage.swift */,
 				B1BGM000000000000000102 /* MagicBrushyBackgroundTrack.mp3 */,
 				A1B100000000000000000103 /* VLM */,
 				A1B200000000000000009 /* Main.storyboard */,
@@ -319,6 +322,7 @@
 				B1EAD0000511 /* FeedbackAlbaSpeech.swift in Sources */,
 				B1BGM000000000000000001 /* MagicBrushyBackgroundMusic.swift in Sources */,
 				B1SET000000000000000001 /* MagicBrushySettingsViewController.swift in Sources */,
+				B1LNG000000000000000001 /* MagicBrushyLanguage.swift in Sources */,
 				B1EAD0000411 /* SherpaOnnx.swift in Sources */,
 				B1EAD0000412 /* SherpaPiperAlbaVoice.swift in Sources */,
 				B1EAD0000413 /* SherpaVLMPlayback.swift in Sources */,

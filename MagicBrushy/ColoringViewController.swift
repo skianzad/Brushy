@@ -1842,6 +1842,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         }
 
         let opener = themeLine.isEmpty ? "A child colored this sheet (outlines + paint)." : "A child colored this sheet (outlines + paint). \(themeLine)"
+        let langInstruction = MagicBrushyLanguage.stored().promptInstruction
 
         return """
 \(opener) Look at the picture.
@@ -1852,7 +1853,7 @@ Your job: say one cheery thing that names the color they just added, in simple k
 
 Speak to THEM: one or two very short sentences, easy words, use "you" or "your". Open with varied praise —never start with the stock phrase “You have a” or “You have an” or “You’ve got a”. Sound warm; you may add a tiny color-feeling phrase that fits that color.
 
-IMPORTANT: Reply with ONLY the words you say aloud—no rules, no quotes about yourself, no repeating this text, no bullets, no markdown, no symbols like <>. Never mention AI, robots, computers, phones, apps, or internet.
+IMPORTANT: Reply with ONLY the words you say aloud—no rules, no quotes about yourself, no repeating this text, no bullets, no markdown, no symbols like <>. Never mention AI, robots, computers, phones, apps, or internet.\(langInstruction)
 
 """
     }
@@ -1870,6 +1871,7 @@ IMPORTANT: Reply with ONLY the words you say aloud—no rules, no quotes about y
         let opener = themeLine.isEmpty
             ? "A child colored this sheet (outlines + paint)."
             : "A child colored this sheet (outlines + paint). \(themeLine)"
+        let langInstruction = MagicBrushyLanguage.stored().promptInstruction
 
         return """
 \(opener) The photo shows the **whole coloring page** together (all outlines and all paint).
@@ -1878,7 +1880,7 @@ They just tapped their mascot buddy asking for a big cheer for their **entire dr
 
 Your job: one warm, very short message in simple kid words about **the whole picture**—what you like about how they filled the page overall. Use "you" or "your". If you can, mention **two** small things you like (for example a color choice **and** the character or scene), but keep it to one or two tiny sentences. Vary how you start (never open with “You have a”, “You have an”, or “You’ve got a”). Do not use map directions (no left, right, top, bottom, or “in the corner”).
 
-IMPORTANT: Reply with ONLY the words you say aloud—no rules, no quotes about yourself, no repeating this text, no bullets, no markdown, no symbols like <>. Never mention AI, robots, computers, phones, apps, or internet.
+IMPORTANT: Reply with ONLY the words you say aloud—no rules, no quotes about yourself, no repeating this text, no bullets, no markdown, no symbols like <>. Never mention AI, robots, computers, phones, apps, or internet.\(langInstruction)
 
 """
     }

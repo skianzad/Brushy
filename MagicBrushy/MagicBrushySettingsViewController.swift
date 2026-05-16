@@ -8,11 +8,12 @@ final class MagicBrushySettingsViewController: UIViewController {
     private let musicRow = UIStackView()
     private let musicIcon = UIImageView()
     private let musicSlider = UISlider()
+    private let languageButton = UIButton(type: .system)
 
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = UIColor.black.withAlphaComponent(0.35)
-        preferredContentSize = CGSize(width: 320, height: 168)
+        preferredContentSize = CGSize(width: 320, height: 268)
 
         cardView.translatesAutoresizingMaskIntoConstraints = false
         cardView.backgroundColor = UIColor(white: 0.12, alpha: 0.94)
@@ -28,6 +29,8 @@ final class MagicBrushySettingsViewController: UIViewController {
         titleLabel.textColor = FigmaTheme.creamText
         titleLabel.font = FigmaTheme.titleFont(size: 22)
         titleLabel.textAlignment = .center
+
+        // MARK: Music row
 
         musicRow.axis = .horizontal
         musicRow.alignment = .center
@@ -49,18 +52,52 @@ final class MagicBrushySettingsViewController: UIViewController {
         musicSlider.accessibilityHint = "Adjusts the quiet background tune across the app."
         musicSlider.addTarget(self, action: #selector(musicVolumeChanged), for: .valueChanged)
 
-        let musicCaption = UILabel()
-        musicCaption.translatesAutoresizingMaskIntoConstraints = false
-        musicCaption.text = "Background music"
-        musicCaption.textColor = FigmaTheme.creamText.withAlphaComponent(0.92)
-        musicCaption.font = FigmaTheme.bodyFont(size: 15, weight: .semibold)
-
+        let musicCaption = makeCaption("Background music")
         musicRow.addArrangedSubview(musicIcon)
         musicRow.addArrangedSubview(musicSlider)
+
+        // MARK: Language row
+
+        let langCaption = makeCaption("Response language")
+        let langIconView = UIImageView(image: UIImage(systemName: "globe"))
+        langIconView.translatesAutoresizingMaskIntoConstraints = false
+        langIconView.tintColor = FigmaTheme.primaryOrange
+        langIconView.contentMode = .scaleAspectFit
+        langIconView.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 20, weight: .semibold)
+        langIconView.setContentHuggingPriority(.required, for: .horizontal)
+
+        languageButton.translatesAutoresizingMaskIntoConstraints = false
+        languageButton.titleLabel?.font = FigmaTheme.bodyFont(size: 16, weight: .semibold)
+        languageButton.setTitleColor(FigmaTheme.creamText, for: .normal)
+        languageButton.backgroundColor = UIColor.white.withAlphaComponent(0.12)
+        languageButton.layer.cornerRadius = 10
+        if #available(iOS 13.0, *) { languageButton.layer.cornerCurve = .continuous }
+        languageButton.contentHorizontalAlignment = .left
+        languageButton.titleEdgeInsets = UIEdgeInsets(top: 0, left: 10, bottom: 0, right: 10)
+        languageButton.accessibilityLabel = "Response language"
+        languageButton.accessibilityHint = "Choose the language the painting coach speaks in."
+        setupLanguageMenu()
+
+        let langRow = UIStackView(arrangedSubviews: [langIconView, languageButton])
+        langRow.axis = .horizontal
+        langRow.alignment = .center
+        langRow.spacing = 10
+        langRow.translatesAutoresizingMaskIntoConstraints = false
+
+        // MARK: Divider
+
+        let divider = UIView()
+        divider.translatesAutoresizingMaskIntoConstraints = false
+        divider.backgroundColor = UIColor.white.withAlphaComponent(0.14)
+
+        // MARK: Assemble
 
         cardView.addSubview(titleLabel)
         cardView.addSubview(musicCaption)
         cardView.addSubview(musicRow)
+        cardView.addSubview(divider)
+        cardView.addSubview(langCaption)
+        cardView.addSubview(langRow)
         view.addSubview(cardView)
 
         NSLayoutConstraint.activate([
@@ -82,10 +119,27 @@ final class MagicBrushySettingsViewController: UIViewController {
             musicRow.topAnchor.constraint(equalTo: musicCaption.bottomAnchor, constant: 10),
             musicRow.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 20),
             musicRow.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -20),
-            musicRow.bottomAnchor.constraint(equalTo: cardView.bottomAnchor, constant: -22),
 
             musicIcon.widthAnchor.constraint(equalToConstant: 28),
             musicIcon.heightAnchor.constraint(equalToConstant: 28),
+
+            divider.topAnchor.constraint(equalTo: musicRow.bottomAnchor, constant: 18),
+            divider.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 20),
+            divider.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -20),
+            divider.heightAnchor.constraint(equalToConstant: 1),
+
+            langCaption.topAnchor.constraint(equalTo: divider.bottomAnchor, constant: 14),
+            langCaption.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 20),
+            langCaption.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -20),
+
+            langRow.topAnchor.constraint(equalTo: langCaption.bottomAnchor, constant: 10),
+            langRow.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 20),
+            langRow.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -20),
+            langRow.bottomAnchor.constraint(equalTo: cardView.bottomAnchor, constant: -22),
+
+            langIconView.widthAnchor.constraint(equalToConstant: 28),
+            langIconView.heightAnchor.constraint(equalToConstant: 28),
+            languageButton.heightAnchor.constraint(equalToConstant: 38),
         ])
 
         syncMusicControlsFromStorage()
@@ -95,6 +149,8 @@ final class MagicBrushySettingsViewController: UIViewController {
         super.viewWillAppear(animated)
         syncMusicControlsFromStorage()
     }
+
+    // MARK: - Music
 
     private func syncMusicControlsFromStorage() {
         musicSlider.value = MagicBrushyBackgroundMusic.storedUserVolumeScale()
@@ -109,6 +165,56 @@ final class MagicBrushySettingsViewController: UIViewController {
     @objc private func musicVolumeChanged(_ sender: UISlider) {
         MagicBrushyBackgroundMusic.setUserVolumeScale(sender.value)
         applyMusicVolumeIcon()
+    }
+
+    // MARK: - Language
+
+    private func setupLanguageMenu() {
+        updateLanguageButtonTitle(MagicBrushyLanguage.stored())
+
+        if #available(iOS 14.0, *) {
+            let actions = MagicBrushyLanguage.allCases.map { lang in
+                UIAction(title: lang.displayName, state: MagicBrushyLanguage.stored() == lang ? .on : .off) { [weak self] _ in
+                    MagicBrushyLanguage.store(lang)
+                    self?.updateLanguageButtonTitle(lang)
+                    self?.setupLanguageMenu()
+                }
+            }
+            languageButton.menu = UIMenu(title: "", children: actions)
+            languageButton.showsMenuAsPrimaryAction = true
+        } else {
+            languageButton.addTarget(self, action: #selector(languageButtonTapped), for: .touchUpInside)
+        }
+    }
+
+    private func updateLanguageButtonTitle(_ lang: MagicBrushyLanguage) {
+        languageButton.setTitle("  \(lang.displayName)", for: .normal)
+    }
+
+    @objc private func languageButtonTapped() {
+        let sheet = UIAlertController(title: "Response language", message: nil, preferredStyle: .actionSheet)
+        for lang in MagicBrushyLanguage.allCases {
+            let current = MagicBrushyLanguage.stored() == lang
+            let action = UIAlertAction(title: (current ? "✓ " : "    ") + lang.displayName, style: .default) { [weak self] _ in
+                MagicBrushyLanguage.store(lang)
+                self?.updateLanguageButtonTitle(lang)
+            }
+            sheet.addAction(action)
+        }
+        sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        sheet.popoverPresentationController?.sourceView = languageButton
+        present(sheet, animated: true)
+    }
+
+    // MARK: - Helpers
+
+    private func makeCaption(_ text: String) -> UILabel {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.text = text
+        label.textColor = FigmaTheme.creamText.withAlphaComponent(0.92)
+        label.font = FigmaTheme.bodyFont(size: 15, weight: .semibold)
+        return label
     }
 }
 
