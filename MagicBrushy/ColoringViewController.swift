@@ -157,8 +157,6 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     private var feedbackGeneration: UInt64 = 0
     /// Last mascot pose applied after coach VLM — passed into semantic mapping to reduce back-to-back duplicates.
     private var lastMascotReaction: MascotReactionState?
-    /// Fresh word the VLM appended as a hidden SEED tag — used as the mandatory opener for the next prompt.
-    private var lastFeedbackSeedWord: String?
     /// Bumped on page change / clear / undo only — **not** on every new stroke, so debounced mascot reactions can still apply after pen lift.
     private var reactionSession: UInt64 = 0
     private var vlmInputPreviewHideWork: DispatchWorkItem?
@@ -1113,7 +1111,6 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         feedbackGeneration &+= 1
         reactionSession &+= 1
         lastMascotReaction = nil
-        lastFeedbackSeedWord = nil
         cancelFeedbackIdleTimer()
         cancelPendingReactionWork()
         vlm.cancel()
@@ -1469,7 +1466,8 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             let img = self.captureCanvasForVLM()
             let previewImage = model.prepareImageForModelPreview(img) ?? img
             self.showVLMInputPreview(previewImage)
-            let reactionPrompt = Reaction.classificationPrompt()
+            let labels = MascotReactionState.allCases.map { String(describing: $0) }
+            let reactionPrompt = Prompt.mascotReactionClassification(poseLabels: labels)
 
             model.maxTokens = 64
             let reactionTask = await model.generate(
@@ -1520,7 +1518,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             let img = self.captureCanvasForVLM()
             let previewImage = model.prepareImageForModelPreview(img) ?? img
             self.showVLMInputPreview(previewImage)
-            let prompt = self.composeFeedbackPrompt()
+            let prompt = self.makeStrokeFeedbackPrompt()
 
             model.maxTokens = 120
             #if DEBUG
@@ -1540,18 +1538,11 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             let pose = Reaction.mascotPoseFromCoachResponse(raw, avoidingRepeatOf: self.lastMascotReaction)
             self.applyMascotReaction(pose)
 
-            // Extract and remove the SEED tag wherever the model placed it (inline or newline).
-            var rawSpeakable = raw
-            if let seedRange = rawSpeakable.range(of: #"SEED:\s*([A-Za-z]+)"#, options: .regularExpression) {
-                let seedToken = String(rawSpeakable[seedRange])
-                let word = seedToken
-                    .replacingOccurrences(of: "SEED:", with: "", options: .caseInsensitive)
-                    .trimmingCharacters(in: .whitespacesAndNewlines)
-                if word.count >= 2 { self.lastFeedbackSeedWord = word }
-                rawSpeakable.removeSubrange(seedRange)
-                rawSpeakable = rawSpeakable.trimmingCharacters(in: .whitespacesAndNewlines)
-            }
-            let spoken = MagicBrushyVLMOutputCleanup.sanitizeKidFeedback(rawSpeakable)
+            let spoken = MagicBrushyVLMOutputCleanup.sanitizeKidFeedback(raw)
+            #if DEBUG
+            print("[Brushi][VLM][Feedback] mascot pose: \(String(describing: pose))")
+            print("[Brushi][VLM][Feedback] spoken: \(spoken)")
+            #endif
             guard !spoken.isEmpty, spoken != "…",
                   !spoken.hasPrefix("Failed:") else { return }
             await FeedbackAlbaSpeech.speakFeedback(spoken)
@@ -1577,7 +1568,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             let img = self.captureCanvasForVLMFullPage()
             let previewImage = model.prepareImageForModelPreview(img) ?? img
             self.showVLMInputPreview(previewImage)
-            let prompt = self.composeWholeDrawingCheerPrompt()
+            let prompt = self.makeWholeDrawingCheerPrompt()
 
             model.maxTokens = 120
             #if DEBUG
@@ -1597,18 +1588,11 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             let pose = Reaction.mascotPoseFromCoachResponse(raw, avoidingRepeatOf: self.lastMascotReaction)
             self.applyMascotReaction(pose)
 
-            // Extract and remove the SEED tag wherever the model placed it (inline or newline).
-            var rawSpeakable = raw
-            if let seedRange = rawSpeakable.range(of: #"SEED:\s*([A-Za-z]+)"#, options: .regularExpression) {
-                let seedToken = String(rawSpeakable[seedRange])
-                let word = seedToken
-                    .replacingOccurrences(of: "SEED:", with: "", options: .caseInsensitive)
-                    .trimmingCharacters(in: .whitespacesAndNewlines)
-                if word.count >= 2 { self.lastFeedbackSeedWord = word }
-                rawSpeakable.removeSubrange(seedRange)
-                rawSpeakable = rawSpeakable.trimmingCharacters(in: .whitespacesAndNewlines)
-            }
-            let spoken = MagicBrushyVLMOutputCleanup.sanitizeKidFeedback(rawSpeakable)
+            let spoken = MagicBrushyVLMOutputCleanup.sanitizeKidFeedback(raw)
+            #if DEBUG
+            print("[Brushi][VLM][WholeDrawing] mascot pose: \(String(describing: pose))")
+            print("[Brushi][VLM][WholeDrawing] spoken: \(spoken)")
+            #endif
             guard !spoken.isEmpty, spoken != "…",
                   !spoken.hasPrefix("Failed:") else { return }
             await FeedbackAlbaSpeech.speakFeedback(spoken)
@@ -1828,100 +1812,23 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         */
     }
 
-    private func composeFeedbackPrompt() -> String {
-        let lastPoints = strokeView.lastFinishedStrokePointCount
-        let lastColor = strokeView.chronologicalStrokeColors.last
-        // Location hint disabled — coach should focus on *which color* they used, not where on the page.
-        // let spatial = strokeView.lastFinishedStrokeSpatialHint()
-
-        let paletteHintBlock: String
-        if lastPoints > 30, let c = lastColor {
-            let paintWord = simpleKidColorName(for: c)
-            paletteHintBlock = "Their most recent big brush used palette color “\(paintWord)”—celebrate that color if you see it in the photo."
-
-        } else if lastPoints > 0, let c = lastColor {
-            let paintWord = simpleKidColorName(for: c)
-            paletteHintBlock = "Their most recent brush used palette color “\(paintWord)”—celebrate that color if you see it in the photo."
-
-        } else if lastPoints > 0 {
-            paletteHintBlock = "They added a little paint recently; give a warm cheer without insisting on a specific color name."
-        } else {
-            paletteHintBlock = "No new stroke tracked; peek at the picture and cheer gently."
-        }
-
-        /*
-        let spatialBlock: String
-        if let s = spatial {
-            spatialBlock = "\(s) Aim your praise at that region first."
-        } else {
-            spatialBlock = "Find the patch of paint that looks newest or brightest compared with the rest, usually near the last finger path."
-        }
-        */
-
-        let themeLine: String
-        if pageIndex >= 0, pageIndex < coloringBookPages.count {
-            let t = coloringBookPages[pageIndex].title
-            themeLine = "Page: \(t)."
-        } else {
-            themeLine = ""
-        }
-
-        let opener = themeLine.isEmpty ? "A child colored this sheet (outlines + paint)." : "A child colored this sheet (outlines + paint). \(themeLine)"
-        let langInstruction = MagicBrushyLanguage.stored().promptInstruction
-        let continuityBlock: String
-        if let seed = lastFeedbackSeedWord {
-            continuityBlock = "Open your reply with the word \"\(seed)\" — then notice something completely NEW in the picture: a different color, a different part, or more of the page being filled. Your full response must be fresh words unrelated to what you said before."
-        } else {
-            continuityBlock = ""
-        }
-
-        return """
-\(opener) Look at the picture.
-
-\(paletteHintBlock)
-
-\(continuityBlock.isEmpty ? "" : continuityBlock + "\n\n")Your job: say one cheery thing that names the color they just added, in simple kid words. If the subject is very obvious, you may weave it in briefly—do not guess random objects. Do not use map directions (no left, right, top, bottom, or “in the corner”).
-
-Speak to THEM: one or two very short sentences, easy words, use "you" or "your". Open with varied praise —never start with the stock phrase “You have a” or “You have an” or “You’ve got a”. Sound warm; you may add a tiny color-feeling phrase that fits that color.
-
-IMPORTANT: Reply with ONLY the words you say aloud—no rules, no quotes about yourself, no repeating this text, no bullets, no markdown, no symbols like <>. Never mention AI, robots, computers, phones, apps, or internet.\(langInstruction)
-After your spoken words, on a new line write exactly: SEED:[one single fresh encouraging word you have not used before, all lowercase]
-
-"""
+    private func currentPageTitle() -> String? {
+        guard pageIndex >= 0, pageIndex < coloringBookPages.count else { return nil }
+        return coloringBookPages[pageIndex].title
     }
 
-    /// Coach prompt when the child taps the mascot: praise the **entire** page, not only the latest stroke.
-    private func composeWholeDrawingCheerPrompt() -> String {
-        let themeLine: String
-        if pageIndex >= 0, pageIndex < coloringBookPages.count {
-            let t = coloringBookPages[pageIndex].title
-            themeLine = "Page: \(t)."
-        } else {
-            themeLine = ""
-        }
+    private func makeStrokeFeedbackPrompt() -> String {
+        let lastColor = strokeView.chronologicalStrokeColors.last
+        let paintName = lastColor.map { simpleKidColorName(for: $0) }
+        return Prompt.strokeFeedback(
+            pageTitle: currentPageTitle(),
+            lastStrokePointCount: strokeView.lastFinishedStrokePointCount,
+            lastPaintColorName: paintName
+        )
+    }
 
-        let opener = themeLine.isEmpty
-            ? "A child colored this sheet (outlines + paint)."
-            : "A child colored this sheet (outlines + paint). \(themeLine)"
-        let langInstruction = MagicBrushyLanguage.stored().promptInstruction
-        let continuityBlock: String
-        if let seed = lastFeedbackSeedWord {
-            continuityBlock = "Open your reply with the word \"\(seed)\" — then notice something completely NEW in the picture: a different color, a different part, or more of the page being filled. Your full response must be fresh words unrelated to what you said before."
-        } else {
-            continuityBlock = ""
-        }
-
-        return """
-\(opener) The photo shows the **whole coloring page** together (all outlines and all paint).
-
-\(continuityBlock.isEmpty ? "" : continuityBlock + "\n\n")They just tapped their mascot buddy asking for a big cheer for their **entire drawing so far**—not only the newest dab of paint. Look at the full picture: how colors spread across the scene, how the page feels as one piece, and the subject of the line art if you can tell.
-
-Your job: one warm, very short message in simple kid words about **the whole picture**—what you like about how they filled the page overall. Use "you" or "your". If you can, mention **two** small things you like (for example a color choice **and** the character or scene), but keep it to one or two tiny sentences. Vary how you start (never open with “You have a”, “You have an”, or “You’ve got a”). Do not use map directions (no left, right, top, bottom, or “in the corner”).
-
-IMPORTANT: Reply with ONLY the words you say aloud—no rules, no quotes about yourself, no repeating this text, no bullets, no markdown, no symbols like <>. Never mention AI, robots, computers, phones, apps, or internet.\(langInstruction)
-After your spoken words, on a new line write exactly: SEED:[one single fresh encouraging word you have not used before, all lowercase]
-
-"""
+    private func makeWholeDrawingCheerPrompt() -> String {
+        Prompt.wholeDrawingCheer(pageTitle: currentPageTitle())
     }
 
     /// Nearest app palette swatch name so "history" stays consistent with the picker.

@@ -46,19 +46,7 @@ enum MagicBrushyLanguage: String, CaseIterable {
     var usesPiperAlba: Bool { self == .english }
 
     /// Instruction appended to every VLM prompt so the model replies in the chosen language.
-    /// Empty for English because all prompts are already written in English.
-    var promptInstruction: String {
-        switch self {
-        case .english:  return ""
-        case .arabic:   return "\nIMPORTANT: Write your reply entirely in Arabic (العربية). Do not use any other language."
-        case .spanish:  return "\nIMPORTANT: Write your reply entirely in Spanish (Español). Do not use any other language."
-        case .french:   return "\nIMPORTANT: Write your reply entirely in French (Français). Do not use any other language."
-        case .german:   return "\nIMPORTANT: Write your reply entirely in German (Deutsch). Do not use any other language."
-        case .japanese: return "\nIMPORTANT: Write your reply entirely in Japanese (日本語). Do not use any other language."
-        case .korean:   return "\nIMPORTANT: Write your reply entirely in Korean (한국어). Do not use any other language."
-        case .chinese:  return "\nIMPORTANT: Write your reply entirely in Chinese (中文). Do not use any other language."
-        }
-    }
+    var promptInstruction: String { Prompt.languageInstruction(for: self) }
 
     // MARK: - Persistence
 

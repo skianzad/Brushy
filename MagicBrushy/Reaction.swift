@@ -1,32 +1,8 @@
 import Foundation
 import NaturalLanguage
 
-/// Mascot pose from VLM coach text (original single-prompt flow) + optional legacy classifier prompt (commented).
+/// Mascot pose from VLM coach text (pose labels / prompts live in `Prompt.swift`).
 enum Reaction {
-
-    // MARK: - Legacy separate reaction-only prompt (unused; pose comes from coach response text)
-    /*
-    static func classificationPrompt() -> String {
-        let labels = MascotReactionState.allCases
-            .map { String(describing: $0) }
-            .sorted()
-            .joined(separator: ", ")
-        return """
-You see a child’s coloring page (template + paint). Pick ONE mascot pose name that fits the **mood of their work right now**—calm encouragement, pride in a new patch of color, quiet focus, warmth, playfulness, etc.
-
-Use a **normal, varied** reaction for everyday coloring: prefer happy, supportive, thumbsUp, listening, thinking, neutral, caringHeart, celebrating, hello, talking, or tapReaction when the page looks like steady fun progress.
-
-Reserve **surprised**, **excited**, and **oMouth** only when the picture clearly shows something unusually bold, messy-funny, or visually startling—not as a default.
-
-Do **not** always pick the same pose across turns; match this specific photo.
-
-Output rule: reply with EXACTLY ONE WORD — one of these camelCase identifiers and nothing else (no punctuation, no quotes, no explanation):
-\(labels)
-
-If unsure, use neutral.
-"""
-    }
-    */
 
     // MARK: - Semantic anchors (Apple `NLEmbedding` sentence vectors)
 
@@ -329,4 +305,5 @@ If unsure, use neutral.
         let range = NSRange(haystack.startIndex..., in: haystack)
         return re.firstMatch(in: haystack, options: [], range: range) != nil
     }
+
 }

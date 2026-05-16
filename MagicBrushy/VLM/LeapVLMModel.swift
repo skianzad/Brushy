@@ -94,6 +94,7 @@ final class LeapVLMModel {
 
         let task = Task { @MainActor in
             self.output = Self.simulatorMessage
+            MagicBrushyVLMDebugLog.response("Simulator", output: self.output)
             await self.finishInferenceSession()
         }
         currentTask = task
@@ -384,10 +385,17 @@ final class LeapVLMModel {
 
                 if !Task.isCancelled {
                     self.output = MagicBrushyVLMOutputCleanup.sanitizeKidFeedback(accumulated)
+                    MagicBrushyVLMDebugLog.response(
+                        "Generate",
+                        output: self.output,
+                        promptTime: self.promptTime,
+                        rawBeforeCleanup: accumulated
+                    )
                 }
             } catch {
                 if !Task.isCancelled {
                     self.output = "Failed: \(error.localizedDescription)"
+                    MagicBrushyVLMDebugLog.response("Generate", output: self.output, promptTime: self.promptTime)
                 }
             }
             await self.finishInferenceSession()
@@ -438,12 +446,6 @@ enum MagicBrushyVLMOutputCleanup {
         guard !s.isEmpty else { return "" }
 
         if let re = try? NSRegularExpression(pattern: #"<\|[^>]+>"#, options: []) {
-            let full = NSRange(s.startIndex..., in: s)
-            s = re.stringByReplacingMatches(in: s, options: [], range: full, withTemplate: "").trimmingCharacters(in: .whitespacesAndNewlines)
-        }
-
-        // Strip any SEED tag the model may have left (belt-and-suspenders after controller extraction).
-        if let re = try? NSRegularExpression(pattern: #"SEED:\s*\w+"#, options: .caseInsensitive) {
             let full = NSRange(s.startIndex..., in: s)
             s = re.stringByReplacingMatches(in: s, options: [], range: full, withTemplate: "").trimmingCharacters(in: .whitespacesAndNewlines)
         }
@@ -518,3 +520,32 @@ enum MagicBrushyVLMOutputCleanup {
         return t
     }
 }
+
+// MARK: - Debug logging
+
+#if DEBUG
+enum MagicBrushyVLMDebugLog {
+    static func response(
+        _ tag: String,
+        output: String,
+        promptTime: String = "",
+        rawBeforeCleanup: String? = nil
+    ) {
+        let timing = promptTime.isEmpty ? "" : " first-token \(promptTime)"
+        print("[Brushi][VLM][\(tag)]\(timing)\n\(output)")
+        if let raw = rawBeforeCleanup,
+           raw.trimmingCharacters(in: .whitespacesAndNewlines) != output.trimmingCharacters(in: .whitespacesAndNewlines) {
+            print("[Brushi][VLM][\(tag)][raw]\n\(raw)")
+        }
+    }
+}
+#else
+enum MagicBrushyVLMDebugLog {
+    static func response(
+        _ tag: String,
+        output: String,
+        promptTime: String = "",
+        rawBeforeCleanup: String? = nil
+    ) {}
+}
+#endif
