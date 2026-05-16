@@ -93,7 +93,13 @@ enum FeedbackAlbaSpeech {
                 self.speakContinuation = cont
                 let u = AVSpeechUtterance(string: text)
                 u.voice = voice
-                u.rate = AVSpeechUtteranceDefaultSpeechRate * 0.92
+                // Slightly slower than default → more relaxed, less mechanical.
+                u.rate = AVSpeechUtteranceDefaultSpeechRate * 0.86
+                // Raising pitch makes the voice brighter and warmer — closer to a
+                // child-friendly tone without sounding cartoonish (range 0.5–2.0).
+                u.pitchMultiplier = 1.18
+                // A touch below full volume keeps the delivery soft and friendly.
+                u.volume = 0.92
                 synth.speak(u)
             }
         }
@@ -124,22 +130,24 @@ enum FeedbackAlbaSpeech {
         }
 
         /// Best available voice for the given BCP-47 language tag.
-        /// Prefers Premium > Enhanced > Default quality among voices matching the language.
-        /// For English, further prefers specific British voices to match the Alba character.
+        /// Prefers Premium > Enhanced > Default quality, skips Siri voices (they can misbehave),
+        /// and within each quality tier picks warmer-sounding (typically female) voices for kids.
         private static func preferredVoice(for languageTag: String) -> AVSpeechSynthesisVoice? {
             let all = AVSpeechSynthesisVoice.speechVoices()
+                .filter { !$0.name.lowercased().contains("siri") }
 
-            // Match on exact tag first, then on the 2-letter language prefix.
+            // Match exact tag first, then 2-letter language prefix.
             let exact = all.filter { $0.language == languageTag }
             let prefix = String(languageTag.prefix(2))
-            let byPrefix = exact.isEmpty ? all.filter { $0.language.hasPrefix(prefix) } : exact
-            guard !byPrefix.isEmpty else {
+            let candidates = exact.isEmpty ? all.filter { $0.language.hasPrefix(prefix) } : exact
+            guard !candidates.isEmpty else {
                 return AVSpeechSynthesisVoice(language: languageTag)
             }
 
-            // For English, prefer specific British names to keep the Alba character feel.
+            // For English, prefer named British voices to keep the warm Alba character feel.
             if prefix == "en" {
-                let enGB = byPrefix.filter { $0.language == "en-GB" }
+                let enGB = candidates.filter { $0.language == "en-GB" }
+                // Martha / Kate are the warmest enhanced GB voices on iOS 17.
                 let nameOrder = ["Martha", "Kate", "Serena", "Daniel", "Arthur", "Oliver"]
                 for name in nameOrder {
                     if let v = enGB.first(where: { $0.name.caseInsensitiveCompare(name) == .orderedSame }) {
@@ -149,10 +157,28 @@ enum FeedbackAlbaSpeech {
                 if let v = enGB.first { return v }
             }
 
-            // For all languages: prefer Premium, then Enhanced, then any.
-            if let premium = byPrefix.first(where: { $0.quality == .premium }) { return premium }
-            if let enhanced = byPrefix.first(where: { $0.quality == .enhanced }) { return enhanced }
-            return byPrefix.first ?? AVSpeechSynthesisVoice(language: languageTag)
+            // Warm female-sounding voices per language — known pleasant voices for kids.
+            let preferredNames: [String: [String]] = [
+                "ar": ["Maged", "Layla"],
+                "es": ["Monica", "Paulina", "Marisol"],
+                "fr": ["Amelie", "Thomas", "Marie"],
+                "de": ["Anna", "Petra", "Yannick"],
+                "ja": ["Kyoko", "O-ren"],
+                "ko": ["Yuna", "Sora"],
+                "zh": ["Ting-Ting", "Sin-ji", "Mei-Jia"],
+            ]
+            if let names = preferredNames[prefix] {
+                for name in names {
+                    if let v = candidates.first(where: { $0.name.caseInsensitiveCompare(name) == .orderedSame }) {
+                        return v
+                    }
+                }
+            }
+
+            // Quality tier fallback: Premium > Enhanced > any.
+            if let premium = candidates.first(where: { $0.quality == .premium }) { return premium }
+            if let enhanced = candidates.first(where: { $0.quality == .enhanced }) { return enhanced }
+            return candidates.first ?? AVSpeechSynthesisVoice(language: languageTag)
         }
     }
 }
