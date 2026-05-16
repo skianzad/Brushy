@@ -1850,7 +1850,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         let langInstruction = MagicBrushyLanguage.stored().promptInstruction
         let continuityBlock: String
         if let last = lastSpokenFeedback {
-            continuityBlock = "Last thing you said to them: \"\(last)\"\nContinue naturally from there — say something fresh and don\'t repeat those exact words."
+            continuityBlock = "You already said this to the child: \"\(last)\"\nYour next reply must be COMPLETELY DIFFERENT — new words, new observation, fresh angle. Do NOT start with, include, or echo any part of that previous sentence."
         } else {
             continuityBlock = ""
         }
@@ -1885,7 +1885,7 @@ IMPORTANT: Reply with ONLY the words you say aloud—no rules, no quotes about y
         let langInstruction = MagicBrushyLanguage.stored().promptInstruction
         let continuityBlock: String
         if let last = lastSpokenFeedback {
-            continuityBlock = "Last thing you said to them: \"\(last)\"\nContinue naturally from there — say something fresh and don\'t repeat those exact words."
+            continuityBlock = "You already said this to the child: \"\(last)\"\nYour next reply must be COMPLETELY DIFFERENT — new words, new observation, fresh angle. Do NOT start with, include, or echo any part of that previous sentence."
         } else {
             continuityBlock = ""
         }
