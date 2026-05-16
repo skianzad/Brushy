@@ -157,8 +157,29 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     private var feedbackGeneration: UInt64 = 0
     /// Last mascot pose applied after coach VLM — passed into semantic mapping to reduce back-to-back duplicates.
     private var lastMascotReaction: MascotReactionState?
-    /// Last cleaned sentence the VLM actually spoke — fed back as context so responses feel like a conversation.
+    /// Last cleaned sentence the VLM actually spoke — used to extract a seed word for the next prompt.
     private var lastSpokenFeedback: String?
+    /// A short positive word pulled from `lastSpokenFeedback` — given to the next prompt as a fresh opener directive.
+    private var lastFeedbackSeedWord: String?
+
+    /// Extracts the first strong positive word from a VLM reply to use as a conversational bridge.
+    private func extractEncouragingSeed(from text: String) -> String {
+        let seeds = ["Wow", "Wonderful", "Amazing", "Beautiful", "Fantastic", "Lovely", "Brilliant",
+                     "Excellent", "Awesome", "Terrific", "Splendid", "Gorgeous", "Super", "Great",
+                     "Cool", "Sweet", "Nice", "Yay", "Oh", "Look"]
+        let lower = text.lowercased()
+        for seed in seeds where lower.contains(seed.lowercased()) {
+            return seed + "!"
+        }
+        // Fall back to the first alphabetic word from the response.
+        let first = text.unicodeScalars
+            .prefix(while: { $0.value < 0x2000 })
+            .map(Character.init)
+            .reduce(into: "") { $0.append($1) }
+            .components(separatedBy: CharacterSet.letters.inverted)
+            .first(where: { $0.count >= 3 })
+        return (first ?? "Nice") + "!"
+    }
     /// Bumped on page change / clear / undo only — **not** on every new stroke, so debounced mascot reactions can still apply after pen lift.
     private var reactionSession: UInt64 = 0
     private var vlmInputPreviewHideWork: DispatchWorkItem?
@@ -1114,6 +1135,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         reactionSession &+= 1
         lastMascotReaction = nil
         lastSpokenFeedback = nil
+        lastFeedbackSeedWord = nil
         cancelFeedbackIdleTimer()
         cancelPendingReactionWork()
         vlm.cancel()
@@ -1544,6 +1566,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             guard !spoken.isEmpty, spoken != "…",
                   !spoken.hasPrefix("Failed:") else { return }
             self.lastSpokenFeedback = spoken
+            self.lastFeedbackSeedWord = self.extractEncouragingSeed(from: spoken)
             await FeedbackAlbaSpeech.speakFeedback(spoken)
         }
     }
@@ -1591,6 +1614,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             guard !spoken.isEmpty, spoken != "…",
                   !spoken.hasPrefix("Failed:") else { return }
             self.lastSpokenFeedback = spoken
+            self.lastFeedbackSeedWord = self.extractEncouragingSeed(from: spoken)
             await FeedbackAlbaSpeech.speakFeedback(spoken)
         }
     }
@@ -1849,8 +1873,8 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         let opener = themeLine.isEmpty ? "A child colored this sheet (outlines + paint)." : "A child colored this sheet (outlines + paint). \(themeLine)"
         let langInstruction = MagicBrushyLanguage.stored().promptInstruction
         let continuityBlock: String
-        if let last = lastSpokenFeedback {
-            continuityBlock = "You already said this to the child: \"\(last)\"\nYour next reply must be COMPLETELY DIFFERENT — new words, new observation, fresh angle. Do NOT start with, include, or echo any part of that previous sentence."
+        if let seed = lastFeedbackSeedWord {
+            continuityBlock = "Open your reply with the word \"\(seed)\" — then notice something completely NEW in the picture: a different color, a different part, or more of the page being filled. Your full response must be fresh words unrelated to what you said before."
         } else {
             continuityBlock = ""
         }
@@ -1884,8 +1908,8 @@ IMPORTANT: Reply with ONLY the words you say aloud—no rules, no quotes about y
             : "A child colored this sheet (outlines + paint). \(themeLine)"
         let langInstruction = MagicBrushyLanguage.stored().promptInstruction
         let continuityBlock: String
-        if let last = lastSpokenFeedback {
-            continuityBlock = "You already said this to the child: \"\(last)\"\nYour next reply must be COMPLETELY DIFFERENT — new words, new observation, fresh angle. Do NOT start with, include, or echo any part of that previous sentence."
+        if let seed = lastFeedbackSeedWord {
+            continuityBlock = "Open your reply with the word \"\(seed)\" — then notice something completely NEW in the picture: a different color, a different part, or more of the page being filled. Your full response must be fresh words unrelated to what you said before."
         } else {
             continuityBlock = ""
         }
