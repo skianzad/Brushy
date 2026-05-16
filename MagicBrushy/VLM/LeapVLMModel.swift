@@ -442,6 +442,12 @@ enum MagicBrushyVLMOutputCleanup {
             s = re.stringByReplacingMatches(in: s, options: [], range: full, withTemplate: "").trimmingCharacters(in: .whitespacesAndNewlines)
         }
 
+        // Strip any SEED tag the model may have left (belt-and-suspenders after controller extraction).
+        if let re = try? NSRegularExpression(pattern: #"SEED:\s*\w+"#, options: .caseInsensitive) {
+            let full = NSRange(s.startIndex..., in: s)
+            s = re.stringByReplacingMatches(in: s, options: [], range: full, withTemplate: "").trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
         let logJunkMarks = ["encoding image slice", "image slice encoded", "decoding image batch", "[2026-", "[INFO"]
         for mark in logJunkMarks {
             if let r = s.range(of: mark, options: .caseInsensitive) {

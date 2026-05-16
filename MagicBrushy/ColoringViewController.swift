@@ -1540,16 +1540,16 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             let pose = Reaction.mascotPoseFromCoachResponse(raw, avoidingRepeatOf: self.lastMascotReaction)
             self.applyMascotReaction(pose)
 
-            // Extract the SEED tag the model appended, then strip it before speech.
-            let lines = raw.components(separatedBy: "\n")
-            let seedLine = lines.first(where: { $0.hasPrefix("SEED:") })
-            let rawSpeakable = lines.filter { !$0.hasPrefix("SEED:") }.joined(separator: "\n")
-            if let sl = seedLine {
-                let word = String(sl.dropFirst(5))
+            // Extract and remove the SEED tag wherever the model placed it (inline or newline).
+            var rawSpeakable = raw
+            if let seedRange = rawSpeakable.range(of: #"SEED:\s*([A-Za-z]+)"#, options: .regularExpression) {
+                let seedToken = String(rawSpeakable[seedRange])
+                let word = seedToken
+                    .replacingOccurrences(of: "SEED:", with: "", options: .caseInsensitive)
                     .trimmingCharacters(in: .whitespacesAndNewlines)
-                    .components(separatedBy: CharacterSet.letters.inverted)
-                    .first(where: { $0.count >= 2 }) ?? ""
-                if !word.isEmpty { self.lastFeedbackSeedWord = word }
+                if word.count >= 2 { self.lastFeedbackSeedWord = word }
+                rawSpeakable.removeSubrange(seedRange)
+                rawSpeakable = rawSpeakable.trimmingCharacters(in: .whitespacesAndNewlines)
             }
             let spoken = MagicBrushyVLMOutputCleanup.sanitizeKidFeedback(rawSpeakable)
             guard !spoken.isEmpty, spoken != "…",
@@ -1597,16 +1597,16 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             let pose = Reaction.mascotPoseFromCoachResponse(raw, avoidingRepeatOf: self.lastMascotReaction)
             self.applyMascotReaction(pose)
 
-            // Extract the SEED tag the model appended, then strip it before speech.
-            let lines = raw.components(separatedBy: "\n")
-            let seedLine = lines.first(where: { $0.hasPrefix("SEED:") })
-            let rawSpeakable = lines.filter { !$0.hasPrefix("SEED:") }.joined(separator: "\n")
-            if let sl = seedLine {
-                let word = String(sl.dropFirst(5))
+            // Extract and remove the SEED tag wherever the model placed it (inline or newline).
+            var rawSpeakable = raw
+            if let seedRange = rawSpeakable.range(of: #"SEED:\s*([A-Za-z]+)"#, options: .regularExpression) {
+                let seedToken = String(rawSpeakable[seedRange])
+                let word = seedToken
+                    .replacingOccurrences(of: "SEED:", with: "", options: .caseInsensitive)
                     .trimmingCharacters(in: .whitespacesAndNewlines)
-                    .components(separatedBy: CharacterSet.letters.inverted)
-                    .first(where: { $0.count >= 2 }) ?? ""
-                if !word.isEmpty { self.lastFeedbackSeedWord = word }
+                if word.count >= 2 { self.lastFeedbackSeedWord = word }
+                rawSpeakable.removeSubrange(seedRange)
+                rawSpeakable = rawSpeakable.trimmingCharacters(in: .whitespacesAndNewlines)
             }
             let spoken = MagicBrushyVLMOutputCleanup.sanitizeKidFeedback(rawSpeakable)
             guard !spoken.isEmpty, spoken != "…",
