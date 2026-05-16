@@ -157,29 +157,8 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     private var feedbackGeneration: UInt64 = 0
     /// Last mascot pose applied after coach VLM — passed into semantic mapping to reduce back-to-back duplicates.
     private var lastMascotReaction: MascotReactionState?
-    /// Last cleaned sentence the VLM actually spoke — used to extract a seed word for the next prompt.
-    private var lastSpokenFeedback: String?
-    /// A short positive word pulled from `lastSpokenFeedback` — given to the next prompt as a fresh opener directive.
+    /// Fresh word the VLM appended as a hidden SEED tag — used as the mandatory opener for the next prompt.
     private var lastFeedbackSeedWord: String?
-
-    /// Extracts the first strong positive word from a VLM reply to use as a conversational bridge.
-    private func extractEncouragingSeed(from text: String) -> String {
-        let seeds = ["Wow", "Wonderful", "Amazing", "Beautiful", "Fantastic", "Lovely", "Brilliant",
-                     "Excellent", "Awesome", "Terrific", "Splendid", "Gorgeous", "Super", "Great",
-                     "Cool", "Sweet", "Nice", "Yay", "Oh", "Look"]
-        let lower = text.lowercased()
-        for seed in seeds where lower.contains(seed.lowercased()) {
-            return seed + "!"
-        }
-        // Fall back to the first alphabetic word from the response.
-        let first = text.unicodeScalars
-            .prefix(while: { $0.value < 0x2000 })
-            .map(Character.init)
-            .reduce(into: "") { $0.append($1) }
-            .components(separatedBy: CharacterSet.letters.inverted)
-            .first(where: { $0.count >= 3 })
-        return (first ?? "Nice") + "!"
-    }
     /// Bumped on page change / clear / undo only — **not** on every new stroke, so debounced mascot reactions can still apply after pen lift.
     private var reactionSession: UInt64 = 0
     private var vlmInputPreviewHideWork: DispatchWorkItem?
@@ -1134,7 +1113,6 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         feedbackGeneration &+= 1
         reactionSession &+= 1
         lastMascotReaction = nil
-        lastSpokenFeedback = nil
         lastFeedbackSeedWord = nil
         cancelFeedbackIdleTimer()
         cancelPendingReactionWork()
@@ -1562,11 +1540,20 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             let pose = Reaction.mascotPoseFromCoachResponse(raw, avoidingRepeatOf: self.lastMascotReaction)
             self.applyMascotReaction(pose)
 
-            let spoken = MagicBrushyVLMOutputCleanup.sanitizeKidFeedback(raw)
+            // Extract the SEED tag the model appended, then strip it before speech.
+            let lines = raw.components(separatedBy: "\n")
+            let seedLine = lines.first(where: { $0.hasPrefix("SEED:") })
+            let rawSpeakable = lines.filter { !$0.hasPrefix("SEED:") }.joined(separator: "\n")
+            if let sl = seedLine {
+                let word = String(sl.dropFirst(5))
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                    .components(separatedBy: CharacterSet.letters.inverted)
+                    .first(where: { $0.count >= 2 }) ?? ""
+                if !word.isEmpty { self.lastFeedbackSeedWord = word }
+            }
+            let spoken = MagicBrushyVLMOutputCleanup.sanitizeKidFeedback(rawSpeakable)
             guard !spoken.isEmpty, spoken != "…",
                   !spoken.hasPrefix("Failed:") else { return }
-            self.lastSpokenFeedback = spoken
-            self.lastFeedbackSeedWord = self.extractEncouragingSeed(from: spoken)
             await FeedbackAlbaSpeech.speakFeedback(spoken)
         }
     }
@@ -1610,11 +1597,20 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             let pose = Reaction.mascotPoseFromCoachResponse(raw, avoidingRepeatOf: self.lastMascotReaction)
             self.applyMascotReaction(pose)
 
-            let spoken = MagicBrushyVLMOutputCleanup.sanitizeKidFeedback(raw)
+            // Extract the SEED tag the model appended, then strip it before speech.
+            let lines = raw.components(separatedBy: "\n")
+            let seedLine = lines.first(where: { $0.hasPrefix("SEED:") })
+            let rawSpeakable = lines.filter { !$0.hasPrefix("SEED:") }.joined(separator: "\n")
+            if let sl = seedLine {
+                let word = String(sl.dropFirst(5))
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                    .components(separatedBy: CharacterSet.letters.inverted)
+                    .first(where: { $0.count >= 2 }) ?? ""
+                if !word.isEmpty { self.lastFeedbackSeedWord = word }
+            }
+            let spoken = MagicBrushyVLMOutputCleanup.sanitizeKidFeedback(rawSpeakable)
             guard !spoken.isEmpty, spoken != "…",
                   !spoken.hasPrefix("Failed:") else { return }
-            self.lastSpokenFeedback = spoken
-            self.lastFeedbackSeedWord = self.extractEncouragingSeed(from: spoken)
             await FeedbackAlbaSpeech.speakFeedback(spoken)
         }
     }
@@ -1889,6 +1885,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
 Speak to THEM: one or two very short sentences, easy words, use "you" or "your". Open with varied praise —never start with the stock phrase “You have a” or “You have an” or “You’ve got a”. Sound warm; you may add a tiny color-feeling phrase that fits that color.
 
 IMPORTANT: Reply with ONLY the words you say aloud—no rules, no quotes about yourself, no repeating this text, no bullets, no markdown, no symbols like <>. Never mention AI, robots, computers, phones, apps, or internet.\(langInstruction)
+After your spoken words, on a new line write exactly: SEED:[one single fresh encouraging word you have not used before, all lowercase]
 
 """
     }
@@ -1922,6 +1919,7 @@ IMPORTANT: Reply with ONLY the words you say aloud—no rules, no quotes about y
 Your job: one warm, very short message in simple kid words about **the whole picture**—what you like about how they filled the page overall. Use "you" or "your". If you can, mention **two** small things you like (for example a color choice **and** the character or scene), but keep it to one or two tiny sentences. Vary how you start (never open with “You have a”, “You have an”, or “You’ve got a”). Do not use map directions (no left, right, top, bottom, or “in the corner”).
 
 IMPORTANT: Reply with ONLY the words you say aloud—no rules, no quotes about yourself, no repeating this text, no bullets, no markdown, no symbols like <>. Never mention AI, robots, computers, phones, apps, or internet.\(langInstruction)
+After your spoken words, on a new line write exactly: SEED:[one single fresh encouraging word you have not used before, all lowercase]
 
 """
     }
