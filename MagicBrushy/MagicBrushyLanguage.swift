@@ -28,6 +28,23 @@ enum MagicBrushyLanguage: String, CaseIterable {
     /// Display label used in the settings UI.
     var displayName: String { "\(flag) \(rawValue)" }
 
+    /// BCP-47 language tag used to pick the Apple TTS voice for this language.
+    var bcp47Tag: String {
+        switch self {
+        case .english:  return "en-GB"
+        case .arabic:   return "ar-SA"
+        case .spanish:  return "es-ES"
+        case .french:   return "fr-FR"
+        case .german:   return "de-DE"
+        case .japanese: return "ja-JP"
+        case .korean:   return "ko-KR"
+        case .chinese:  return "zh-CN"
+        }
+    }
+
+    /// Whether to use the bundled Piper Alba voice (English only).
+    var usesPiperAlba: Bool { self == .english }
+
     /// Instruction appended to every VLM prompt so the model replies in the chosen language.
     /// Empty for English because all prompts are already written in English.
     var promptInstruction: String {

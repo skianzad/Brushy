@@ -36,7 +36,10 @@ enum FeedbackAlbaSpeech {
         MagicBrushyBackgroundMusic.duckForMascotSpeech()
         defer { MagicBrushyBackgroundMusic.restoreVolumeAfterMascotSpeech() }
 
-        if SherpaPiperAlbaVoice.isBundledVoiceAvailable {
+        let lang = MagicBrushyLanguage.stored()
+
+        // Piper Alba is English-only — use it only when English is selected.
+        if lang.usesPiperAlba, SherpaPiperAlbaVoice.isBundledVoiceAvailable {
             do {
                 try await SherpaPiperAlbaVoice.speakAlbaBritishEnglish(clean) { text, duration in
                     Self.mascotLipSync?.startSherpaDrivenLipSync(text: text, duration: duration)
@@ -46,7 +49,9 @@ enum FeedbackAlbaSpeech {
             return
         }
 
-        await AppleFeedbackSynth.shared.speak(clean)
+        // All other languages (and English fallback) go through Apple TTS
+        // with the matching voice for the selected language.
+        await AppleFeedbackSynth.shared.speak(clean, languageTag: lang.bcp47Tag)
     }
 
     @MainActor
@@ -78,11 +83,11 @@ enum FeedbackAlbaSpeech {
             }
         }
 
-        func speak(_ text: String) async {
+        func speak(_ text: String, languageTag: String = "en-GB") async {
             guard !text.isEmpty else { return }
             stop()
             FeedbackAlbaSpeech.mascotLipSync?.startAppleDrivenLipSync()
-            let voice = Self.preferredBritishEnglishVoice()
+            let voice = Self.preferredVoice(for: languageTag)
 
             await withCheckedContinuation { (cont: CheckedContinuation<Void, Never>) in
                 self.speakContinuation = cont
@@ -118,16 +123,36 @@ enum FeedbackAlbaSpeech {
             c.resume()
         }
 
-        /// Prefer British voices consistent with Alba (Sherpa Piper en-GB).
-        private static func preferredBritishEnglishVoice() -> AVSpeechSynthesisVoice? {
-            let enGB = AVSpeechSynthesisVoice.speechVoices().filter { $0.language == "en-GB" }
-            let nameOrder = ["Martha", "Kate", "Serena", "Daniel", "Arthur", "Oliver"]
-            for name in nameOrder {
-                if let v = enGB.first(where: { $0.name.caseInsensitiveCompare(name) == .orderedSame }) {
-                    return v
-                }
+        /// Best available voice for the given BCP-47 language tag.
+        /// Prefers Premium > Enhanced > Default quality among voices matching the language.
+        /// For English, further prefers specific British voices to match the Alba character.
+        private static func preferredVoice(for languageTag: String) -> AVSpeechSynthesisVoice? {
+            let all = AVSpeechSynthesisVoice.speechVoices()
+
+            // Match on exact tag first, then on the 2-letter language prefix.
+            let exact = all.filter { $0.language == languageTag }
+            let prefix = String(languageTag.prefix(2))
+            let byPrefix = exact.isEmpty ? all.filter { $0.language.hasPrefix(prefix) } : exact
+            guard !byPrefix.isEmpty else {
+                return AVSpeechSynthesisVoice(language: languageTag)
             }
-            return enGB.first ?? AVSpeechSynthesisVoice(language: "en-US")
+
+            // For English, prefer specific British names to keep the Alba character feel.
+            if prefix == "en" {
+                let enGB = byPrefix.filter { $0.language == "en-GB" }
+                let nameOrder = ["Martha", "Kate", "Serena", "Daniel", "Arthur", "Oliver"]
+                for name in nameOrder {
+                    if let v = enGB.first(where: { $0.name.caseInsensitiveCompare(name) == .orderedSame }) {
+                        return v
+                    }
+                }
+                if let v = enGB.first { return v }
+            }
+
+            // For all languages: prefer Premium, then Enhanced, then any.
+            if let premium = byPrefix.first(where: { $0.quality == .premium }) { return premium }
+            if let enhanced = byPrefix.first(where: { $0.quality == .enhanced }) { return enhanced }
+            return byPrefix.first ?? AVSpeechSynthesisVoice(language: languageTag)
         }
     }
 }
