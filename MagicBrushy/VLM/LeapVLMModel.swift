@@ -456,8 +456,9 @@ final class LeapVLMModel {
         guard size.width > 0, size.height > 0 else { return nil }
 
         let fraction = min(1, max(0.1, minDimensionFractionOfSource))
-        let minW = size.width * fraction
-        let minH = size.height * fraction
+        // minW/minH are capped at maxEdge so this constraint never inflates the image above the model's cap.
+        let minW = min(size.width * fraction, maxEdge)
+        let minH = min(size.height * fraction, maxEdge)
         var w = size.width
         var h = size.height
         let downscale = min(maxEdge / w, maxEdge / h, 1)
