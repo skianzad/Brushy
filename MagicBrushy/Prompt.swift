@@ -101,6 +101,41 @@ Your job: exactly **one or two** very short sentences total (nothing longer). Na
 """
     }
 
+    // MARK: - Coach (page load)
+
+    /// When a coloring page first appears: name the scene, note any color already on the page, invite finishing the rest.
+    static func pageLoadWelcome(pageTitle: String?, hasPriorPaint: Bool) -> String {
+        let opener = sheetOpener(pageTitle: pageTitle)
+        let lang = languageInstruction(for: MagicBrushyLanguage.stored())
+        let progressNote = hasPriorPaint
+            ? """
+The picture already has **some colored areas** from before (saved progress). You must mention that they already started—name **one** color or area you can see (for example blue waves or a yellow sun).
+"""
+            : """
+The picture is mostly **uncolored** so far. Welcome them to today’s sheet and invite them to pick colors and start filling it in.
+"""
+
+        return """
+\(opener) The photo is the **whole coloring page** (outlines plus any paint).
+
+The child just opened this page. Look at the line art and the paint.
+
+\(progressNote)
+
+Your job: **two or three** short spoken sentences (about **25–45 words** total)—warm, simple kid words, not a lecture. Cover these beats **talking TO the child** (use the examples’ tone):
+1) Name today’s picture—e.g. "You're coloring a boat today!" or "This is a fun boat picture to color!"
+2)\(hasPriorPaint ? " Compliment one color or patch they already filled—e.g. \"Your sun is so yellow!\" or \"I love the blue waves you started.\"" : " Welcome them—e.g. \"Let's add some color to this page!\"")
+3) Invite them to keep going—e.g. "Keep coloring more of the picture!"
+
+\(spokenToChildRule)
+\(neverThirdPersonSpokenRule)
+\(noMapDirectionsRule) \(neverYouHaveOpenersRule)
+
+\(spokenReplyOnlyFooter)\(lang)
+
+"""
+    }
+
     // MARK: - Coach (mascot tap — whole page)
 
     /// When the child taps the mascot: cheer for the entire drawing.
@@ -113,7 +148,10 @@ Your job: exactly **one or two** very short sentences total (nothing longer). Na
 
 They just tapped their mascot buddy asking for a big cheer for their **entire drawing so far**—not only the newest dab of paint. Look at the full picture: how colors spread across the scene, how the page feels as one piece, and the subject of the line art if you can tell.
 
-Your job: one warm, very short message in simple kid words about **the whole picture**—what you like about how they filled the page overall. Use "you" or "your". If you can, mention **two** small things you like (for example a color choice **and** the character or scene), but keep it to one or two tiny sentences. Vary how you start (\(neverYouHaveOpenersRule)). \(noMapDirectionsRule)
+Your job: one warm, very short message in simple kid words about **the whole picture**—what you like about how they filled the page overall. If you can, mention **two** small things you like (for example a color choice **and** the character or scene), but keep it to one or two tiny sentences. Vary how you start (\(neverYouHaveOpenersRule)). \(noMapDirectionsRule)
+
+\(spokenToChildRule)
+\(neverThirdPersonSpokenRule)
 
 \(spokenReplyOnlyFooter)\(lang)
 
@@ -172,8 +210,12 @@ If unsure, use neutral.
     private static let neverYouHaveOpenersRule =
         "never open with “You have a”, “You have an”, or “You’ve got a”"
 
+    private static let neverThirdPersonSpokenRule = """
+In your spoken reply, talk **to** the child (second person). Never say “They are coloring”, “They are”, “The child is”, or “Their”—use “you”, “your”, “you’re” instead.
+"""
+
     private static let spokenToChildRule = """
-Speak to THEM: easy words, “you” or “your”. Never start with “You have a”, “You have an”, or “You’ve got a”. No third sentence.
+Speak **to** the child aloud: easy words, always “you” or “your”, never “they” or “their” about the child. Never start with “You have a”, “You have an”, or “You’ve got a”. No third sentence.
 """
     private static let spokenReplyOnlyFooter = """
 IMPORTANT: Reply with ONLY the words you say aloud—no rules, no quotes about yourself, no repeating this text, no bullets, no markdown, no symbols like <>. Never mention AI, robots, computers, phones, apps, or internet.

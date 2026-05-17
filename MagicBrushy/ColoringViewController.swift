@@ -11,6 +11,8 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         static let strokeFeedbackMaxOutput = 60
         /// Mascot tap / whole-page cheer (longer reply OK).
         static let wholeDrawingMaxOutput = 96
+        /// Page-open welcome (subject + prior paint + encourage finishing — a bit longer than stroke feedback).
+        static let pageLoadWelcomeMaxOutput = 128
     }
 
     private enum TopChromeMetrics {
@@ -168,6 +170,9 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     /// Bumped on page change / clear / undo only — **not** on every new stroke, so debounced mascot reactions can still apply after pen lift.
     private var reactionSession: UInt64 = 0
     private var vlmInputPreviewHideWork: DispatchWorkItem?
+    /// Page indices that already received the open-page VLM welcome this session.
+    private var welcomedPageIndices = Set<Int>()
+    private var pendingPageWelcomeWork: DispatchWorkItem?
     /// When set, auto-feedback is suppressed until this date (user tapped mascot to mute).
     private var feedbackPausedUntil: Date?
     /// Label floating over the mascot showing the pause countdown.
@@ -317,7 +322,8 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         mascotImageView.contentMode = .scaleAspectFit
         mascotImageView.clipsToBounds = false
         mascotImageView.translatesAutoresizingMaskIntoConstraints = false
-        mascotImageView.heightAnchor.constraint(equalToConstant: 300).isActive = true
+        mascotImageView.setContentHuggingPriority(.required, for: .vertical)
+        mascotImageView.setContentCompressionResistancePriority(.required, for: .vertical)
         mascotLipSync.attach(
             imageView: mascotImageView,
             closed: UIImage(named: "MascotTalkingMouthClosed")
@@ -330,7 +336,18 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
 
         let mascotContainer = self.mascotContainer
         mascotContainer.translatesAutoresizingMaskIntoConstraints = false
+        mascotContainer.clipsToBounds = false
+        mascotContainer.setContentHuggingPriority(.required, for: .vertical)
+        mascotContainer.setContentCompressionResistancePriority(.required, for: .vertical)
         mascotContainer.addSubview(mascotImageView)
+
+        let mascotSize = mascotImage?.size ?? CGSize(width: 1, height: 1)
+        let mascotAspect = mascotSize.height / max(mascotSize.width, 1)
+        let mascotLayoutWidth = ColoringCrayonPaletteLayout.mascotLayoutWidth
+        let mascotLayoutHeight = min(
+            mascotLayoutWidth * mascotAspect,
+            ColoringCrayonPaletteLayout.mascotMaxHeight
+        )
 
         mascotPauseBadge.translatesAutoresizingMaskIntoConstraints = false
         mascotPauseBadge.font = FigmaTheme.bodyFont(size: 13, weight: .bold)
@@ -360,12 +377,13 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
 
         NSLayoutConstraint.activate([
             mascotImageView.centerXAnchor.constraint(equalTo: mascotContainer.centerXAnchor),
-            mascotImageView.topAnchor.constraint(equalTo: mascotContainer.topAnchor, constant: -4),
-            mascotImageView.bottomAnchor.constraint(equalTo: mascotContainer.bottomAnchor, constant: 4),
-            mascotImageView.widthAnchor.constraint(lessThanOrEqualTo: mascotContainer.widthAnchor, multiplier: 0.98),
+            mascotImageView.topAnchor.constraint(equalTo: mascotContainer.topAnchor),
+            mascotImageView.bottomAnchor.constraint(equalTo: mascotContainer.bottomAnchor),
+            mascotImageView.widthAnchor.constraint(equalToConstant: mascotLayoutWidth),
+            mascotImageView.heightAnchor.constraint(equalToConstant: mascotLayoutHeight),
 
             mascotPauseBadge.centerXAnchor.constraint(equalTo: mascotContainer.centerXAnchor),
-            mascotPauseBadge.bottomAnchor.constraint(equalTo: mascotContainer.bottomAnchor, constant: -8),
+            mascotPauseBadge.bottomAnchor.constraint(equalTo: mascotImageView.bottomAnchor, constant: -4),
             mascotPauseBadge.widthAnchor.constraint(greaterThanOrEqualToConstant: 100),
             mascotPauseBadge.heightAnchor.constraint(equalToConstant: 26),
         ])
@@ -376,7 +394,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         // ── Right panel ───────────────────────────────────────────────────────
         let rightPanelStack = UIStackView(arrangedSubviews: [mascotContainer, toolPairStack, crayonScrollContainer])
         rightPanelStack.axis = .vertical
-        rightPanelStack.spacing = 10
+        rightPanelStack.spacing = ColoringCrayonPaletteLayout.rightPanelStackSpacing
         rightPanelStack.distribution = .fill
         rightPanelStack.alignment = .fill
         rightPanelStack.translatesAutoresizingMaskIntoConstraints = false
@@ -384,6 +402,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         rightPanelStack.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
         // Above scaled canvas layer so crayons are not covered by the page edge / border.
         rightPanelStack.layer.zPosition = 100
+        rightPanelStack.setCustomSpacing(ColoringCrayonPaletteLayout.mascotToToolsSpacing, after: mascotContainer)
 
         // ── Top nav bar ───────────────────────────────────────────────────────
         func makeNavButton(icon: String, fill: UIColor, border: UIColor) -> UIButton {
@@ -413,13 +432,15 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         homeButton.heightAnchor.constraint(equalToConstant: 52).isActive = true
 
         prevPageButton.addTarget(self, action: #selector(undoStroke), for: .touchUpInside)
-        nextPageButton.addTarget(self, action: #selector(clearStrokes), for: .touchUpInside)
+        nextPageButton.addTarget(self, action: #selector(redoStroke), for: .touchUpInside)
         doneButton.addTarget(self, action: #selector(requestFeedback), for: .touchUpInside)
 
         let prevBtn = makeNavButton(icon: "chevron.left", fill: FigmaTheme.actionBlue, border: FigmaTheme.actionBlueBorder)
+        prevBtn.accessibilityLabel = "Undo"
         prevBtn.addTarget(self, action: #selector(undoStroke), for: .touchUpInside)
         let nextBtn = makeNavButton(icon: "chevron.right", fill: FigmaTheme.actionBlue, border: FigmaTheme.actionBlueBorder)
-        nextBtn.addTarget(self, action: #selector(clearStrokes), for: .touchUpInside)
+        nextBtn.accessibilityLabel = "Redo"
+        nextBtn.addTarget(self, action: #selector(redoStroke), for: .touchUpInside)
         // let doneBtn = makeNavButton(icon: "checkmark", ...) — checkmark button removed (no-op)
 
         let saveBtn = makeNavButton(icon: "square.and.arrow.down", fill: FigmaTheme.actionBlue, border: FigmaTheme.actionBlueBorder)
@@ -550,29 +571,9 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         loadOverlay.addSubview(loadLabel)
         loadOverlay.addSubview(loadProgress)
         view.addSubview(loadOverlay)
-        // VLM input preview (debug) — entire setup commented out (not deleted). Uncomment this block + the constraint block + `showVLMInputPreview` body to restore.
-        /*
-        vlmInputPreviewImageView.translatesAutoresizingMaskIntoConstraints = false
-        vlmInputPreviewImageView.contentMode = .scaleAspectFit
-        vlmInputPreviewImageView.backgroundColor = UIColor.black.withAlphaComponent(0.65)
-        vlmInputPreviewImageView.layer.cornerRadius = 10
-        vlmInputPreviewImageView.layer.borderWidth = 1.5
-        vlmInputPreviewImageView.layer.borderColor = UIColor.white.withAlphaComponent(0.8).cgColor
-        vlmInputPreviewImageView.clipsToBounds = true
-        vlmInputPreviewImageView.isHidden = true
-
-        vlmInputPreviewLabel.translatesAutoresizingMaskIntoConstraints = false
-        vlmInputPreviewLabel.font = .preferredFont(forTextStyle: .caption2)
-        vlmInputPreviewLabel.textColor = .white
-        vlmInputPreviewLabel.textAlignment = .center
-        vlmInputPreviewLabel.numberOfLines = 2
-        vlmInputPreviewLabel.backgroundColor = UIColor.black.withAlphaComponent(0.6)
-        vlmInputPreviewLabel.layer.cornerRadius = 8
-        vlmInputPreviewLabel.clipsToBounds = true
-        vlmInputPreviewLabel.isHidden = true
-        view.addSubview(vlmInputPreviewImageView)
-        view.addSubview(vlmInputPreviewLabel)
-        */
+        #if DEBUG
+        installVLMInputPreviewChrome()
+        #endif
 
         let canvasAspect = canvasContainer.widthAnchor.constraint(equalTo: canvasContainer.heightAnchor, multiplier: 4 / 5)
         canvasAspect.priority = .defaultHigh
@@ -636,18 +637,11 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             loadProgress.topAnchor.constraint(equalTo: loadLabel.bottomAnchor, constant: 12),
             loadProgress.leadingAnchor.constraint(equalTo: loadOverlay.leadingAnchor, constant: 48),
             loadProgress.trailingAnchor.constraint(equalTo: loadOverlay.trailingAnchor, constant: -48),
-
-            // VLM input preview constraints — commented out (not deleted). Pair with `viewDidLoad` block + `showVLMInputPreview`.
-            /*
-            vlmInputPreviewImageView.bottomAnchor.constraint(equalTo: g.bottomAnchor, constant: -14),
-            vlmInputPreviewImageView.widthAnchor.constraint(equalToConstant: 112),
-            vlmInputPreviewImageView.heightAnchor.constraint(equalToConstant: 112),
-
-            vlmInputPreviewLabel.leadingAnchor.constraint(equalTo: vlmInputPreviewImageView.leadingAnchor),
-            vlmInputPreviewLabel.trailingAnchor.constraint(equalTo: vlmInputPreviewImageView.trailingAnchor),
-            vlmInputPreviewLabel.bottomAnchor.constraint(equalTo: vlmInputPreviewImageView.topAnchor, constant: -6),
-            */
         ])
+
+        #if DEBUG
+        activateVLMInputPreviewConstraints(safeGuide: g)
+        #endif
 
         let cvScale = ColoringCrayonPaletteLayout.canvasVisualScale
         let cvLeft = ColoringCrayonPaletteLayout.canvasShiftLeftPoints
@@ -1068,6 +1062,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         }
         _ = modelForInference()
         refreshModelStatusIndicator()
+        schedulePageLoadWelcome()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -1114,6 +1109,11 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         pendingReactionWork = nil
     }
 
+    private func cancelPendingPageWelcomeWork() {
+        pendingPageWelcomeWork?.cancel()
+        pendingPageWelcomeWork = nil
+    }
+
     /// Full reset: page / clear / undo — drop pending mascot reaction and all VLM work.
     private func invalidateFeedbackSession() {
         feedbackGeneration &+= 1
@@ -1121,6 +1121,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         lastMascotReaction = nil
         cancelFeedbackIdleTimer()
         cancelPendingReactionWork()
+        cancelPendingPageWelcomeWork()
         vlm.cancel()
         hideVLMInputPreviewImmediate()
     }
@@ -1312,12 +1313,17 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         case .downloading(let p):
             let pct = Int((p * 100).rounded(.down))
             modelStatusDot.backgroundColor = .systemBlue
-            modelStatusLabel.text = "AI: Assets \(pct)%"
-            modelStatusStack.accessibilityLabel = "Loading and downloading assets, \(pct) percent complete"
+            if pct > 0 {
+                modelStatusLabel.text = "AI: Download the model… \(pct)%"
+                modelStatusStack.accessibilityLabel = "Downloading the art coach model, \(pct) percent complete"
+            } else {
+                modelStatusLabel.text = "AI: Loading…"
+                modelStatusStack.accessibilityLabel = "Loading art coach model"
+            }
         case .loadingIntoMemory:
             modelStatusDot.backgroundColor = .systemBlue
-            modelStatusLabel.text = "AI: Preparing…"
-            modelStatusStack.accessibilityLabel = "Preparing assets"
+            modelStatusLabel.text = "AI: Loading…"
+            modelStatusStack.accessibilityLabel = "Loading art coach model"
         case .ready:
             modelStatusDot.backgroundColor = .systemGreen
             modelStatusLabel.text = "AI: Ready"
@@ -1333,7 +1339,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         }
     }
 
-    /// Full-screen model download UI lives on `HomeViewController` only; keep chrome unobstructed here.
+    /// Model download / load chip lives on `HomeViewController` only; keep chrome unobstructed here.
     private func refreshLoadOverlay() {
         loadOverlay.isHidden = true
         loadOverlay.isUserInteractionEnabled = false
@@ -1411,6 +1417,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             templateView.isHidden = true
             // Line overlay stays visible above the snapshot.
         }
+        schedulePageLoadWelcome()
     }
 
     @objc private func strokeSizeTouchDown(_ sender: UIButton) {
@@ -1441,7 +1448,15 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     @objc private func undoStroke() {
         invalidateFeedbackSession()
         FeedbackAlbaSpeech.stopSpeaking()
-        strokeView.undoLastStroke()
+        guard strokeView.undoLastStroke() else { return }
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+    }
+
+    @objc private func redoStroke() {
+        invalidateFeedbackSession()
+        FeedbackAlbaSpeech.stopSpeaking()
+        guard strokeView.redoLastStroke() else { return }
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
     }
 
     @objc private func requestFeedback() {
@@ -1525,8 +1540,8 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
 
             let img = self.captureCanvasForVLM()
             let previewImage = model.prepareImageForModelPreview(img) ?? img
-            self.showVLMInputPreview(previewImage)
             let prompt = self.makeStrokeFeedbackPrompt()
+            self.showVLMInputPreview(previewImage, prompt: prompt, tag: "Stroke")
 
             let strokeTokenCap = VLMCoachTokenLimits.strokeFeedbackMaxOutput
             model.maxTokens = strokeTokenCap
@@ -1558,6 +1573,94 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         }
     }
 
+    /// After a page is shown: VLM names the scene, notes prior color if any, and encourages finishing the page.
+    private func schedulePageLoadWelcome() {
+        #if targetEnvironment(simulator)
+        return
+        #endif
+        cancelPendingPageWelcomeWork()
+        guard coloringBookPages.indices.contains(pageIndex) else { return }
+        guard welcomedPageIndices.contains(pageIndex) == false else { return }
+        if let until = feedbackPausedUntil, Date() < until { return }
+
+        let pageAtSchedule = pageIndex
+        let work = DispatchWorkItem { [weak self] in
+            self?.runPageLoadWelcome(pageAtSchedule: pageAtSchedule)
+        }
+        pendingPageWelcomeWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.65, execute: work)
+    }
+
+    private func runPageLoadWelcome(pageAtSchedule: Int) {
+        #if targetEnvironment(simulator)
+        return
+        #endif
+        guard pageAtSchedule == pageIndex else { return }
+        guard coloringBookPages.indices.contains(pageIndex) else { return }
+        guard !welcomedPageIndices.contains(pageIndex) else { return }
+        if let until = feedbackPausedUntil, Date() < until { return }
+
+        let welcomeGen = feedbackGeneration
+        applyMascotReaction(.hello)
+
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            let model = self.modelForInference()
+            var spins = 0
+            while model.running, spins < 120 {
+                try? await Task.sleep(nanoseconds: 80_000_000)
+                spins += 1
+            }
+            guard !model.running else { return }
+            guard welcomeGen == self.feedbackGeneration else { return }
+            guard pageAtSchedule == self.pageIndex else { return }
+            guard !self.welcomedPageIndices.contains(pageAtSchedule) else { return }
+
+            self.view.layoutIfNeeded()
+            let bounds = self.strokeView.bounds
+            guard bounds.width >= 16, bounds.height >= 16 else {
+                self.schedulePageLoadWelcome()
+                return
+            }
+
+            self.welcomedPageIndices.insert(pageAtSchedule)
+            let img = self.captureCanvasForVLMFullPage()
+            let previewImage = model.prepareImageForModelPreview(img) ?? img
+            let prompt = self.makePageLoadWelcomePrompt()
+            self.showVLMInputPreview(previewImage, prompt: prompt, tag: "Page open")
+
+            let tokenCap = VLMCoachTokenLimits.pageLoadWelcomeMaxOutput
+            model.maxTokens = tokenCap
+            #if DEBUG
+            print("""
+            [Brushi][VLM][PageLoad] image \(Int(img.size.width))x\(Int(img.size.height)), max tokens \(tokenCap)
+            \(prompt)
+            """)
+            #endif
+            let task = await model.generate(
+                image: previewImage,
+                prompt: prompt,
+                maxOutputTokens: tokenCap
+            )
+            await task.value
+            guard welcomeGen == self.feedbackGeneration else { return }
+            guard pageAtSchedule == self.pageIndex else { return }
+
+            let raw = model.output.trimmingCharacters(in: .whitespacesAndNewlines)
+            let pose = Reaction.mascotPoseFromCoachResponse(raw, avoidingRepeatOf: self.lastMascotReaction)
+            self.applyMascotReaction(pose)
+
+            let spoken = MagicBrushyVLMOutputCleanup.sanitizeKidFeedback(raw)
+            #if DEBUG
+            print("[Brushi][VLM][PageLoad] mascot pose: \(String(describing: pose))")
+            print("[Brushi][VLM][PageLoad] spoken: \(spoken)")
+            #endif
+            guard !spoken.isEmpty, spoken != "…",
+                  !spoken.hasPrefix("Failed:") else { return }
+            await FeedbackAlbaSpeech.speakFeedback(spoken)
+        }
+    }
+
     /// Mascot tap: full-page snapshot (no stroke zoom crop) and a prompt about the **entire** drawing.
     private func runMascotWholeDrawingCheer(feedbackGen: UInt64) {
         Task { @MainActor [weak self] in
@@ -1576,8 +1679,8 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
 
             let img = self.captureCanvasForVLMFullPage()
             let previewImage = model.prepareImageForModelPreview(img) ?? img
-            self.showVLMInputPreview(previewImage)
             let prompt = self.makeWholeDrawingCheerPrompt()
+            self.showVLMInputPreview(previewImage, prompt: prompt, tag: "Whole page")
 
             let wholePageTokenCap = VLMCoachTokenLimits.wholeDrawingMaxOutput
             model.maxTokens = wholePageTokenCap
@@ -1778,8 +1881,48 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         present(sheet, animated: true)
     }
 
+    #if DEBUG
+    private func installVLMInputPreviewChrome() {
+        vlmInputPreviewImageView.translatesAutoresizingMaskIntoConstraints = false
+        vlmInputPreviewImageView.contentMode = .scaleAspectFit
+        vlmInputPreviewImageView.backgroundColor = UIColor.black.withAlphaComponent(0.65)
+        vlmInputPreviewImageView.layer.cornerRadius = 10
+        vlmInputPreviewImageView.layer.borderWidth = 1.5
+        vlmInputPreviewImageView.layer.borderColor = UIColor.white.withAlphaComponent(0.8).cgColor
+        vlmInputPreviewImageView.clipsToBounds = true
+        vlmInputPreviewImageView.isHidden = true
+        vlmInputPreviewImageView.isUserInteractionEnabled = false
+
+        vlmInputPreviewLabel.translatesAutoresizingMaskIntoConstraints = false
+        vlmInputPreviewLabel.font = .monospacedSystemFont(ofSize: 9, weight: .medium)
+        vlmInputPreviewLabel.textColor = .white
+        vlmInputPreviewLabel.textAlignment = .left
+        vlmInputPreviewLabel.numberOfLines = 6
+        vlmInputPreviewLabel.backgroundColor = UIColor.black.withAlphaComponent(0.72)
+        vlmInputPreviewLabel.layer.cornerRadius = 8
+        vlmInputPreviewLabel.clipsToBounds = true
+        vlmInputPreviewLabel.isHidden = true
+        view.addSubview(vlmInputPreviewImageView)
+        view.addSubview(vlmInputPreviewLabel)
+    }
+
+    private func activateVLMInputPreviewConstraints(safeGuide g: UILayoutGuide) {
+        NSLayoutConstraint.activate([
+            vlmInputPreviewImageView.leadingAnchor.constraint(equalTo: g.leadingAnchor, constant: 12),
+            vlmInputPreviewImageView.bottomAnchor.constraint(equalTo: g.bottomAnchor, constant: -12),
+            vlmInputPreviewImageView.widthAnchor.constraint(equalToConstant: 148),
+            vlmInputPreviewImageView.heightAnchor.constraint(equalToConstant: 148),
+
+            vlmInputPreviewLabel.leadingAnchor.constraint(equalTo: vlmInputPreviewImageView.trailingAnchor, constant: 8),
+            vlmInputPreviewLabel.trailingAnchor.constraint(lessThanOrEqualTo: g.trailingAnchor, constant: -12),
+            vlmInputPreviewLabel.bottomAnchor.constraint(equalTo: vlmInputPreviewImageView.bottomAnchor),
+            vlmInputPreviewLabel.widthAnchor.constraint(lessThanOrEqualToConstant: 220),
+        ])
+    }
+    #endif
+
     private func hideVLMInputPreviewImmediate() {
-        // When VLM preview is re-enabled, this pairs with the commented body in `showVLMInputPreview`.
+        #if DEBUG
         vlmInputPreviewHideWork?.cancel()
         vlmInputPreviewHideWork = nil
         vlmInputPreviewImageView.layer.removeAllAnimations()
@@ -1788,15 +1931,22 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         vlmInputPreviewLabel.isHidden = true
         vlmInputPreviewImageView.alpha = 1
         vlmInputPreviewLabel.alpha = 1
+        #endif
     }
 
-    private func showVLMInputPreview(_ image: UIImage) {
-        // Full implementation kept below (commented). Re-enable with the `viewDidLoad` + constraint `/* … */` blocks for these views.
-        _ = image
-        /*
+    private func showVLMInputPreview(_ image: UIImage, prompt: String, tag: String) {
+        #if DEBUG
         vlmInputPreviewHideWork?.cancel()
         vlmInputPreviewImageView.image = image
-        vlmInputPreviewLabel.text = "VLM input\n\(Int(image.size.width))×\(Int(image.size.height))"
+        let promptPreview = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
+        let clipped = promptPreview.count > 280
+            ? String(promptPreview.prefix(280)) + "…"
+            : promptPreview
+        vlmInputPreviewLabel.text = """
+        VLM [\(tag)]
+        \(Int(image.size.width))×\(Int(image.size.height)) px
+        \(clipped)
+        """
         vlmInputPreviewImageView.alpha = 1
         vlmInputPreviewLabel.alpha = 1
         vlmInputPreviewImageView.isHidden = false
@@ -1818,8 +1968,12 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             }
         }
         vlmInputPreviewHideWork = work
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0, execute: work)
-        */
+        DispatchQueue.main.asyncAfter(deadline: .now() + 8.0, execute: work)
+        #else
+        _ = image
+        _ = prompt
+        _ = tag
+        #endif
     }
 
     private func currentPageTitle() -> String? {
@@ -1839,6 +1993,20 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
 
     private func makeWholeDrawingCheerPrompt() -> String {
         Prompt.wholeDrawingCheer(pageTitle: currentPageTitle())
+    }
+
+    private func makePageLoadWelcomePrompt() -> String {
+        Prompt.pageLoadWelcome(
+            pageTitle: currentPageTitle(),
+            hasPriorPaint: canvasHasPriorPaintForPageWelcome()
+        )
+    }
+
+    /// Saved underlay or live strokes visible when the page opens (not a blank sheet).
+    private func canvasHasPriorPaintForPageWelcome() -> Bool {
+        if strokeView.hasUserPaint { return true }
+        if !resumeSnapshotView.isHidden, resumeSnapshotView.image != nil { return true }
+        return false
     }
 
     /// Nearest app palette swatch name so "history" stays consistent with the picker.
@@ -2001,6 +2169,14 @@ private enum MagicBrushyCrayonResources {
 /// Layout for the coloring screen right rail (crayons + panel width). Tuned to match Figma-style chunky crayons.
 private enum ColoringCrayonPaletteLayout {
     static let rightPanelWidth: CGFloat = 210
+    /// Mascot is drawn 25% larger than the base rail fit (crayon column width stays `rightPanelWidth`).
+    static let mascotScale: CGFloat = 1.25
+    static var mascotLayoutWidth: CGFloat { rightPanelWidth * mascotScale }
+    /// Cap mascot height; width uses `mascotLayoutWidth` so aspect-fit leaves no empty band under the feet.
+    static var mascotMaxHeight: CGFloat { 300 * mascotScale }
+    static let rightPanelStackSpacing: CGFloat = 10
+    /// Tight gap under mascot so tools sit closer and the character reads larger.
+    static let mascotToToolsSpacing: CGFloat = 2
     /// Vertical pitch per crayon row (smaller = tighter list in the scroll rail).
     static let crayonRowHeight: CGFloat = 57
     /// Fraction of row height used by the PNG swatch (`MagicCrayonControl`, rest is tap padding).

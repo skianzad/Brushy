@@ -379,7 +379,7 @@ final class HomeViewController: UIViewController {
         NSLayoutConstraint.activate([
             assetsLoadChip.centerXAnchor.constraint(equalTo: categoryGridPanel.centerXAnchor),
             assetsLoadChip.topAnchor.constraint(equalTo: categoryGridPanel.topAnchor, constant: topInset),
-            assetsLoadChip.widthAnchor.constraint(equalToConstant: 108),
+            assetsLoadChip.widthAnchor.constraint(equalToConstant: 132),
 
             stack.topAnchor.constraint(equalTo: assetsLoadChip.topAnchor, constant: 4),
             stack.leadingAnchor.constraint(equalTo: assetsLoadChip.leadingAnchor, constant: 5),
@@ -458,7 +458,7 @@ final class HomeViewController: UIViewController {
         if vlm.modelLoadDidFail {
             stopAssetsLoadChipAnimations()
             assetsLoadLabel.isHidden = false
-            assetsLoadLabel.text = "Couldn't load"
+            assetsLoadLabel.text = "Couldn't load model"
             assetsLoadLabel.textColor = UIColor.systemYellow
             assetsLoadProgress.isHidden = true
             categoryGridPanel.bringSubviewToFront(assetsLoadChip)
@@ -469,14 +469,18 @@ final class HomeViewController: UIViewController {
         case .downloading(let p):
             let pct = Int((p * 100).rounded(.down))
             assetsLoadLabel.isHidden = false
-            assetsLoadLabel.text = pct > 0 ? "Downloading \(pct)%" : "Downloading…"
+            if pct > 0 {
+                assetsLoadLabel.text = "Download the model… \(pct)%"
+            } else {
+                assetsLoadLabel.text = "Loading…"
+            }
             assetsLoadProgress.isHidden = false
             assetsLoadProgress.setProgress(Float(p), animated: !wasHidden)
             assetsLoadSpinner.stopAnimating()
             setAssetsLoadChipProgressShimmer(true)
         case .loadingIntoMemory:
-            assetsLoadLabel.text = nil
-            assetsLoadLabel.isHidden = true
+            assetsLoadLabel.isHidden = false
+            assetsLoadLabel.text = "Loading…"
             assetsLoadProgress.isHidden = true
             assetsLoadChip.layer.removeAnimation(forKey: "assetsLoadShimmer")
             assetsLoadSpinner.startAnimating()

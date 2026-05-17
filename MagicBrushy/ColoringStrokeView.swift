@@ -11,6 +11,11 @@ final class ColoringStrokeView: UIView {
 
     private var strokes: [Stroke] = []
     private var current: Stroke?
+    /// Strokes removed by undo, restored by redo (newest at end).
+    private var redoStack: [Stroke] = []
+    /// Set when undo drops the baked bitmap so redo can bring it back.
+    private var redoBakedLayer: UIImage?
+    private var redoFinishedColors: [UIColor]?
     /// Strokes older than the live window are flattened into this bitmap to bound memory.
     private var bakedLayer: UIImage?
     /// Number of live (un-baked) strokes kept so the most recent ones remain undoable.
@@ -85,6 +90,7 @@ final class ColoringStrokeView: UIView {
         if finishedStrokeColors.count > 48 {
             finishedStrokeColors.removeFirst(finishedStrokeColors.count - 48)
         }
+        clearRedoHistory()
         bakeOldStrokesIfNeeded()
         onCommittedStrokeEnded?()
         setNeedsDisplay()
@@ -171,16 +177,53 @@ final class ColoringStrokeView: UIView {
         return "Their newest brush stroke is centered roughly in the \(horiz)-\(vert) part of the picture (inside the coloring area)."
     }
 
-    func undoLastStroke() {
+    @discardableResult
+    func undoLastStroke() -> Bool {
         if !strokes.isEmpty {
-            strokes.removeLast()
+            redoStack.append(strokes.removeLast())
             if !finishedStrokeColors.isEmpty { finishedStrokeColors.removeLast() }
-        } else if bakedLayer != nil {
-            // All live strokes already undone — drop the whole baked layer
+            setNeedsDisplay()
+            return true
+        }
+        if bakedLayer != nil {
+            redoBakedLayer = bakedLayer
+            redoFinishedColors = finishedStrokeColors
             bakedLayer = nil
             finishedStrokeColors.removeAll()
+            setNeedsDisplay()
+            return true
         }
-        setNeedsDisplay()
+        return false
+    }
+
+    var canRedo: Bool {
+        !redoStack.isEmpty || redoBakedLayer != nil
+    }
+
+    @discardableResult
+    func redoLastStroke() -> Bool {
+        if !redoStack.isEmpty {
+            let restored = redoStack.removeLast()
+            strokes.append(restored)
+            finishedStrokeColors.append(restored.color)
+            if finishedStrokeColors.count > 48 {
+                finishedStrokeColors.removeFirst(finishedStrokeColors.count - 48)
+            }
+            bakeOldStrokesIfNeeded()
+            setNeedsDisplay()
+            return true
+        }
+        if let baked = redoBakedLayer {
+            bakedLayer = baked
+            if let colors = redoFinishedColors {
+                finishedStrokeColors = colors
+            }
+            redoBakedLayer = nil
+            redoFinishedColors = nil
+            setNeedsDisplay()
+            return true
+        }
+        return false
     }
 
     func clearStrokes() {
@@ -188,7 +231,14 @@ final class ColoringStrokeView: UIView {
         finishedStrokeColors.removeAll()
         bakedLayer = nil
         current = nil
+        clearRedoHistory()
         setNeedsDisplay()
+    }
+
+    private func clearRedoHistory() {
+        redoStack.removeAll()
+        redoBakedLayer = nil
+        redoFinishedColors = nil
     }
 
     /// Whether the user has placed any paint (including fully baked strokes).

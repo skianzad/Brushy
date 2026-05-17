@@ -1,5 +1,108 @@
 import UIKit
 
+/// Mascot art with a soft alpha falloff at the edges so harsh export fringes don’t pop on lip-sync swaps.
+final class MascotSoftEdgeImageView: UIImageView {
+
+    /// Fraction of width faded on each left/right edge.
+    var horizontalEdgeFadeFraction: CGFloat = 0.10
+    /// Fraction of height faded on each top/bottom edge.
+    var verticalEdgeFadeFraction: CGFloat = 0.07
+
+    private let edgeMaskLayer = CALayer()
+    private var cachedMaskPixelSize: CGSize = .zero
+
+    convenience init() {
+        self.init(frame: .zero)
+    }
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        installEdgeMask()
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        installEdgeMask()
+    }
+
+    private func installEdgeMask() {
+        layer.mask = edgeMaskLayer
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        updateEdgeMaskIfNeeded()
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        guard previousTraitCollection?.displayScale != traitCollection.displayScale else { return }
+        cachedMaskPixelSize = .zero
+        setNeedsLayout()
+    }
+
+    private func updateEdgeMaskIfNeeded() {
+        let size = bounds.size
+        guard size.width > 1, size.height > 1 else { return }
+        let scale = window?.screen.scale ?? traitCollection.displayScale
+        let pixelSize = CGSize(width: size.width * scale, height: size.height * scale)
+        edgeMaskLayer.frame = bounds
+        guard pixelSize != cachedMaskPixelSize || edgeMaskLayer.contents == nil else { return }
+        cachedMaskPixelSize = pixelSize
+        edgeMaskLayer.contentsScale = scale
+        edgeMaskLayer.contents = Self.makeEdgeFadeMask(
+            pixelSize: pixelSize,
+            horizontalFade: horizontalEdgeFadeFraction,
+            verticalFade: verticalEdgeFadeFraction
+        )
+    }
+
+    private static func smoothstep(_ edge0: CGFloat, _ edge1: CGFloat, _ x: CGFloat) -> CGFloat {
+        guard edge1 > edge0 else { return x >= edge1 ? 1 : 0 }
+        let t = max(0, min(1, (x - edge0) / (edge1 - edge0)))
+        return t * t * (3 - 2 * t)
+    }
+
+    private static func makeEdgeFadeMask(
+        pixelSize: CGSize,
+        horizontalFade: CGFloat,
+        verticalFade: CGFloat
+    ) -> CGImage? {
+        let w = max(1, Int(pixelSize.width.rounded(.up)))
+        let h = max(1, Int(pixelSize.height.rounded(.up)))
+        let fadeX = max(1, horizontalFade * CGFloat(w))
+        let fadeY = max(1, verticalFade * CGFloat(h))
+        var pixels = [UInt8](repeating: 0, count: w * h)
+        for y in 0..<h {
+            let fy = min(
+                smoothstep(0, fadeY, CGFloat(y)),
+                smoothstep(0, fadeY, CGFloat(h - 1 - y))
+            )
+            for x in 0..<w {
+                let fx = min(
+                    smoothstep(0, fadeX, CGFloat(x)),
+                    smoothstep(0, fadeX, CGFloat(w - 1 - x))
+                )
+                pixels[y * w + x] = UInt8(min(255, max(0, fx * fy * 255)))
+            }
+        }
+        guard let provider = CGDataProvider(data: Data(pixels) as CFData) else { return nil }
+        return CGImage(
+            width: w,
+            height: h,
+            bitsPerComponent: 8,
+            bitsPerPixel: 8,
+            bytesPerRow: w,
+            space: CGColorSpaceCreateDeviceGray(),
+            bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.none.rawValue),
+            provider: provider,
+            decode: nil,
+            shouldInterpolate: true,
+            intent: .defaultIntent
+        )
+    }
+}
+
 /// Swaps the mascot `UIImageView` between closed / open / “O” mouths while Alba speaks.
 @MainActor
 final class MascotLipSyncDriver: NSObject {
@@ -22,6 +125,8 @@ final class MascotLipSyncDriver: NSObject {
     private static let sherpaLipTimerInterval: TimeInterval = 0.16
     /// Mouth timeline lags wall clock so we stay closer to **heard** audio after `play()` (DAC / route / small buffer delay).
     private static let sherpaHeardAudioLeadInSeconds: TimeInterval = 0.05
+    /// Short cross-fade between mouth frames — softens hard export edges when paired with `MascotSoftEdgeImageView`.
+    private static let mouthCrossfadeDuration: TimeInterval = 0.07
 
     func attach(imageView: UIImageView, closed: UIImage?, open: UIImage?, oMouth: UIImage?) {
         self.imageView = imageView
@@ -71,7 +176,7 @@ final class MascotLipSyncDriver: NSObject {
     /// Apple `AVSpeechSynthesizer` path: often one word per callback.
     func appleWillSpeak(substring: String) {
         if substring.unicodeScalars.contains(where: { $0 == "o" || $0 == "O" }) {
-            imageView?.image = mouthO
+            setMouthImage(mouthO)
             return
         }
         if substring.contains(where: { $0.isLetter || $0.isNumber }) {
@@ -80,9 +185,9 @@ final class MascotLipSyncDriver: NSObject {
                 lastAppleMouthToggle = now
                 mouthFlipPhase &+= 1
             }
-            imageView?.image = (mouthFlipPhase & 1 == 0) ? mouthClosed : mouthOpen
+            setMouthImage((mouthFlipPhase & 1 == 0) ? mouthClosed : mouthOpen)
         } else {
-            imageView?.image = mouthClosed
+            setMouthImage(mouthClosed)
         }
     }
 
@@ -105,13 +210,25 @@ final class MascotLipSyncDriver: NSObject {
 
     private func applyMouth(for ch: Character) {
         if ch == "o" || ch == "O" {
-            imageView?.image = mouthO
+            setMouthImage(mouthO)
             return
         }
         if ch.isLetter || ch.isNumber {
-            imageView?.image = (mouthFlipPhase & 1 == 0) ? mouthClosed : mouthOpen
+            setMouthImage((mouthFlipPhase & 1 == 0) ? mouthClosed : mouthOpen)
         } else {
-            imageView?.image = mouthClosed
+            setMouthImage(mouthClosed)
+        }
+    }
+
+    private func setMouthImage(_ image: UIImage?) {
+        guard let iv = imageView else { return }
+        guard let image else {
+            iv.image = nil
+            return
+        }
+        if iv.image === image { return }
+        UIView.transition(with: iv, duration: Self.mouthCrossfadeDuration, options: .transitionCrossDissolve) {
+            iv.image = image
         }
     }
 }

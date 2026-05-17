@@ -10,7 +10,7 @@ import Foundation
 import UIKit
 
 extension Notification.Name {
-    /// Posted when download / load panel visibility or progress changes (home screen shows the blocking overlay).
+    /// Posted when model download / load panel visibility or progress changes (home screen chip).
     static let leapVLMLoadPanelStateDidChange = Notification.Name("LeapVLMModel.loadPanelStateDidChange")
 }
 
@@ -229,7 +229,7 @@ final class LeapVLMModel {
         publishLoadPanel(
             visible: true,
             progress: 0,
-            status: "Loading and downloading the assets…",
+            status: "Loading…",
             failed: false)
 
         let task = Task<Void, Never> { @MainActor [weak self] in
@@ -243,16 +243,19 @@ final class LeapVLMModel {
                             guard let self else { return }
                             if progress < 1.0 {
                                 let pct = Int((progress * 100).rounded(.down))
+                                let status = pct > 0
+                                    ? "Download the model… \(pct)%"
+                                    : "Download the model…"
                                 self.publishLoadPanel(
                                     visible: true,
                                     progress: Double(progress),
-                                    status: "Loading and downloading the assets… \(pct)%",
+                                    status: status,
                                     failed: false)
                             } else {
                                 self.publishLoadPanel(
                                     visible: true,
                                     progress: 1,
-                                    status: "Preparing assets…",
+                                    status: "Loading…",
                                     failed: false)
                             }
                         }
@@ -264,7 +267,7 @@ final class LeapVLMModel {
                 self.publishLoadPanel(
                     visible: true,
                     progress: 0,
-                    status: "Couldn’t load assets: \(error.localizedDescription)",
+                    status: "Couldn’t load model: \(error.localizedDescription)",
                     failed: true)
             }
             self.pendingLoadTask = nil
@@ -285,7 +288,7 @@ final class LeapVLMModel {
             publishLoadPanel(
                 visible: true,
                 progress: 0,
-                status: "Couldn’t load assets: \(error.localizedDescription)",
+                status: "Couldn’t load model: \(error.localizedDescription)",
                 failed: true)
         }
     }
@@ -493,8 +496,30 @@ enum MagicBrushyVLMOutputCleanup {
         while s.contains("  ") { s = s.replacingOccurrences(of: "  ", with: " ") }
 
         s = stripStaleYouHaveOpeners(s)
+        s = rewriteThirdPersonCoachLines(s)
 
         return s.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Models often echo prompt wording (“They are coloring…”) despite instructions—rewrite for TTS.
+    private static func rewriteThirdPersonCoachLines(_ raw: String) -> String {
+        var s = raw
+        let pairs: [(String, String)] = [
+            ("They are coloring", "You're coloring"),
+            ("they are coloring", "you're coloring"),
+            ("They are ", "You're "),
+            ("they are ", "you're "),
+            ("They're coloring", "You're coloring"),
+            ("they're coloring", "you're coloring"),
+            ("Their ", "Your "),
+            ("their ", "your "),
+            ("The child is coloring", "You're coloring"),
+            ("the child is coloring", "you're coloring"),
+        ]
+        for (from, to) in pairs {
+            s = s.replacingOccurrences(of: from, with: to)
+        }
+        return s
     }
 
     /// Models often echo “You have a …” when naming the scene; prompt discourages it—strip if it still leaks through.
