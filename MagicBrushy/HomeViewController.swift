@@ -88,8 +88,9 @@ final class HomeViewController: UIViewController {
     private let categoryGridContentView = UIView()
     private var categoryGridViewportHeightConstraint: NSLayoutConstraint!
     private let unlockButton = UIButton(type: .custom)
+    private var unlockMinHeightConstraint: NSLayoutConstraint!
 
-    private lazy var settingsButton: UIButton = makeMagicBrushySettingsGearButton()
+    private lazy var settingsButton: MagicBrushySettingsGearButton = makeMagicBrushySettingsGearButton()
     private let diamondBackButton = MagicBrushyDiamondBackButton()
 
     private let assetsLoadChip = UIView()
@@ -100,6 +101,10 @@ final class HomeViewController: UIViewController {
 
     private var bodyTopToHeaderConstraint: NSLayoutConstraint!
     private var bodyBottomConstraint: NSLayoutConstraint!
+    private var mascotWidthConstraint: NSLayoutConstraint!
+    private var mascotHeightConstraint: NSLayoutConstraint!
+    private var mascotColumnWidthFractionConstraint: NSLayoutConstraint!
+    private var mascotColumnFixedWidthConstraint: NSLayoutConstraint!
 
     private let homeMainStack = UIStackView()
 
@@ -226,9 +231,13 @@ final class HomeViewController: UIViewController {
         homeMainStack.translatesAutoresizingMaskIntoConstraints = false
         homeMainStack.addArrangedSubview(bodyStack)
 
-        NSLayoutConstraint.activate([
-            mascotColumn.widthAnchor.constraint(equalTo: homeMainStack.widthAnchor, multiplier: HomeCategoryTileMetrics.mascotColumnWidthFraction),
-        ])
+        mascotColumnWidthFractionConstraint = mascotColumn.widthAnchor.constraint(
+            equalTo: homeMainStack.widthAnchor,
+            multiplier: HomeCategoryTileMetrics.mascotColumnWidthFraction
+        )
+        mascotColumnFixedWidthConstraint = mascotColumn.widthAnchor.constraint(equalToConstant: 200)
+        mascotColumnFixedWidthConstraint.isActive = false
+        NSLayoutConstraint.activate([mascotColumnWidthFractionConstraint])
 
         mascotView.isUserInteractionEnabled = false
 
@@ -258,7 +267,9 @@ final class HomeViewController: UIViewController {
             topChromeRow.topAnchor.constraint(equalTo: g.topAnchor, constant: 4),
             topChromeRow.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -16),
             topChromeRow.leadingAnchor.constraint(greaterThanOrEqualTo: diamondBackButton.trailingAnchor, constant: 8),
-            unlockButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 44),
+            { unlockMinHeightConstraint = unlockButton.heightAnchor.constraint(
+                greaterThanOrEqualToConstant: MagicBrushyChromeMetrics.unlockMinHeight(traitCollection)
+            ); return unlockMinHeightConstraint }(),
 
             homeTitleBadge.topAnchor.constraint(equalTo: mascotColumn.topAnchor),
             homeTitleBadge.centerXAnchor.constraint(equalTo: mascotColumn.centerXAnchor),
@@ -273,9 +284,8 @@ final class HomeViewController: UIViewController {
                 multiplier: HomeCategoryTileMetrics.titleBadgeMaxHeightFraction
             ),
 
-            mascotView.topAnchor.constraint(equalTo: homeTitleBadge.bottomAnchor, constant: 8),
-            mascotView.leadingAnchor.constraint(equalTo: mascotColumn.leadingAnchor, constant: 2),
-            mascotView.trailingAnchor.constraint(equalTo: mascotColumn.trailingAnchor, constant: -2),
+            mascotView.topAnchor.constraint(greaterThanOrEqualTo: homeTitleBadge.bottomAnchor, constant: 8),
+            mascotView.centerXAnchor.constraint(equalTo: mascotColumn.centerXAnchor),
             mascotView.bottomAnchor.constraint(equalTo: mascotColumn.bottomAnchor),
 
             bodyTopToHeaderConstraint,
@@ -410,6 +420,36 @@ final class HomeViewController: UIViewController {
         categoryGridPanel.bringSubviewToFront(assetsLoadChip)
         view.bringSubviewToFront(diamondBackButton)
         view.bringSubviewToFront(topChromeRow)
+
+        let mascotSize = BrushiMascotLayout.displaySize(for: traitCollection, image: mascotView.image)
+        mascotWidthConstraint = mascotView.widthAnchor.constraint(equalToConstant: mascotSize.width)
+        mascotHeightConstraint = mascotView.heightAnchor.constraint(equalToConstant: mascotSize.height)
+        NSLayoutConstraint.activate([mascotWidthConstraint, mascotHeightConstraint])
+
+        applyTopChromeLayout(for: traitCollection)
+        applyMascotLayout(for: traitCollection)
+    }
+
+    private func applyMascotLayout(for traitCollection: UITraitCollection) {
+        let phone = MagicBrushyChromeMetrics.isPhone(traitCollection)
+        let mascotSize = BrushiMascotLayout.displaySize(for: traitCollection, image: mascotView.image)
+        mascotWidthConstraint?.constant = mascotSize.width
+        mascotHeightConstraint?.constant = mascotSize.height
+        if phone {
+            mascotColumnWidthFractionConstraint.isActive = false
+            mascotColumnFixedWidthConstraint.isActive = true
+            mascotColumnFixedWidthConstraint.constant = mascotSize.width + 8
+        } else {
+            mascotColumnFixedWidthConstraint.isActive = false
+            mascotColumnWidthFractionConstraint.isActive = true
+        }
+    }
+
+    private func applyTopChromeLayout(for traitCollection: UITraitCollection) {
+        diamondBackButton.applyLayout(for: traitCollection)
+        settingsButton.applyStyle(for: traitCollection)
+        unlockMinHeightConstraint?.constant = MagicBrushyChromeMetrics.unlockMinHeight(traitCollection)
+        applySubscribeButtonEnabledState()
     }
 
     private func stopAssetsLoadChipAnimations() {
@@ -507,6 +547,7 @@ final class HomeViewController: UIViewController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         applyLayoutMetricsForCurrentTraits()
+        applyMascotLayout(for: traitCollection)
     }
 
     /// The scroll view now fills the panel directly; no fixed viewport height needed.
@@ -550,8 +591,15 @@ final class HomeViewController: UIViewController {
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
-        guard previousTraitCollection?.verticalSizeClass != traitCollection.verticalSizeClass else { return }
-        applyLayoutMetricsForCurrentTraits()
+        let sizeClassChanged = previousTraitCollection?.verticalSizeClass != traitCollection.verticalSizeClass
+        let idiomChanged = previousTraitCollection?.userInterfaceIdiom != traitCollection.userInterfaceIdiom
+        if sizeClassChanged {
+            applyLayoutMetricsForCurrentTraits()
+        }
+        if idiomChanged {
+            applyTopChromeLayout(for: traitCollection)
+            applyMascotLayout(for: traitCollection)
+        }
     }
 
     private func configureUnlockButton() {
@@ -564,25 +612,30 @@ final class HomeViewController: UIViewController {
 
     private func applySubscribeButtonEnabledState() {
         let full = SubscriptionManager.shared.hasFullLibraryAccess
+        let tc = traitCollection
         unlockButton.isEnabled = !full
         unlockButton.alpha = full ? 0.55 : 1
 
         var cfg = UIButton.Configuration.filled()
         cfg.title = full ? "Unlocked" : "Unlock all"
         let symbolName = full ? "lock.open.fill" : "lock.fill"
-        let symCfg = UIImage.SymbolConfiguration(pointSize: 17, weight: .semibold)
+        let symCfg = UIImage.SymbolConfiguration(
+            pointSize: MagicBrushyChromeMetrics.unlockSymbolPointSize(tc),
+            weight: .semibold
+        )
         cfg.image = UIImage(systemName: symbolName, withConfiguration: symCfg)
         cfg.imagePlacement = .leading
-        cfg.imagePadding = 8
-        cfg.contentInsets = NSDirectionalEdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16)
+        cfg.imagePadding = MagicBrushyChromeMetrics.isPhone(tc) ? 6 : 8
+        cfg.contentInsets = MagicBrushyChromeMetrics.unlockContentInsets(tc)
         cfg.cornerStyle = .large
         cfg.baseForegroundColor = .white
         cfg.baseBackgroundColor = FigmaTheme.primaryOrange
         cfg.background.strokeColor = FigmaTheme.primaryOrangeBorder
         cfg.background.strokeWidth = 3
+        let titleSize = MagicBrushyChromeMetrics.unlockTitleFontSize(tc)
         cfg.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
             var out = incoming
-            out.font = FigmaTheme.bodyFont(size: 15, weight: .bold)
+            out.font = FigmaTheme.bodyFont(size: titleSize, weight: .bold)
             return out
         }
         unlockButton.configuration = cfg

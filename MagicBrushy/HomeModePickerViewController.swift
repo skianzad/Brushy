@@ -34,13 +34,26 @@ final class HomeModePickerViewController: UIViewController {
     private let homeTitleBadge = HomeBrushiTitleBadgeView()
     private let mascotView = UIImageView()
     private let unlockButton = UIButton(type: .custom)
-    private lazy var settingsButton: UIButton = makeMagicBrushySettingsGearButton()
+    private var unlockMinHeightConstraint: NSLayoutConstraint!
+    private lazy var settingsButton: MagicBrushySettingsGearButton = makeMagicBrushySettingsGearButton()
 
     private var freeCard: HomeModeCardView!
     private var coloringCard: HomeModeCardView!
 
     private var bodyTopToHeaderConstraint: NSLayoutConstraint!
     private var bodyBottomConstraint: NSLayoutConstraint!
+    private var cardWidthToStackConstraint: NSLayoutConstraint!
+    private var coloringCardWidthConstraint: NSLayoutConstraint!
+    private var coloringCardHeightConstraint: NSLayoutConstraint!
+    private var freeCardHeightConstraint: NSLayoutConstraint!
+    private var mascotWidthFractionConstraint: NSLayoutConstraint!
+    private var mascotFixedWidthConstraint: NSLayoutConstraint!
+    private var topChromeTrailingToSafeConstraint: NSLayoutConstraint!
+    private var topChromeTrailingToBodyConstraint: NSLayoutConstraint!
+    private var homeMainLeadingConstraint: NSLayoutConstraint!
+    private var homeMainTrailingConstraint: NSLayoutConstraint!
+    private var mascotWidthConstraint: NSLayoutConstraint!
+    private var mascotHeightConstraint: NSLayoutConstraint!
     private var subscriptionAccessObserver: NSObjectProtocol?
 
     override func viewDidLoad() {
@@ -137,16 +150,30 @@ final class HomeModePickerViewController: UIViewController {
             heroView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
             topChromeRow.topAnchor.constraint(equalTo: g.topAnchor, constant: 4),
-            topChromeRow.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -16),
             topChromeRow.leadingAnchor.constraint(greaterThanOrEqualTo: g.leadingAnchor, constant: 16),
-            unlockButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 44),
+            { unlockMinHeightConstraint = unlockButton.heightAnchor.constraint(
+                greaterThanOrEqualToConstant: MagicBrushyChromeMetrics.unlockMinHeight(traitCollection)
+            ); return unlockMinHeightConstraint }(),
 
             bodyTopToHeaderConstraint,
             bodyBottomConstraint,
-            homeMainStack.leadingAnchor.constraint(equalTo: g.leadingAnchor, constant: 16),
-            homeMainStack.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -16),
-
-            mascotColumn.widthAnchor.constraint(equalTo: homeMainStack.widthAnchor, multiplier: HomeModePickerLayout.mascotColumnWidthFraction),
+        ])
+        homeMainLeadingConstraint = homeMainStack.leadingAnchor.constraint(equalTo: g.leadingAnchor, constant: 16)
+        homeMainTrailingConstraint = homeMainStack.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -16)
+        topChromeTrailingToSafeConstraint = topChromeRow.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -16)
+        topChromeTrailingToBodyConstraint = topChromeRow.trailingAnchor.constraint(equalTo: bodyStack.trailingAnchor)
+        topChromeTrailingToBodyConstraint.isActive = false
+        mascotWidthFractionConstraint = mascotColumn.widthAnchor.constraint(
+            equalTo: homeMainStack.widthAnchor,
+            multiplier: HomeModePickerLayout.mascotColumnWidthFraction
+        )
+        mascotFixedWidthConstraint = mascotColumn.widthAnchor.constraint(equalToConstant: 120)
+        mascotFixedWidthConstraint.isActive = false
+        NSLayoutConstraint.activate([
+            homeMainLeadingConstraint,
+            homeMainTrailingConstraint,
+            topChromeTrailingToSafeConstraint,
+            mascotWidthFractionConstraint,
 
             homeTitleBadge.topAnchor.constraint(equalTo: mascotColumn.topAnchor),
             homeTitleBadge.leadingAnchor.constraint(equalTo: mascotColumn.leadingAnchor),
@@ -160,17 +187,31 @@ final class HomeModePickerViewController: UIViewController {
                 multiplier: HomeModePickerLayout.titleBadgeMaxHeightFraction
             ),
 
-            mascotView.topAnchor.constraint(equalTo: homeTitleBadge.bottomAnchor, constant: 8),
-            mascotView.leadingAnchor.constraint(equalTo: mascotColumn.leadingAnchor, constant: 2),
-            mascotView.trailingAnchor.constraint(equalTo: mascotColumn.trailingAnchor, constant: -2),
+            mascotView.topAnchor.constraint(greaterThanOrEqualTo: homeTitleBadge.bottomAnchor, constant: 8),
+            mascotView.centerXAnchor.constraint(equalTo: mascotColumn.centerXAnchor),
             mascotView.bottomAnchor.constraint(equalTo: mascotColumn.bottomAnchor),
 
-            coloringCard.widthAnchor.constraint(
-                equalTo: modeCardsStack.widthAnchor,
-                multiplier: HomeModePickerLayout.cardWidthFraction
-            ),
             freeCard.widthAnchor.constraint(equalTo: coloringCard.widthAnchor),
         ])
+        cardWidthToStackConstraint = coloringCard.widthAnchor.constraint(
+            equalTo: modeCardsStack.widthAnchor,
+            multiplier: HomeModePickerLayout.cardWidthFraction
+        )
+        coloringCardWidthConstraint = coloringCard.widthAnchor.constraint(equalToConstant: 120)
+        coloringCardHeightConstraint = coloringCard.heightAnchor.constraint(equalToConstant: 120)
+        freeCardHeightConstraint = freeCard.heightAnchor.constraint(equalTo: coloringCard.heightAnchor)
+        NSLayoutConstraint.activate([
+            coloringCardWidthConstraint,
+            coloringCardHeightConstraint,
+            freeCard.widthAnchor.constraint(equalTo: coloringCard.widthAnchor),
+            freeCardHeightConstraint,
+        ])
+        let mascotSize = BrushiMascotLayout.displaySize(for: traitCollection, image: mascotView.image)
+        mascotWidthConstraint = mascotView.widthAnchor.constraint(equalToConstant: mascotSize.width)
+        mascotHeightConstraint = mascotView.heightAnchor.constraint(equalToConstant: mascotSize.height)
+        NSLayoutConstraint.activate([mascotWidthConstraint, mascotHeightConstraint])
+
+        applyBodyLayout(for: traitCollection)
 
         subscriptionAccessObserver = NotificationCenter.default.addObserver(
             forName: .magicBrushySubscriptionAccessDidChange,
@@ -183,6 +224,78 @@ final class HomeModePickerViewController: UIViewController {
         applySubscribeButtonEnabledState()
         Task { await SubscriptionManager.shared.refreshEntitlements() }
         view.bringSubviewToFront(topChromeRow)
+        applyTopChromeLayout(for: traitCollection)
+    }
+
+    private func applyTopChromeLayout(for traitCollection: UITraitCollection) {
+        settingsButton.applyStyle(for: traitCollection)
+        unlockMinHeightConstraint?.constant = MagicBrushyChromeMetrics.unlockMinHeight(traitCollection)
+        applySubscribeButtonEnabledState()
+    }
+
+    /// iPhone: compact row of square tiles + hugging mascot; iPad: original stacked layout.
+    private func applyBodyLayout(for traitCollection: UITraitCollection) {
+        let phone = MagicBrushyChromeMetrics.isPhone(traitCollection)
+        if phone {
+            homeMainStack.alignment = .center
+            bodyStack.alignment = .center
+            bodyStack.distribution = .fill
+            bodyStack.spacing = 10
+            mascotWidthFractionConstraint.isActive = false
+            mascotFixedWidthConstraint.isActive = true
+            modeCardsStack.axis = .horizontal
+            modeCardsStack.alignment = .fill
+            modeCardsStack.distribution = .fill
+            modeCardsStack.spacing = 10
+            cardWidthToStackConstraint.isActive = false
+            coloringCardWidthConstraint.isActive = true
+            coloringCardHeightConstraint.isActive = true
+            freeCardHeightConstraint.isActive = true
+            modeCardsStack.setContentHuggingPriority(.required, for: .horizontal)
+            modeCardsStack.setContentHuggingPriority(.required, for: .vertical)
+            bodyStack.setContentHuggingPriority(.required, for: .horizontal)
+            bodyStack.setContentCompressionResistancePriority(.required, for: .horizontal)
+            topChromeTrailingToSafeConstraint.isActive = false
+            topChromeTrailingToBodyConstraint.isActive = true
+        } else {
+            homeMainStack.alignment = .fill
+            bodyStack.alignment = .fill
+            bodyStack.distribution = .fill
+            bodyStack.spacing = HomeModePickerLayout.bodyStackSpacing
+            mascotFixedWidthConstraint.isActive = false
+            mascotWidthFractionConstraint.isActive = true
+            modeCardsStack.axis = .vertical
+            modeCardsStack.alignment = .center
+            modeCardsStack.distribution = .fillEqually
+            modeCardsStack.spacing = HomeModePickerLayout.cardStackSpacing
+            cardWidthToStackConstraint.isActive = true
+            coloringCardWidthConstraint.isActive = false
+            coloringCardHeightConstraint.isActive = false
+            freeCardHeightConstraint.isActive = false
+            modeCardsStack.setContentHuggingPriority(.defaultLow, for: .horizontal)
+            modeCardsStack.setContentHuggingPriority(.defaultLow, for: .vertical)
+            bodyStack.setContentHuggingPriority(.defaultLow, for: .horizontal)
+            bodyStack.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+            topChromeTrailingToBodyConstraint.isActive = false
+            topChromeTrailingToSafeConstraint.isActive = true
+        }
+        view.setNeedsLayout()
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        let idiomChanged = previousTraitCollection?.userInterfaceIdiom != traitCollection.userInterfaceIdiom
+        if idiomChanged {
+            applyTopChromeLayout(for: traitCollection)
+            applyBodyLayout(for: traitCollection)
+            applyMascotLayout(for: traitCollection)
+        }
+    }
+
+    private func applyMascotLayout(for traitCollection: UITraitCollection) {
+        let mascotSize = BrushiMascotLayout.displaySize(for: traitCollection, image: mascotView.image)
+        mascotWidthConstraint?.constant = mascotSize.width
+        mascotHeightConstraint?.constant = mascotSize.height
     }
 
     deinit {
@@ -199,12 +312,39 @@ final class HomeModePickerViewController: UIViewController {
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
+        let phone = MagicBrushyChromeMetrics.isPhone(traitCollection)
         let compact = traitCollection.verticalSizeClass == .compact
         bodyTopToHeaderConstraint?.constant = compact ? 4 : 8
         bodyBottomConstraint?.constant = compact ? -10 : -22
         homeMainStack.spacing = compact ? 10 : 16
-        bodyStack.spacing = compact ? 8 : HomeModePickerLayout.bodyStackSpacing
-        modeCardsStack.spacing = compact ? 10 : HomeModePickerLayout.cardStackSpacing
+        if !phone {
+            bodyStack.spacing = compact ? 8 : HomeModePickerLayout.bodyStackSpacing
+            modeCardsStack.spacing = compact ? 10 : HomeModePickerLayout.cardStackSpacing
+        }
+        if phone {
+            layoutPhoneBody()
+        }
+        applyMascotLayout(for: traitCollection)
+    }
+
+    /// Sizes mascot + square cards from available space so the row stays centered without a wide empty gutter.
+    private func layoutPhoneBody() {
+        let mainW = homeMainStack.bounds.width
+        let bodyH = bodyStack.bounds.height
+        guard mainW > 80, bodyH > 60 else { return }
+
+        let mascotDisplayW = BrushiMascotLayout.layoutWidth(for: traitCollection)
+        let mascotW = max(mascotDisplayW + 8, min(132, mainW * 0.26))
+        mascotFixedWidthConstraint.constant = mascotW
+
+        let cardRowW = mainW - mascotW - bodyStack.spacing
+        let side = floor(min(bodyH, (cardRowW - modeCardsStack.spacing) / 2))
+        guard side > 40 else { return }
+
+        if coloringCardWidthConstraint.constant != side {
+            coloringCardWidthConstraint.constant = side
+            coloringCardHeightConstraint.constant = side
+        }
     }
 
     @objc private func modeCardTapped(_ sender: UIControl) {
@@ -230,25 +370,30 @@ final class HomeModePickerViewController: UIViewController {
 
     private func applySubscribeButtonEnabledState() {
         let full = SubscriptionManager.shared.hasFullLibraryAccess
+        let tc = traitCollection
         unlockButton.isEnabled = !full
         unlockButton.alpha = full ? 0.55 : 1
 
         var cfg = UIButton.Configuration.filled()
         cfg.title = full ? "Unlocked" : "Unlock all"
         let symbolName = full ? "lock.open.fill" : "lock.fill"
-        let symCfg = UIImage.SymbolConfiguration(pointSize: 17, weight: .semibold)
+        let symCfg = UIImage.SymbolConfiguration(
+            pointSize: MagicBrushyChromeMetrics.unlockSymbolPointSize(tc),
+            weight: .semibold
+        )
         cfg.image = UIImage(systemName: symbolName, withConfiguration: symCfg)
         cfg.imagePlacement = .leading
-        cfg.imagePadding = 8
-        cfg.contentInsets = NSDirectionalEdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16)
+        cfg.imagePadding = MagicBrushyChromeMetrics.isPhone(tc) ? 6 : 8
+        cfg.contentInsets = MagicBrushyChromeMetrics.unlockContentInsets(tc)
         cfg.cornerStyle = .large
         cfg.baseForegroundColor = .white
         cfg.baseBackgroundColor = FigmaTheme.primaryOrange
         cfg.background.strokeColor = FigmaTheme.primaryOrangeBorder
         cfg.background.strokeWidth = 3
+        let titleSize = MagicBrushyChromeMetrics.unlockTitleFontSize(tc)
         cfg.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
             var out = incoming
-            out.font = FigmaTheme.bodyFont(size: 15, weight: .bold)
+            out.font = FigmaTheme.bodyFont(size: titleSize, weight: .bold)
             return out
         }
         unlockButton.configuration = cfg

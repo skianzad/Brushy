@@ -186,6 +186,16 @@ final class MagicBrushySettingsViewController: UIViewController {
         ])
 
         syncMusicControlsFromStorage()
+
+        let dismissTap = UITapGestureRecognizer(target: self, action: #selector(dismissFromBackgroundTap(_:)))
+        dismissTap.delegate = self
+        view.addGestureRecognizer(dismissTap)
+    }
+
+    @objc private func dismissFromBackgroundTap(_ recognizer: UITapGestureRecognizer) {
+        let pt = recognizer.location(in: view)
+        guard !cardView.frame.contains(pt) else { return }
+        dismiss(animated: true)
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -306,34 +316,72 @@ final class MagicBrushySettingsViewController: UIViewController {
     }
 }
 
+extension MagicBrushySettingsViewController: UIGestureRecognizerDelegate, UIPopoverPresentationControllerDelegate {
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        let pt = touch.location(in: view)
+        return !cardView.frame.contains(pt)
+    }
+
+    func adaptivePresentationStyle(for controller: UIPresentationController) -> UIModalPresentationStyle {
+        .none
+    }
+}
+
 // MARK: - Gear button + presentation
+
+/// Blue gear chrome matching nav controls on home / grid / coloring screens.
+final class MagicBrushySettingsGearButton: UIButton {
+
+    private var widthConstraint: NSLayoutConstraint!
+    private var heightConstraint: NSLayoutConstraint!
+
+    init() {
+        super.init(frame: .zero)
+        var cfg = UIButton.Configuration.plain()
+        cfg.image = UIImage(systemName: "gearshape.fill")
+        cfg.baseForegroundColor = .white
+        configuration = cfg
+        translatesAutoresizingMaskIntoConstraints = false
+        accessibilityLabel = "Settings"
+        accessibilityHint = "Background music volume and preferences."
+        backgroundColor = FigmaTheme.actionBlue
+        layer.borderColor = FigmaTheme.actionBlueBorder.cgColor
+        layer.shadowColor = UIColor.black.cgColor
+        layer.shadowOpacity = 0.18
+        layer.shadowRadius = 4
+        layer.shadowOffset = CGSize(width: 0, height: 2)
+        widthConstraint = widthAnchor.constraint(equalToConstant: 52)
+        heightConstraint = heightAnchor.constraint(equalToConstant: 52)
+        NSLayoutConstraint.activate([widthConstraint, heightConstraint])
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    func applyStyle(for traitCollection: UITraitCollection) {
+        let side = MagicBrushyChromeMetrics.chromeButtonSide(traitCollection)
+        widthConstraint.constant = side
+        heightConstraint.constant = side
+        layer.cornerRadius = MagicBrushyChromeMetrics.chromeCornerRadius(traitCollection)
+        layer.borderWidth = MagicBrushyChromeMetrics.chromeBorderWidth(traitCollection)
+        var cfg = configuration ?? UIButton.Configuration.plain()
+        cfg.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(
+            pointSize: MagicBrushyChromeMetrics.chromeSymbolPointSize(traitCollection),
+            weight: .bold
+        )
+        configuration = cfg
+    }
+}
 
 extension UIViewController {
 
-    /// Chrome gear button (52×52) matching nav controls on the coloring screen.
-    func makeMagicBrushySettingsGearButton() -> UIButton {
-        let b = UIButton(type: .system)
-        var cfg = UIButton.Configuration.plain()
-        cfg.image = UIImage(systemName: "gearshape.fill")
-        cfg.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 20, weight: .bold)
-        cfg.baseForegroundColor = .white
-        b.configuration = cfg
-        b.translatesAutoresizingMaskIntoConstraints = false
-        b.accessibilityLabel = "Settings"
-        b.accessibilityHint = "Background music volume and preferences."
-        b.backgroundColor = FigmaTheme.actionBlue
-        b.layer.cornerRadius = 14
-        b.layer.borderWidth = 4
-        b.layer.borderColor = FigmaTheme.actionBlueBorder.cgColor
-        b.layer.shadowColor = UIColor.black.cgColor
-        b.layer.shadowOpacity = 0.18
-        b.layer.shadowRadius = 4
-        b.layer.shadowOffset = CGSize(width: 0, height: 2)
+    /// Chrome gear button; call `applyStyle(for:)` from `traitCollectionDidChange` on each screen.
+    func makeMagicBrushySettingsGearButton() -> MagicBrushySettingsGearButton {
+        let b = MagicBrushySettingsGearButton()
         b.addTarget(self, action: #selector(magicBrushySettingsGearTapped(_:)), for: .touchUpInside)
-        NSLayoutConstraint.activate([
-            b.widthAnchor.constraint(equalToConstant: 52),
-            b.heightAnchor.constraint(equalToConstant: 52),
-        ])
+        b.applyStyle(for: traitCollection)
         return b
     }
 
@@ -345,15 +393,14 @@ extension UIViewController {
         let settings = MagicBrushySettingsViewController()
         if traitCollection.userInterfaceIdiom == .pad {
             settings.modalPresentationStyle = .popover
-            settings.popoverPresentationController?.sourceView = sourceView
-            settings.popoverPresentationController?.sourceRect = sourceView.bounds
-            settings.popoverPresentationController?.permittedArrowDirections = [.up, .down]
+            let popover = settings.popoverPresentationController
+            popover?.sourceView = sourceView
+            popover?.sourceRect = sourceView.bounds
+            popover?.permittedArrowDirections = [.up, .down]
+            popover?.delegate = settings
         } else {
-            settings.modalPresentationStyle = .formSheet
-            if #available(iOS 15.0, *) {
-                settings.sheetPresentationController?.detents = [.medium()]
-                settings.sheetPresentationController?.prefersGrabberVisible = true
-            }
+            settings.modalPresentationStyle = .overFullScreen
+            settings.modalTransitionStyle = .crossDissolve
         }
         present(settings, animated: true)
     }

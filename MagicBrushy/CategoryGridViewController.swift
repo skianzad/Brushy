@@ -33,27 +33,8 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
     private let headerRow = UIStackView()
     private let headerLeadingContainer = UIView()
     private let headerTrailingContainer = UIView()
-    private lazy var settingsButton: UIButton = makeMagicBrushySettingsGearButton()
-    private let backButtonChrome = UIView()
-    private let backDiamondRotator = UIView()
-    private let backButtonStroke = UIView()
-    private let backButtonFill = UIView()
-    private let backButton = UIButton(type: .custom)
-
-    private enum BackChromeMetrics {
-        static let size: CGFloat = 90.9
-        /// Square side before 45° rotation so the diamond fits the `size` × `size` layout box.
-        static var diamondSquareSide: CGFloat { size / 2.0.squareRoot() }
-        static let fillCornerRadius: CGFloat = 12.73
-        static let strokeOutset: CGFloat = 2.52
-        static var strokeSizeDelta: CGFloat { strokeOutset * 2 }
-        static let strokeCornerRadius: CGFloat = 15.24
-        static let strokeBorderWidth: CGFloat = 5.03
-        static let fillColor = UIColor(red: 1, green: 0.539, blue: 0.012, alpha: 1)
-        static let strokeColor = UIColor(red: 0.863, green: 0.404, blue: 0.153, alpha: 1)
-        static let shadowRadius: CGFloat = 7.27
-        static let shadowOffsetY: CGFloat = 7.27
-    }
+    private lazy var settingsButton: MagicBrushySettingsGearButton = makeMagicBrushySettingsGearButton()
+    private let diamondBackButton = MagicBrushyDiamondBackButton()
     private let categoryScroll = UIScrollView()
     private let categoryStack = UIStackView()
     private var categoryButtons: [UIButton] = []
@@ -136,54 +117,8 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
         headerRow.addArrangedSubview(titleLabel)
         headerRow.addArrangedSubview(headerTrailingContainer)
 
-        headerLeadingContainer.addSubview(backButtonChrome)
-
-        backButtonChrome.translatesAutoresizingMaskIntoConstraints = false
-        backButtonChrome.backgroundColor = .clear
-        backButtonChrome.clipsToBounds = false
-        backButtonChrome.layer.shadowColor = UIColor(red: 0, green: 0, blue: 0, alpha: 0.25).cgColor
-        backButtonChrome.layer.shadowOpacity = 1
-        backButtonChrome.layer.shadowRadius = BackChromeMetrics.shadowRadius
-        backButtonChrome.layer.shadowOffset = CGSize(width: 0, height: BackChromeMetrics.shadowOffsetY)
-        backButtonChrome.layer.masksToBounds = false
-
-        backButtonStroke.translatesAutoresizingMaskIntoConstraints = false
-        backButtonStroke.backgroundColor = .clear
-        backButtonStroke.layer.borderWidth = BackChromeMetrics.strokeBorderWidth
-        backButtonStroke.layer.borderColor = BackChromeMetrics.strokeColor.cgColor
-        backButtonStroke.layer.cornerRadius = BackChromeMetrics.strokeCornerRadius
-        backButtonStroke.isUserInteractionEnabled = false
-        if #available(iOS 13.0, *) {
-            backButtonStroke.layer.cornerCurve = .continuous
-        }
-
-        backDiamondRotator.translatesAutoresizingMaskIntoConstraints = false
-        backDiamondRotator.backgroundColor = .clear
-        backDiamondRotator.clipsToBounds = false
-
-        backButtonFill.translatesAutoresizingMaskIntoConstraints = false
-        backButtonFill.backgroundColor = BackChromeMetrics.fillColor
-        backButtonFill.layer.cornerRadius = BackChromeMetrics.fillCornerRadius
-        backButtonFill.clipsToBounds = true
-        backButtonFill.isUserInteractionEnabled = false
-        if #available(iOS 13.0, *) {
-            backButtonFill.layer.cornerCurve = .continuous
-        }
-
-        backButton.translatesAutoresizingMaskIntoConstraints = false
-        backButton.backgroundColor = .clear
-        backButton.tintColor = .white
-        let chevron = UIImage(systemName: "chevron.left", withConfiguration: UIImage.SymbolConfiguration(pointSize: 26, weight: .bold))
-        backButton.setImage(chevron, for: .normal)
-        backButton.accessibilityLabel = "Back"
-        backButton.addTarget(self, action: #selector(goBack), for: .touchUpInside)
-        backButton.transform = CGAffineTransform(rotationAngle: -.pi / 4)
-
-        backButtonChrome.addSubview(backDiamondRotator)
-        backDiamondRotator.addSubview(backButtonStroke)
-        backDiamondRotator.addSubview(backButtonFill)
-        backDiamondRotator.addSubview(backButton)
-        backDiamondRotator.transform = CGAffineTransform(rotationAngle: .pi / 4)
+        headerLeadingContainer.addSubview(diamondBackButton)
+        diamondBackButton.addTarget(self, action: #selector(goBack), for: .touchUpInside)
 
         // Horizontal pack chips (commented out — pack comes from home / `initialPackId`).
         /*
@@ -238,39 +173,16 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
             headerRow.leadingAnchor.constraint(equalTo: g.leadingAnchor, constant: 12),
             headerRow.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -12),
 
-            backButtonChrome.widthAnchor.constraint(equalToConstant: BackChromeMetrics.size),
-            backButtonChrome.heightAnchor.constraint(equalToConstant: BackChromeMetrics.size),
+            diamondBackButton.leadingAnchor.constraint(equalTo: headerLeadingContainer.leadingAnchor),
+            diamondBackButton.trailingAnchor.constraint(equalTo: headerLeadingContainer.trailingAnchor),
+            diamondBackButton.topAnchor.constraint(equalTo: headerLeadingContainer.topAnchor),
+            diamondBackButton.bottomAnchor.constraint(equalTo: headerLeadingContainer.bottomAnchor),
 
-            headerLeadingContainer.widthAnchor.constraint(equalToConstant: BackChromeMetrics.size),
+            headerLeadingContainer.widthAnchor.constraint(equalTo: diamondBackButton.widthAnchor),
             headerTrailingContainer.widthAnchor.constraint(equalTo: headerLeadingContainer.widthAnchor),
 
             settingsButton.centerXAnchor.constraint(equalTo: headerTrailingContainer.centerXAnchor),
             settingsButton.centerYAnchor.constraint(equalTo: headerTrailingContainer.centerYAnchor),
-
-            backButtonChrome.leadingAnchor.constraint(equalTo: headerLeadingContainer.leadingAnchor),
-            backButtonChrome.trailingAnchor.constraint(equalTo: headerLeadingContainer.trailingAnchor),
-            backButtonChrome.topAnchor.constraint(equalTo: headerLeadingContainer.topAnchor),
-            backButtonChrome.bottomAnchor.constraint(equalTo: headerLeadingContainer.bottomAnchor),
-
-            backDiamondRotator.topAnchor.constraint(equalTo: backButtonChrome.topAnchor),
-            backDiamondRotator.leadingAnchor.constraint(equalTo: backButtonChrome.leadingAnchor),
-            backDiamondRotator.trailingAnchor.constraint(equalTo: backButtonChrome.trailingAnchor),
-            backDiamondRotator.bottomAnchor.constraint(equalTo: backButtonChrome.bottomAnchor),
-
-            backButtonStroke.centerXAnchor.constraint(equalTo: backDiamondRotator.centerXAnchor),
-            backButtonStroke.centerYAnchor.constraint(equalTo: backDiamondRotator.centerYAnchor),
-            backButtonStroke.widthAnchor.constraint(equalToConstant: BackChromeMetrics.diamondSquareSide + BackChromeMetrics.strokeSizeDelta),
-            backButtonStroke.heightAnchor.constraint(equalToConstant: BackChromeMetrics.diamondSquareSide + BackChromeMetrics.strokeSizeDelta),
-
-            backButtonFill.centerXAnchor.constraint(equalTo: backDiamondRotator.centerXAnchor),
-            backButtonFill.centerYAnchor.constraint(equalTo: backDiamondRotator.centerYAnchor),
-            backButtonFill.widthAnchor.constraint(equalToConstant: BackChromeMetrics.diamondSquareSide),
-            backButtonFill.heightAnchor.constraint(equalToConstant: BackChromeMetrics.diamondSquareSide),
-
-            backButton.centerXAnchor.constraint(equalTo: backButtonFill.centerXAnchor),
-            backButton.centerYAnchor.constraint(equalTo: backButtonFill.centerYAnchor),
-            backButton.widthAnchor.constraint(equalTo: backButtonFill.widthAnchor),
-            backButton.heightAnchor.constraint(equalTo: backButtonFill.heightAnchor),
 
             mainColumn.topAnchor.constraint(equalTo: headerRow.bottomAnchor, constant: 14),
             mainColumn.leadingAnchor.constraint(equalTo: g.leadingAnchor),
@@ -291,6 +203,12 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
             collectionView.trailingAnchor.constraint(equalTo: gridFill.trailingAnchor),
             collectionView.bottomAnchor.constraint(equalTo: gridFill.bottomAnchor),
         ])
+        applyChromeLayout(for: traitCollection)
+    }
+
+    private func applyChromeLayout(for traitCollection: UITraitCollection) {
+        diamondBackButton.applyLayout(for: traitCollection)
+        settingsButton.applyStyle(for: traitCollection)
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -580,7 +498,7 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
         let attrs: [NSAttributedString.Key: Any] = [
             .font: font,
             .foregroundColor: UIColor.white,
-            .strokeColor: BackChromeMetrics.fillColor,
+            .strokeColor: MagicBrushyChromeMetrics.diamondBackFillColor,
             .strokeWidth: -4.5,
             .paragraphStyle: paragraph,
         ]
@@ -620,21 +538,16 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        updateBackButtonChromeShadowPath()
         applyGridColumns()
-    }
-
-    private func updateBackButtonChromeShadowPath() {
-        let b = backButtonChrome.bounds
-        guard b.width > 1, b.height > 1 else { return }
-        let r = BackChromeMetrics.fillCornerRadius
-        backButtonChrome.layer.shadowPath = UIBezierPath(roundedRect: b, cornerRadius: r).cgPath
     }
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
         if previousTraitCollection?.verticalSizeClass != traitCollection.verticalSizeClass {
             applyCategoryTitleAttributes()
+        }
+        if previousTraitCollection?.userInterfaceIdiom != traitCollection.userInterfaceIdiom {
+            applyChromeLayout(for: traitCollection)
         }
         applyGridColumns()
     }

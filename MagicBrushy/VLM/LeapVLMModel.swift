@@ -78,11 +78,15 @@ final class LeapVLMModel {
     public func generate(
         image: UIImage,
         prompt: String,
-        maxOutputTokens: Int? = nil
+        maxOutputTokens: Int? = nil,
+        maxImageEdge: CGFloat = LeapVLMModel.coachMaxImageEdge,
+        minDimensionFractionOfSource: CGFloat = 1.0 / 3.0
     ) async -> Task<Void, Never> {
         _ = image
         _ = prompt
         _ = maxOutputTokens
+        _ = maxImageEdge
+        _ = minDimensionFractionOfSource
 
         if let currentTask, running {
             return currentTask
@@ -164,7 +168,10 @@ final class LeapVLMModel {
 
     private static let modelName = "LFM2.5-VL-1.6B"
     private static let quantization = "Q4_0"
+    /// Upper bound for vision encoder input (longest edge in **pixels**).
     private static let maxImageEdge: CGFloat = 512
+    /// Coach calls (stroke / whole-page / welcome) use a smaller cap for faster on-device inference.
+    static let coachMaxImageEdge: CGFloat = 384
 
     var maxTokens = 240
     let displayEveryNTokens = 4
@@ -319,7 +326,9 @@ final class LeapVLMModel {
     public func generate(
         image: UIImage,
         prompt: String,
-        maxOutputTokens: Int? = nil
+        maxOutputTokens: Int? = nil,
+        maxImageEdge: CGFloat = LeapVLMModel.coachMaxImageEdge,
+        minDimensionFractionOfSource: CGFloat = 1.0 / 3.0
     ) async -> Task<Void, Never> {
 
         if let currentTask, running {
@@ -348,7 +357,11 @@ final class LeapVLMModel {
                     return
                 }
 
-                guard let jpegData = Self.resizedJPEGData(from: image, maxEdge: Self.maxImageEdge) else {
+                guard let jpegData = Self.resizedJPEGData(
+                    from: image,
+                    maxEdge: maxImageEdge,
+                    minDimensionFractionOfSource: minDimensionFractionOfSource
+                ) else {
                     self.output = "Failed: could not encode image"
                     await self.finishInferenceSession()
                     return
@@ -446,29 +459,33 @@ final class LeapVLMModel {
         return resized.jpegData(compressionQuality: 0.9)
     }
 
-    /// Downscales for the VLM cap but never below `minDimensionFractionOfSource` of the source width or height.
+    /// Downscales for the VLM cap but never below `minDimensionFractionOfSource` of the source pixel width or height.
     private static func resizedImage(
         from image: UIImage,
         maxEdge: CGFloat,
         minDimensionFractionOfSource: CGFloat = 1.0 / 3.0
     ) -> UIImage? {
-        let size = image.size
-        guard size.width > 0, size.height > 0 else { return nil }
+        let srcPixelW = image.size.width * image.scale
+        let srcPixelH = image.size.height * image.scale
+        guard srcPixelW > 0.5, srcPixelH > 0.5 else { return nil }
 
         let fraction = min(1, max(0.1, minDimensionFractionOfSource))
         // minW/minH are capped at maxEdge so this constraint never inflates the image above the model's cap.
-        let minW = min(size.width * fraction, maxEdge)
-        let minH = min(size.height * fraction, maxEdge)
-        var w = size.width
-        var h = size.height
+        let minW = min(srcPixelW * fraction, maxEdge)
+        let minH = min(srcPixelH * fraction, maxEdge)
+        var w = srcPixelW
+        var h = srcPixelH
         let downscale = min(maxEdge / w, maxEdge / h, 1)
         w *= downscale
         h *= downscale
         w = max(w, minW)
         h = max(h, minH)
 
-        let newSize = CGSize(width: w, height: h)
-        let renderer = UIGraphicsImageRenderer(size: newSize)
+        let newSize = CGSize(width: max(1, floor(w)), height: max(1, floor(h)))
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        format.opaque = true
+        let renderer = UIGraphicsImageRenderer(size: newSize, format: format)
         return renderer.image { _ in
             image.draw(in: CGRect(origin: .zero, size: newSize))
         }

@@ -76,3 +76,100 @@ enum FigmaTheme {
         layer.shadowPath = path
     }
 }
+
+// MARK: - Top chrome (iPhone vs iPad)
+
+enum MagicBrushyChromeMetrics {
+
+    static func isPhone(_ traitCollection: UITraitCollection) -> Bool {
+        traitCollection.userInterfaceIdiom == .phone
+    }
+
+    static func chromeButtonSide(_ traitCollection: UITraitCollection) -> CGFloat {
+        isPhone(traitCollection) ? 38 : 52
+    }
+
+    static func chromeSymbolPointSize(_ traitCollection: UITraitCollection) -> CGFloat {
+        isPhone(traitCollection) ? 16 : 20
+    }
+
+    static func chromeCornerRadius(_ traitCollection: UITraitCollection) -> CGFloat {
+        isPhone(traitCollection) ? 11 : 14
+    }
+
+    static func chromeBorderWidth(_ traitCollection: UITraitCollection) -> CGFloat {
+        isPhone(traitCollection) ? 3 : 4
+    }
+
+    static let diamondStrokeSizeDelta: CGFloat = 5.04
+    static let diamondBackFillColor = UIColor(red: 1, green: 0.539, blue: 0.012, alpha: 1)
+
+    static func diamondBackSide(_ traitCollection: UITraitCollection) -> CGFloat {
+        isPhone(traitCollection) ? 64 : 90.9
+    }
+
+    static func diamondSquareSide(for backSide: CGFloat) -> CGFloat {
+        backSide / 2.0.squareRoot()
+    }
+
+    static func diamondChevronPointSize(_ traitCollection: UITraitCollection) -> CGFloat {
+        isPhone(traitCollection) ? 18 : 26
+    }
+
+    static func unlockMinHeight(_ traitCollection: UITraitCollection) -> CGFloat {
+        isPhone(traitCollection) ? 36 : 44
+    }
+
+    static func unlockTitleFontSize(_ traitCollection: UITraitCollection) -> CGFloat {
+        isPhone(traitCollection) ? 13 : 15
+    }
+
+    static func unlockSymbolPointSize(_ traitCollection: UITraitCollection) -> CGFloat {
+        isPhone(traitCollection) ? 14 : 17
+    }
+
+    static func unlockContentInsets(_ traitCollection: UITraitCollection) -> NSDirectionalEdgeInsets {
+        isPhone(traitCollection)
+            ? NSDirectionalEdgeInsets(top: 6, leading: 10, bottom: 6, trailing: 10)
+            : NSDirectionalEdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16)
+    }
+}
+
+// MARK: - Brushi mascot (mode picker, home, coloring)
+
+enum BrushiMascotLayout {
+
+    static let mascotScale: CGFloat = 1.25
+    /// Extra scale for Brushi above the crayon rail on the coloring screen.
+    static let coloringRailMascotMultiplier: CGFloat = 1.5
+    private static let maxHeightBase: CGFloat = 300
+
+    /// Coloring right-rail width (also drives mascot size on home screens).
+    static func rightRailWidth(for traitCollection: UITraitCollection) -> CGFloat {
+        MagicBrushyChromeMetrics.isPhone(traitCollection) ? 150 : 210
+    }
+
+    static func layoutWidth(for traitCollection: UITraitCollection) -> CGFloat {
+        rightRailWidth(for: traitCollection) * mascotScale
+    }
+
+    static func maxLayoutHeight(for traitCollection: UITraitCollection) -> CGFloat {
+        maxHeightBase * mascotScale
+    }
+
+    /// Width + height for the mascot `UIImageView` (aspect-fit, capped).
+    static func displaySize(for traitCollection: UITraitCollection, image: UIImage?) -> CGSize {
+        let w = layoutWidth(for: traitCollection)
+        let aspect = (image?.size.height ?? 1) / max(image?.size.width ?? 1, 1)
+        let h = min(w * aspect, maxLayoutHeight(for: traitCollection))
+        return CGSize(width: w, height: h)
+    }
+
+    /// Mascot atop the crayon palette on `ColoringViewController` (1.5× base home size).
+    static func coloringRailDisplaySize(for traitCollection: UITraitCollection, image: UIImage?) -> CGSize {
+        let base = displaySize(for: traitCollection, image: image)
+        let w = base.width * coloringRailMascotMultiplier
+        let h = min(base.height * coloringRailMascotMultiplier, maxLayoutHeight(for: traitCollection) * coloringRailMascotMultiplier)
+        return CGSize(width: w, height: h)
+    }
+}

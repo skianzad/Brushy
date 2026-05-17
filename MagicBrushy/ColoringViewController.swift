@@ -26,6 +26,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         static let additionalSafeAreaShrink = UIEdgeInsets(top: 0, left: -4, bottom: -6, right: -4)
     }
 
+    private let canvasContainer = UIView()
     private let templateView = UIImageView()
     /// Flattened snapshot when resuming from `LastDrawingStore` (sits between template and live strokes).
     private let resumeSnapshotView = UIImageView()
@@ -70,9 +71,14 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         isFreeDrawingSession ? freeDrawStrokeWidthPresets : templateStrokeWidthPresets
     }
 
-    /// Minimum VLM input size as a fraction of the captured image (free draw uses half-page).
-    private var vlmInputMinDimensionFraction: CGFloat {
+    /// iPad only: minimum last-stroke crop size on the canvas (free draw uses a larger crop window).
+    private var vlmStrokeCropMinCanvasFraction: CGFloat {
         isFreeDrawingSession ? 0.5 : 1.0 / 3.0
+    }
+
+    /// Phone sends the full page to the VLM (no stroke zoom crop) for faster, stable inference.
+    private var usesFullPageVLMInput: Bool {
+        traitCollection.userInterfaceIdiom == .phone
     }
 
     /// Saved free-drawing files: capture sharper than on-screen 1× points (grid + resume).
@@ -102,6 +108,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     private let crayonScrollView = CrayonPaletteScrollView()
     private let crayonStack = UIStackView()
     private var crayonControls: [MagicCrayonControl] = []
+    private var crayonRowHeightConstraints: [NSLayoutConstraint] = []
     /// Display order (top → bottom): vivid primaries first, neutrals / lights last.
     /// Each value is a 0-based index into `palette` / `Colors/NN-color.png` (01→0, 02→1 …).
     private var crayonPaletteDisplayOrder: [Int] {
@@ -160,6 +167,29 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     private var strokeSizeDotViews: [UIView] = []
     private let strokeSizeStack = UIStackView()
 
+    // ── Compact-layout adaptive constraints ──────────────────────────────────
+    /// Width + height constraints for nav bar buttons (home, undo, redo, save, settings, mute).
+    private var navButtonSizeConstraints: [NSLayoutConstraint] = []
+    /// Nav chrome buttons whose symbol size / corner radius adapt on iPhone.
+    private var chromeNavButtons: [UIButton] = []
+    private var settingsGearButton: MagicBrushySettingsGearButton?
+    /// Width + height constraints for stroke-size blob buttons.
+    private var strokeBlobSizeConstraints: [NSLayoutConstraint] = []
+    /// Height constraints for brush / eraser tool buttons.
+    private var toolButtonHeightConstraints: [NSLayoutConstraint] = []
+    /// Right crayon-rail width.
+    private var rightPanelWidthConstraint: NSLayoutConstraint?
+    /// iPhone: pinch-to-zoom and two-finger pan on the coloring page.
+    private var phoneCanvasUserZoom: CGFloat = 1
+    private var phoneCanvasPanOffset: CGPoint = .zero
+    private var phonePinchBaselineZoom: CGFloat = 1
+    private var phonePanBaselineOffset: CGPoint = .zero
+    private var canvasPinchGesture: UIPinchGestureRecognizer!
+    private var canvasPanGesture: UIPanGestureRecognizer!
+    private var mascotImageWidthConstraint: NSLayoutConstraint!
+    private var mascotImageHeightConstraint: NSLayoutConstraint!
+    private var feedbackPauseEndTimer: Timer?
+
     /// App-wide singleton model; loaded once at app startup from SceneDelegate.
     private let vlm = LeapVLMModel.shared
 
@@ -200,9 +230,6 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     private static let mascotLongInactivityDelay: TimeInterval = 60
     private var mascotInactivityWork: DispatchWorkItem?
     private var mascotShowingSleepyFromInactivity = false
-    /// Label floating over the mascot showing the pause countdown.
-    private let mascotPauseBadge = UILabel()
-
     override func viewDidLoad() {
         super.viewDidLoad()
         additionalSafeAreaInsets = TopChromeMetrics.additionalSafeAreaShrink
@@ -333,7 +360,9 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             let img = crayonSwatchImages.indices.contains(paletteIndex) ? crayonSwatchImages[paletteIndex] : nil
             c.setSwatch(image: img, wax: wax)
             c.translatesAutoresizingMaskIntoConstraints = false
-            c.heightAnchor.constraint(equalToConstant: ColoringCrayonPaletteLayout.crayonRowHeight).isActive = true
+            let rowH = c.heightAnchor.constraint(equalToConstant: ColoringCrayonPaletteLayout.crayonRowHeight)
+            rowH.isActive = true
+            crayonRowHeightConstraints.append(rowH)
             c.addTarget(self, action: #selector(crayonTapped(_:)), for: .touchUpInside)
             crayonStack.addArrangedSubview(c)
             crayonControls.append(c)
@@ -366,23 +395,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         mascotContainer.setContentCompressionResistancePriority(.required, for: .vertical)
         mascotContainer.addSubview(mascotImageView)
 
-        let mascotSize = mascotImage?.size ?? CGSize(width: 1, height: 1)
-        let mascotAspect = mascotSize.height / max(mascotSize.width, 1)
-        let mascotLayoutWidth = ColoringCrayonPaletteLayout.mascotLayoutWidth
-        let mascotLayoutHeight = min(
-            mascotLayoutWidth * mascotAspect,
-            ColoringCrayonPaletteLayout.mascotMaxHeight
-        )
-
-        mascotPauseBadge.translatesAutoresizingMaskIntoConstraints = false
-        mascotPauseBadge.font = FigmaTheme.bodyFont(size: 13, weight: .bold)
-        mascotPauseBadge.textColor = .white
-        mascotPauseBadge.textAlignment = .center
-        mascotPauseBadge.backgroundColor = UIColor.black.withAlphaComponent(0.55)
-        mascotPauseBadge.layer.cornerRadius = 12
-        mascotPauseBadge.clipsToBounds = true
-        mascotPauseBadge.isHidden = true
-        mascotContainer.addSubview(mascotPauseBadge)
+        let mascotDisplay = BrushiMascotLayout.coloringRailDisplaySize(for: traitCollection, image: mascotImage)
 
         var muteCfg = UIButton.Configuration.plain()
         muteCfg.image = UIImage(systemName: "speaker.wave.2.fill")
@@ -400,20 +413,16 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         mascotContainer.addGestureRecognizer(mascotTap)
         mascotContainer.isUserInteractionEnabled = true
 
+        mascotImageWidthConstraint = mascotImageView.widthAnchor.constraint(equalToConstant: mascotDisplay.width)
+        mascotImageHeightConstraint = mascotImageView.heightAnchor.constraint(equalToConstant: mascotDisplay.height)
         NSLayoutConstraint.activate([
             mascotImageView.centerXAnchor.constraint(equalTo: mascotContainer.centerXAnchor),
             mascotImageView.topAnchor.constraint(equalTo: mascotContainer.topAnchor),
             mascotImageView.bottomAnchor.constraint(equalTo: mascotContainer.bottomAnchor),
-            mascotImageView.widthAnchor.constraint(equalToConstant: mascotLayoutWidth),
-            mascotImageView.heightAnchor.constraint(equalToConstant: mascotLayoutHeight),
-
-            mascotPauseBadge.centerXAnchor.constraint(equalTo: mascotContainer.centerXAnchor),
-            mascotPauseBadge.bottomAnchor.constraint(equalTo: mascotImageView.bottomAnchor, constant: -4),
-            mascotPauseBadge.widthAnchor.constraint(greaterThanOrEqualToConstant: 100),
-            mascotPauseBadge.heightAnchor.constraint(equalToConstant: 26),
+            mascotImageWidthConstraint,
+            mascotImageHeightConstraint,
         ])
 
-        mascotContainer.bringSubviewToFront(mascotPauseBadge)
         updateMascotMuteButtonAppearance()
 
         // ── Right panel ───────────────────────────────────────────────────────
@@ -439,8 +448,11 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             b.configuration = cfg
             styleChromeButton(b, fill: fill, border: border, cornerRadius: 14)
             b.translatesAutoresizingMaskIntoConstraints = false
-            b.widthAnchor.constraint(equalToConstant: 52).isActive = true
-            b.heightAnchor.constraint(equalToConstant: 52).isActive = true
+            let wc = b.widthAnchor.constraint(equalToConstant: 52)
+            let hc = b.heightAnchor.constraint(equalToConstant: 52)
+            NSLayoutConstraint.activate([wc, hc])
+            navButtonSizeConstraints += [wc, hc]
+            chromeNavButtons.append(b)
             return b
         }
 
@@ -453,8 +465,11 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         homeButton.addTarget(self, action: #selector(homeTapped), for: .touchUpInside)
         homeButton.isHidden = navigationController == nil
         homeButton.translatesAutoresizingMaskIntoConstraints = false
-        homeButton.widthAnchor.constraint(equalToConstant: 52).isActive = true
-        homeButton.heightAnchor.constraint(equalToConstant: 52).isActive = true
+        let homeW = homeButton.widthAnchor.constraint(equalToConstant: 52)
+        let homeH = homeButton.heightAnchor.constraint(equalToConstant: 52)
+        NSLayoutConstraint.activate([homeW, homeH])
+        navButtonSizeConstraints += [homeW, homeH]
+        chromeNavButtons.append(homeButton)
 
         prevPageButton.addTarget(self, action: #selector(undoStroke), for: .touchUpInside)
         nextPageButton.addTarget(self, action: #selector(redoStroke), for: .touchUpInside)
@@ -473,6 +488,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         saveBtn.addTarget(self, action: #selector(saveColoringTapped), for: .touchUpInside)
 
         let settingsBtn = makeMagicBrushySettingsGearButton()
+        settingsGearButton = settingsBtn
 
         let navSpacer = UIView()
         navSpacer.setContentHuggingPriority(UILayoutPriority(1), for: .horizontal)
@@ -492,7 +508,6 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         bar.spacing = 10
 
         // ── Canvas ────────────────────────────────────────────────────────────
-        let canvasContainer = UIView()
         canvasContainer.translatesAutoresizingMaskIntoConstraints = false
         canvasContainer.backgroundColor = .clear
         // Keep the drawing stack below the right rail so crayon tips can overlap the canvas visually.
@@ -569,6 +584,10 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         // while aligned to `toolRow` — subviews outside the parent's bounds do not receive touches.
         view.addSubview(strokeSizeStack)
         view.addSubview(mascotMuteButton)
+        let muteW = mascotMuteButton.widthAnchor.constraint(equalToConstant: 52)
+        let muteH = mascotMuteButton.heightAnchor.constraint(equalToConstant: 52)
+        navButtonSizeConstraints += [muteW, muteH]
+        chromeNavButtons.append(mascotMuteButton)
         NSLayoutConstraint.activate([
             strokeSizeStack.centerYAnchor.constraint(equalTo: toolRow.centerYAnchor),
             strokeSizeStack.trailingAnchor.constraint(equalTo: templateView.trailingAnchor, constant: -10),
@@ -576,8 +595,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             // Same vertical line as home + stroke-size chrome; 52pt matches nav / brush-size blobs.
             mascotMuteButton.centerYAnchor.constraint(equalTo: toolRow.centerYAnchor),
             mascotMuteButton.centerXAnchor.constraint(equalTo: mascotContainer.centerXAnchor),
-            mascotMuteButton.widthAnchor.constraint(equalToConstant: 52),
-            mascotMuteButton.heightAnchor.constraint(equalToConstant: 52),
+            muteW, muteH,
         ])
 
         installClouds()
@@ -604,6 +622,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         canvasAspect.priority = .defaultHigh
         let rightPanelWidth = rightPanelStack.widthAnchor.constraint(equalToConstant: ColoringCrayonPaletteLayout.rightPanelWidth)
         rightPanelWidth.priority = .required
+        rightPanelWidthConstraint = rightPanelWidth
 
         NSLayoutConstraint.activate([
             skyView.topAnchor.constraint(equalTo: view.topAnchor),
@@ -673,10 +692,8 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         }
         applyStrokeWidthFromSelection()
 
-        let cvScale = ColoringCrayonPaletteLayout.canvasVisualScale
-        let cvLeft = ColoringCrayonPaletteLayout.canvasShiftLeftPoints
-        canvasContainer.transform = CGAffineTransform(translationX: -cvLeft, y: 0)
-            .concatenating(CGAffineTransform(scaleX: cvScale, y: cvScale))
+        installPhoneCanvasZoomGestures()
+        applyCanvasVisualTransform()
 
         let start = pinnedPageIndex ?? 0
         pageIndex = min(max(0, start), max(0, coloringBookPages.count - 1))
@@ -753,8 +770,10 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         b.layer.borderColor = nil
         b.accessibilityLabel = "Brush size \(index + 1) of \(strokeWidthPresets.count)"
         b.accessibilityHint = "Pick how thick your paint is"
-        b.widthAnchor.constraint(equalToConstant: 52).isActive = true
-        b.heightAnchor.constraint(equalToConstant: 52).isActive = true
+        let blobW = b.widthAnchor.constraint(equalToConstant: 52)
+        let blobH = b.heightAnchor.constraint(equalToConstant: 52)
+        NSLayoutConstraint.activate([blobW, blobH])
+        strokeBlobSizeConstraints += [blobW, blobH]
         b.layer.shadowColor = UIColor.black.cgColor
         b.layer.shadowRadius = 4
         b.layer.shadowOffset = CGSize(width: 0, height: 2)
@@ -860,7 +879,9 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         }
         b.addTarget(self, action: #selector(toolModeTapped(_:)), for: .touchUpInside)
         b.translatesAutoresizingMaskIntoConstraints = false
-        b.heightAnchor.constraint(equalToConstant: ColoringCrayonPaletteLayout.toolButtonHeight).isActive = true
+        let brushH = b.heightAnchor.constraint(equalToConstant: ColoringCrayonPaletteLayout.toolButtonHeight)
+        brushH.isActive = true
+        toolButtonHeightConstraints.append(brushH)
         return b
     }
 
@@ -899,7 +920,9 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         }
         b.addTarget(self, action: #selector(toolModeTapped(_:)), for: .touchUpInside)
         b.translatesAutoresizingMaskIntoConstraints = false
-        b.heightAnchor.constraint(equalToConstant: ColoringCrayonPaletteLayout.toolButtonHeight).isActive = true
+        let eraserH = b.heightAnchor.constraint(equalToConstant: ColoringCrayonPaletteLayout.toolButtonHeight)
+        eraserH.isActive = true
+        toolButtonHeightConstraints.append(eraserH)
         return b
     }
 
@@ -1036,7 +1059,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     deinit {
         pollTimer?.invalidate()
         cancelFeedbackIdleTimer()
-        pauseCountdownTimer?.invalidate()
+        feedbackPauseEndTimer?.invalidate()
         NotificationCenter.default.removeObserver(self)
     }
 
@@ -1047,8 +1070,144 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         refreshModelStatusIndicator()
     }
 
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        let sizeClassChanged = previousTraitCollection?.verticalSizeClass != traitCollection.verticalSizeClass
+        let idiomChanged = previousTraitCollection?.userInterfaceIdiom != traitCollection.userInterfaceIdiom
+        guard sizeClassChanged || idiomChanged else { return }
+        applyLayoutForTraitCollection(traitCollection)
+    }
+
+    /// Adjusts button and panel sizes for iPhone vs iPad (and tighter spacing in landscape).
+    private func applyLayoutForTraitCollection(_ tc: UITraitCollection) {
+        let phone = MagicBrushyChromeMetrics.isPhone(tc)
+        let compact = tc.verticalSizeClass == .compact
+        let navSize = phone ? MagicBrushyChromeMetrics.chromeButtonSide(tc) : 52
+        let blobSize: CGFloat = phone ? 36 : 52
+        let panelWidth = BrushiMascotLayout.rightRailWidth(for: tc)
+        let toolHeight: CGFloat = phone ? 50 : ColoringCrayonPaletteLayout.toolButtonHeight
+        let blobSpacing: CGFloat = (phone && compact) ? 4 : (phone ? 6 : 8)
+        let blobCorner: CGFloat = phone ? 19 : 26
+        let navCorner = phone ? MagicBrushyChromeMetrics.chromeCornerRadius(tc) : 14
+        let navBorder = phone ? MagicBrushyChromeMetrics.chromeBorderWidth(tc) : 4
+        let navSymbol = phone ? MagicBrushyChromeMetrics.chromeSymbolPointSize(tc) : 20
+        let homeSymbol: CGFloat = phone ? 18 : 22
+
+        for c in navButtonSizeConstraints { c.constant = navSize }
+        for c in strokeBlobSizeConstraints { c.constant = blobSize }
+        for c in toolButtonHeightConstraints { c.constant = toolHeight }
+        rightPanelWidthConstraint?.constant = panelWidth
+        strokeSizeStack.spacing = blobSpacing
+        for b in strokeSizeButtons { b.layer.cornerRadius = blobCorner }
+
+        for b in chromeNavButtons {
+            b.layer.cornerRadius = navCorner
+            b.layer.borderWidth = navBorder
+            var cfg = b.configuration ?? UIButton.Configuration.plain()
+            let symSize = (b === homeButton) ? homeSymbol : navSymbol
+            cfg.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: symSize, weight: .bold)
+            b.configuration = cfg
+        }
+        settingsGearButton?.applyStyle(for: tc)
+
+        let crayonRowH = ColoringCrayonPaletteLayout.crayonRowHeight(for: tc)
+        for c in crayonRowHeightConstraints { c.constant = crayonRowH }
+        crayonStack.spacing = ColoringCrayonPaletteLayout.crayonStackSpacing(for: tc)
+
+        mascotMuteButton.isHidden = phone
+        mascotMuteButton.isUserInteractionEnabled = !phone
+        if !phone {
+            updateMascotMuteButtonAppearance()
+        }
+        let mascotSize = BrushiMascotLayout.coloringRailDisplaySize(for: tc, image: mascotImageView.image)
+        mascotImageWidthConstraint?.constant = mascotSize.width
+        mascotImageHeightConstraint?.constant = mascotSize.height
+        updatePhoneCanvasZoomGesturesEnabled(for: tc)
+        if !phone {
+            phoneCanvasUserZoom = 1
+            phoneCanvasPanOffset = .zero
+            applyCanvasVisualTransform()
+        }
+    }
+
+    private static let phoneCanvasMinZoom: CGFloat = 1
+    private static let phoneCanvasMaxZoom: CGFloat = 3
+
+    private func installPhoneCanvasZoomGestures() {
+        let pinch = UIPinchGestureRecognizer(target: self, action: #selector(handleCanvasPinch(_:)))
+        pinch.delegate = self
+        canvasContainer.addGestureRecognizer(pinch)
+        canvasPinchGesture = pinch
+
+        let pan = UIPanGestureRecognizer(target: self, action: #selector(handleCanvasPan(_:)))
+        pan.minimumNumberOfTouches = 2
+        pan.maximumNumberOfTouches = 2
+        pan.delegate = self
+        canvasContainer.addGestureRecognizer(pan)
+        canvasPanGesture = pan
+
+        updatePhoneCanvasZoomGesturesEnabled(for: traitCollection)
+    }
+
+    private func updatePhoneCanvasZoomGesturesEnabled(for traitCollection: UITraitCollection) {
+        let phone = MagicBrushyChromeMetrics.isPhone(traitCollection)
+        canvasPinchGesture?.isEnabled = phone
+        canvasPanGesture?.isEnabled = phone && phoneCanvasUserZoom > Self.phoneCanvasMinZoom + 0.01
+    }
+
+    private func applyCanvasVisualTransform() {
+        let cvScale = ColoringCrayonPaletteLayout.canvasVisualScale
+        let cvLeft = ColoringCrayonPaletteLayout.canvasShiftLeftPoints
+        let phone = MagicBrushyChromeMetrics.isPhone(traitCollection)
+        let userZoom = phone ? phoneCanvasUserZoom : 1
+        let pan = phone ? phoneCanvasPanOffset : .zero
+        let scale = cvScale * userZoom
+        canvasContainer.transform = CGAffineTransform(translationX: -cvLeft + pan.x, y: pan.y)
+            .scaledBy(x: scale, y: scale)
+    }
+
+    @objc private func handleCanvasPinch(_ gesture: UIPinchGestureRecognizer) {
+        guard MagicBrushyChromeMetrics.isPhone(traitCollection) else { return }
+        switch gesture.state {
+        case .began:
+            phonePinchBaselineZoom = phoneCanvasUserZoom
+        case .changed:
+            phoneCanvasUserZoom = min(
+                max(Self.phoneCanvasMinZoom, phonePinchBaselineZoom * gesture.scale),
+                Self.phoneCanvasMaxZoom
+            )
+            applyCanvasVisualTransform()
+            updatePhoneCanvasZoomGesturesEnabled(for: traitCollection)
+        case .ended, .cancelled, .failed:
+            if phoneCanvasUserZoom <= Self.phoneCanvasMinZoom + 0.01 {
+                phoneCanvasPanOffset = .zero
+                applyCanvasVisualTransform()
+            }
+            updatePhoneCanvasZoomGesturesEnabled(for: traitCollection)
+        default:
+            break
+        }
+    }
+
+    @objc private func handleCanvasPan(_ gesture: UIPanGestureRecognizer) {
+        guard MagicBrushyChromeMetrics.isPhone(traitCollection),
+              phoneCanvasUserZoom > Self.phoneCanvasMinZoom + 0.01
+        else { return }
+        switch gesture.state {
+        case .began:
+            phonePanBaselineOffset = phoneCanvasPanOffset
+        case .changed:
+            let t = gesture.translation(in: view)
+            phoneCanvasPanOffset = CGPoint(x: phonePanBaselineOffset.x + t.x, y: phonePanBaselineOffset.y + t.y)
+            applyCanvasVisualTransform()
+        default:
+            break
+        }
+    }
+
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        applyLayoutForTraitCollection(traitCollection)
         navigationController?.view.backgroundColor = FigmaTheme.skyBlue
         if let nav = navigationController {
             let barAppearance = UINavigationBarAppearance()
@@ -1274,10 +1433,12 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         let now = Date()
         if let until = feedbackPausedUntil, now < until {
             feedbackPausedUntil = nil
-            updateMascotPauseBadge()
+            feedbackPauseEndTimer?.invalidate()
+            feedbackPauseEndTimer = nil
             applyMascotReaction(.hello)
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
             MagicBrushyBackgroundMusic.resumeAfterCoachMuteSilence()
+            updateMascotMuteButtonAppearance()
             return
         }
 
@@ -1287,9 +1448,21 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         vlm.cancel()
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         applyMascotReaction(.supportive)
-        updateMascotPauseBadge()
-        scheduleMascotPauseCountdown()
+        scheduleFeedbackPauseEnd()
         MagicBrushyBackgroundMusic.pauseForCoachMuteSilence()
+        updateMascotMuteButtonAppearance()
+    }
+
+    private func scheduleFeedbackPauseEnd() {
+        feedbackPauseEndTimer?.invalidate()
+        feedbackPauseEndTimer = Timer.scheduledTimer(withTimeInterval: Self.feedbackPauseDuration, repeats: false) { [weak self] _ in
+            guard let self, self.feedbackPausedUntil != nil else { return }
+            self.feedbackPausedUntil = nil
+            self.feedbackPauseEndTimer = nil
+            self.applyMascotReaction(.hello)
+            MagicBrushyBackgroundMusic.resumeAfterCoachMuteSilence()
+            self.updateMascotMuteButtonAppearance()
+        }
     }
 
     private func playMascotClapHaptics() {
@@ -1317,6 +1490,10 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     }
 
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        if gestureRecognizer === canvasPinchGesture || gestureRecognizer === canvasPanGesture {
+            return true
+        }
+        guard !MagicBrushyChromeMetrics.isPhone(traitCollection) else { return true }
         let p = touch.location(in: mascotContainer)
         let muteInMascot = mascotContainer.convert(mascotMuteButton.bounds, from: mascotMuteButton)
         if muteInMascot.contains(p), mascotMuteButton.isUserInteractionEnabled, !mascotMuteButton.isHidden {
@@ -1325,46 +1502,14 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         return true
     }
 
-    private var pauseCountdownTimer: Timer?
-
-    private func scheduleMascotPauseCountdown() {
-        pauseCountdownTimer?.invalidate()
-        pauseCountdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] t in
-            guard let self else { t.invalidate(); return }
-            self.updateMascotPauseBadge()
-            if self.feedbackPausedUntil == nil || Date() >= (self.feedbackPausedUntil ?? Date()) {
-                self.feedbackPausedUntil = nil
-                self.updateMascotPauseBadge()
-                self.applyMascotReaction(.hello)
-                MagicBrushyBackgroundMusic.resumeAfterCoachMuteSilence()
-                t.invalidate()
-                self.pauseCountdownTimer = nil
-            }
+    func gestureRecognizer(
+        _ gestureRecognizer: UIGestureRecognizer,
+        shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
+    ) -> Bool {
+        if gestureRecognizer === canvasPinchGesture || gestureRecognizer === canvasPanGesture {
+            return otherGestureRecognizer.view === strokeView || otherGestureRecognizer.view?.isDescendant(of: strokeView) == true
         }
-    }
-
-    private func updateMascotPauseBadge() {
-        guard let until = feedbackPausedUntil, Date() < until else {
-            mascotPauseBadge.isHidden = true
-            updateMascotMuteButtonAppearance()
-            return
-        }
-        let secs = max(0, Int(until.timeIntervalSinceNow.rounded(.up)))
-        let badgeText: String
-        if secs >= 3600 {
-            let h = secs / 3600
-            let m = (secs % 3600) / 60
-            badgeText = "🤫 \(h)h \(m)m"
-        } else if secs >= 60 {
-            let m = secs / 60
-            let s = secs % 60
-            badgeText = "🤫 \(m)m \(s)s"
-        } else {
-            badgeText = "🤫 \(secs)s"
-        }
-        mascotPauseBadge.text = badgeText
-        mascotPauseBadge.isHidden = false
-        updateMascotMuteButtonAppearance()
+        return false
     }
 
     private func applyObservationSnapshot() {
@@ -1886,21 +2031,19 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         captureCanvasBitmap(includeLineOverlay: true, displayScale: 1)
     }
 
-    /// Full canvas at 1×, then cropped around the last finished stroke when available so the model sees mostly that region.
+    /// Full canvas at 1×; on iPad, optionally cropped around the last stroke (iPhone always uses the full page).
     private func captureCanvasForVLM() -> UIImage {
-        let full = captureCanvasBitmap(includeLineOverlay: true, displayScale: 1)
-        guard let crop = strokeView.vlmCropRectAroundLastFinishedStroke(
-            minCanvasFraction: vlmInputMinDimensionFraction
-        ) else { return full }
+        let full = captureCanvasForVLMFullPage()
+        guard !usesFullPageVLMInput,
+              let crop = strokeView.vlmCropRectAroundLastFinishedStroke(
+                minCanvasFraction: vlmStrokeCropMinCanvasFraction
+              ) else { return full }
         return vlmImageByCroppingFullCanvas(full, to: crop)
     }
 
     private func prepareImageForVLMInput(_ image: UIImage) -> UIImage {
         let model = modelForInference()
-        return model.prepareImageForModelPreview(
-            image,
-            minDimensionFractionOfSource: vlmInputMinDimensionFraction
-        ) ?? image
+        return model.prepareImageForModelPreview(image) ?? image
     }
 
     /// Scale factor so saved JPEGs have enough pixels for full-screen resume (not just point-size × 1×).
@@ -2290,16 +2433,27 @@ private enum ColoringCrayonPaletteLayout {
     /// Mascot is drawn 25% larger than the base rail fit (crayon column width stays `rightPanelWidth`).
     static let mascotScale: CGFloat = 1.25
     static var mascotLayoutWidth: CGFloat { rightPanelWidth * mascotScale }
-    /// Cap mascot height; width uses `mascotLayoutWidth` so aspect-fit leaves no empty band under the feet.
-    static var mascotMaxHeight: CGFloat { 300 * mascotScale }
+
+    static func mascotLayoutWidth(for traitCollection: UITraitCollection) -> CGFloat {
+        BrushiMascotLayout.layoutWidth(for: traitCollection)
+    }
     static let rightPanelStackSpacing: CGFloat = 10
     /// Tight gap under mascot so tools sit closer and the character reads larger.
     static let mascotToToolsSpacing: CGFloat = 2
     /// Vertical pitch per crayon row (smaller = tighter list in the scroll rail).
     static let crayonRowHeight: CGFloat = 57
+    static let crayonRowHeightPhone: CGFloat = 40
     /// Fraction of row height used by the PNG swatch (`MagicCrayonControl`, rest is tap padding).
     static let shapeHeightMultiplier: CGFloat = 1.0
     static let stackSpacing: CGFloat = 0
+
+    static func crayonRowHeight(for traitCollection: UITraitCollection) -> CGFloat {
+        MagicBrushyChromeMetrics.isPhone(traitCollection) ? crayonRowHeightPhone : crayonRowHeight
+    }
+
+    static func crayonStackSpacing(for traitCollection: UITraitCollection) -> CGFloat {
+        MagicBrushyChromeMetrics.isPhone(traitCollection) ? 0 : stackSpacing
+    }
     static let scrollContainerMinHeight: CGFloat = 180
     static let toolButtonHeight: CGFloat = 72
     /// Side gap between brush and eraser (~1 mm; scales with screen density).
