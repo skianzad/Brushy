@@ -109,7 +109,7 @@ Your job: exactly **one or two** very short sentences total (nothing longer). Na
         let lang = languageInstruction(for: MagicBrushyLanguage.stored())
         let progressNote = hasPriorPaint
             ? """
-The picture already has **some colored areas** from before (saved progress). You must mention that they already started—name **one** color or area you can see (for example blue waves or a yellow sun).
+The picture already has **some colored areas** from before (saved progress). You must mention that they already started—name **one** color or area you can see.
 """
             : """
 The picture is mostly **uncolored** so far. Welcome them to today’s sheet and invite them to pick colors and start filling it in.
@@ -123,9 +123,8 @@ The child just opened this page. Look at the line art and the paint.
 \(progressNote)
 
 Your job: **two or three** short spoken sentences (about **25–45 words** total)—warm, simple kid words, not a lecture. Cover these beats **talking TO the child** (use the examples’ tone):
-1) Name today’s picture—e.g. "You're coloring a boat today!" or "This is a fun boat picture to color!"
-2)\(hasPriorPaint ? " Compliment one color or patch they already filled—e.g. \"Your sun is so yellow!\" or \"I love the blue waves you started.\"" : " Welcome them—e.g. \"Let's add some color to this page!\"")
-3) Invite them to keep going—e.g. "Keep coloring more of the picture!"
+1) Name today’s picture.
+2) Invite the child to keep going.
 
 \(spokenToChildRule)
 \(neverThirdPersonSpokenRule)
@@ -148,7 +147,7 @@ Your job: **two or three** short spoken sentences (about **25–45 words** total
 
 The child just tapped their mascot buddy asking for a big cheer for their **entire drawing so far**—not only the newest dab of paint. Look at the full picture: how colors spread across the scene, how the page feels as one piece, and the subject of the line art if you can tell.
 
-Your job: one warm, very short message in simple kid words about **the whole picture**—what you like about how they filled the page overall. If you can, mention **two** small things you like (for example a color choice **and** the character or scene), but keep it to one or two tiny sentences. Vary how you start (\(neverYouHaveOpenersRule)). \(noMapDirectionsRule)
+Your job: one warm, very short message in simple kid words about **the whole picture**—what you like about how they filled the page overall. If you may, mention **two** small things you like (for example a color choice **and** the character or scene), but keep it to one or two tiny sentences. Vary how you start (\(neverYouHaveOpenersRule)). \(noMapDirectionsRule)
 
 \(spokenToChildRule)
 \(neverThirdPersonSpokenRule)
@@ -193,13 +192,13 @@ If unsure, use neutral.
         lastPaintColorName: String?
     ) -> String {
         if lastStrokePointCount > 30, let paintWord = lastPaintColorName {
-            return "Their most recent big brush used palette color “\(paintWord)”— you may celebrate that color if you see it in the photo."
+            return "the kid most recent big brush used palette color “\(paintWord)”— you may celebrate that color if you see it in the photo."
         }
         if lastStrokePointCount > 0, let paintWord = lastPaintColorName {
-            return "Their most recent brush used palette color “\(paintWord)”— you may celebrate that color if you see it in the photo."
+            return "the kid most recent brush used palette color “\(paintWord)”— you may celebrate that color if you see it in the photo."
         }
         if lastStrokePointCount > 0 {
-            return "They added a little paint recently; you may give a warm cheer without insisting on a specific color name."
+            return "The kid added a little paint recently; you may give a warm cheer without insisting on a specific color name."
         }
         return "No new stroke tracked; peek at the picture and cheer gently."
     }
