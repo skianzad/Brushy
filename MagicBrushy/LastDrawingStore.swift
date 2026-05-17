@@ -24,6 +24,9 @@ enum LastDrawingStore {
 
     /// Cap so disk use stays bounded; oldest entries (and their files) are removed first.
     private static let maxSavedDrawings = 48
+    private static let compositeJPEGQuality: CGFloat = 0.92
+    private static let underlayJPEGQuality: CGFloat = 0.90
+    private static let thumbnailJPEGQuality: CGFloat = 0.85
 
     private static var directoryURL: URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
@@ -133,7 +136,7 @@ enum LastDrawingStore {
         pageTitle: String,
         composite: UIImage,
         resumeUnderlay: UIImage?,
-        thumbnailMaxEdge: CGFloat = 400
+        thumbnailMaxEdge: CGFloat = 720
     ) -> UUID {
         migrateLegacyV1IfNeeded()
         return appendRecord(
@@ -155,7 +158,7 @@ enum LastDrawingStore {
         pageTitle: String,
         composite: UIImage,
         resumeUnderlay: UIImage?,
-        thumbnailMaxEdge: CGFloat = 400
+        thumbnailMaxEdge: CGFloat = 720
     ) -> Bool {
         migrateLegacyV1IfNeeded()
         var entries = loadIndex()
@@ -164,16 +167,16 @@ enum LastDrawingStore {
 
         let cURL = fileURL(old.compositeFileName)
         let tURL = fileURL(old.thumbFileName)
-        if let j = composite.jpegData(compressionQuality: 0.88) {
+        if let j = Self.jpegData(from: composite, quality: compositeJPEGQuality) {
             try? j.write(to: cURL, options: .atomic)
         }
         let thumb = Self.downscale(composite, maxEdge: thumbnailMaxEdge)
-        if let j = thumb.jpegData(compressionQuality: 0.82) {
+        if let j = Self.jpegData(from: thumb, quality: thumbnailJPEGQuality) {
             try? j.write(to: tURL, options: .atomic)
         }
 
         var underlayName = old.resumeUnderlayFileName
-        if let underlay = resumeUnderlay, let j = underlay.jpegData(compressionQuality: 0.88) {
+        if let underlay = resumeUnderlay, let j = Self.jpegData(from: underlay, quality: underlayJPEGQuality) {
             if underlayName == nil {
                 underlayName = "u_\(old.id.uuidString).jpg"
             }
@@ -208,7 +211,7 @@ enum LastDrawingStore {
         pageTitle: String,
         composite: UIImage,
         resumeUnderlay: UIImage?,
-        thumbnailMaxEdge: CGFloat = 400
+        thumbnailMaxEdge: CGFloat = 720
     ) -> UUID {
         let id = UUID()
         let stem = id.uuidString
@@ -218,7 +221,7 @@ enum LastDrawingStore {
         let tURL = fileURL(tName)
 
         var underlayName: String? = nil
-        if let underlay = resumeUnderlay, let j = underlay.jpegData(compressionQuality: 0.88) {
+        if let underlay = resumeUnderlay, let j = Self.jpegData(from: underlay, quality: underlayJPEGQuality) {
             let u = "u_\(stem).jpg"
             let uURL = fileURL(u)
             do {
@@ -228,10 +231,10 @@ enum LastDrawingStore {
         }
 
         let thumb = Self.downscale(composite, maxEdge: thumbnailMaxEdge)
-        if let j = thumb.jpegData(compressionQuality: 0.82) {
+        if let j = Self.jpegData(from: thumb, quality: thumbnailJPEGQuality) {
             try? j.write(to: tURL, options: .atomic)
         }
-        if let j = composite.jpegData(compressionQuality: 0.88) {
+        if let j = Self.jpegData(from: composite, quality: compositeJPEGQuality) {
             try? j.write(to: cURL, options: .atomic)
         }
 
@@ -334,6 +337,15 @@ enum LastDrawingStore {
         if let u = record.resumeUnderlayFileName {
             try? FileManager.default.removeItem(at: fileURL(u))
         }
+    }
+
+    /// Encodes full pixel dimensions (important when `UIImage.scale` > 1).
+    private static func jpegData(from image: UIImage, quality: CGFloat) -> Data? {
+        if let cg = image.cgImage {
+            return UIImage(cgImage: cg, scale: 1, orientation: image.imageOrientation)
+                .jpegData(compressionQuality: quality)
+        }
+        return image.jpegData(compressionQuality: quality)
     }
 
     private static func downscale(_ image: UIImage, maxEdge: CGFloat) -> UIImage {

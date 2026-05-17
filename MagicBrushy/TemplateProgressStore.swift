@@ -20,7 +20,7 @@ enum TemplateProgressStore {
     // MARK: – Public API
 
     static func save(packId: String, pageIndex: Int, underlay: UIImage) {
-        guard let data = underlay.jpegData(compressionQuality: 0.82) else { return }
+        guard let data = underlay.jpegData(compressionQuality: 0.9) else { return }
         let url = fileURL(packId: packId, pageIndex: pageIndex)
         try? data.write(to: url, options: .atomic)
     }
@@ -44,22 +44,33 @@ enum TemplateProgressStore {
         }
     }
 
+    /// Default cap when the grid has not laid out yet (still far above the old 280px shelf thumbs).
+    static let defaultShelfPreviewMaxPixelSide: CGFloat = 1024
+
     /// Preview for category thumbnails: saved underlay (template + strokes, no outlines) plus line art on top, matching on-canvas stacking.
-    static func shelfPreviewImage(templatePageImage: UIImage, savedUnderlay: UIImage) -> UIImage {
+    /// - Parameter maxPixelSide: Target longest edge in **pixels**; pass cell image area × screen scale from the grid.
+    static func shelfPreviewImage(
+        templatePageImage: UIImage,
+        savedUnderlay: UIImage,
+        maxPixelSide: CGFloat = defaultShelfPreviewMaxPixelSide
+    ) -> UIImage {
         let lineArt = templatePageImage.magicBrushyLineArtOverlay()
-        let maxPixelSide: CGFloat = 280
-        let longest = max(savedUnderlay.size.width, savedUnderlay.size.height)
-        let scaleDown = min(1, maxPixelSide / max(longest, 1))
-        let outW = max(1, floor(savedUnderlay.size.width * scaleDown))
-        let outH = max(1, floor(savedUnderlay.size.height * scaleDown))
-        let outSize = CGSize(width: outW, height: outH)
+        let underlayPixelsW = savedUnderlay.size.width * savedUnderlay.scale
+        let underlayPixelsH = savedUnderlay.size.height * savedUnderlay.scale
+        let longest = max(underlayPixelsW, underlayPixelsH, 1)
+        let cap = max(320, maxPixelSide)
+        let scaleDown = min(1, cap / longest)
+        let outPixelsW = max(1, floor(underlayPixelsW * scaleDown))
+        let outPixelsH = max(1, floor(underlayPixelsH * scaleDown))
+        let outSize = CGSize(width: outPixelsW, height: outPixelsH)
         let bounds = CGRect(origin: .zero, size: outSize)
 
         let format = UIGraphicsImageRendererFormat()
         format.scale = 1
         format.opaque = true
 
-        return UIGraphicsImageRenderer(size: outSize, format: format).image { _ in
+        return UIGraphicsImageRenderer(size: outSize, format: format).image { ctx in
+            ctx.cgContext.interpolationQuality = .high
             UIColor.white.setFill()
             UIBezierPath(rect: bounds).fill()
             savedUnderlay.draw(in: aspectFitRect(for: savedUnderlay, in: bounds))

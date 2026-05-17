@@ -131,8 +131,8 @@ final class MascotLipSyncDriver: NSObject {
     func attach(imageView: UIImageView, closed: UIImage?, open: UIImage?, oMouth: UIImage?) {
         self.imageView = imageView
         mouthClosed = closed
-        mouthOpen = open ?? closed
-        mouthO = oMouth ?? open ?? closed
+        mouthOpen = open ?? mouthClosed
+        mouthO = oMouth ?? mouthOpen ?? mouthClosed
     }
 
     func startSherpaDrivenLipSync(text: String, duration: TimeInterval) {
@@ -232,3 +232,4 @@ final class MascotLipSyncDriver: NSObject {
         }
     }
 }
+

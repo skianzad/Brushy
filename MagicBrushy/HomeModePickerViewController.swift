@@ -4,6 +4,8 @@ private enum HomeModePickerLayout {
     static let mascotColumnWidthFraction: CGFloat = 0.37
     static let bodyStackSpacing: CGFloat = 16
     static let cardStackSpacing: CGFloat = 16
+    /// Slightly narrower than the cards column (heights unchanged).
+    static let cardWidthFraction: CGFloat = 0.90
     static let cardCornerRadius: CGFloat = 11.5
     static let cardBorderWidth: CGFloat = 5.75
     static let titleBarHeight: CGFloat = 46
@@ -80,11 +82,10 @@ final class HomeModePickerViewController: UIViewController {
         freeCard.tag = Mode.freeDraw.rawValue
         freeCard.addTarget(self, action: #selector(modeCardTapped(_:)), for: .touchUpInside)
 
-        // Coloring on top, Free Draw below — both fill equal height.
         modeCardsStack.axis = .vertical
         modeCardsStack.spacing = HomeModePickerLayout.cardStackSpacing
         modeCardsStack.distribution = .fillEqually
-        modeCardsStack.alignment = .fill
+        modeCardsStack.alignment = .center
         modeCardsStack.translatesAutoresizingMaskIntoConstraints = false
         modeCardsStack.addArrangedSubview(coloringCard)
         modeCardsStack.addArrangedSubview(freeCard)
@@ -163,6 +164,12 @@ final class HomeModePickerViewController: UIViewController {
             mascotView.leadingAnchor.constraint(equalTo: mascotColumn.leadingAnchor, constant: 2),
             mascotView.trailingAnchor.constraint(equalTo: mascotColumn.trailingAnchor, constant: -2),
             mascotView.bottomAnchor.constraint(equalTo: mascotColumn.bottomAnchor),
+
+            coloringCard.widthAnchor.constraint(
+                equalTo: modeCardsStack.widthAnchor,
+                multiplier: HomeModePickerLayout.cardWidthFraction
+            ),
+            freeCard.widthAnchor.constraint(equalTo: coloringCard.widthAnchor),
         ])
 
         subscriptionAccessObserver = NotificationCenter.default.addObserver(

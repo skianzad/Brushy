@@ -639,6 +639,21 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
         applyGridColumns()
     }
 
+    /// Longest edge in pixels for composed progress thumbnails (matches grid image area × display scale).
+    private func gridThumbnailMaxPixelSide() -> CGFloat {
+        let displayScale = view.window?.screen.scale ?? traitCollection.displayScale
+        guard let layout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout else {
+            return TemplateProgressStore.defaultShelfPreviewMaxPixelSide
+        }
+        let horizontalInset: CGFloat = 20
+        let titleBand: CGFloat = 30
+        let imageSide = max(
+            layout.itemSize.width - horizontalInset,
+            layout.itemSize.height - titleBand
+        )
+        return max(640, ceil(imageSide * displayScale))
+    }
+
     private func applyGridColumns() {
         guard let layout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout else { return }
         let horizontalInset = layout.sectionInset.left + layout.sectionInset.right
@@ -673,7 +688,11 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
             let thumb: UIImage
             if pack.id != BuiltInColoringPages.savedDrawingsPackId,
                let underlay = TemplateProgressStore.load(packId: pack.id, pageIndex: pageIndex) {
-                thumb = TemplateProgressStore.shelfPreviewImage(templatePageImage: page.image, savedUnderlay: underlay)
+                thumb = TemplateProgressStore.shelfPreviewImage(
+                    templatePageImage: page.image,
+                    savedUnderlay: underlay,
+                    maxPixelSide: gridThumbnailMaxPixelSide()
+                )
             } else {
                 thumb = page.image
             }

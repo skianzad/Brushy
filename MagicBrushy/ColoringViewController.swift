@@ -74,6 +74,13 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     private var vlmInputMinDimensionFraction: CGFloat {
         isFreeDrawingSession ? 0.5 : 1.0 / 3.0
     }
+
+    /// Saved free-drawing files: capture sharper than on-screen 1× points (grid + resume).
+    private enum SavedDrawingCapture {
+        static let minPixelWidth: CGFloat = 1536
+        static let maxPixelEdge: CGFloat = 2048
+        static let galleryThumbnailMaxEdge: CGFloat = 720
+    }
     /// Set when opening from the home “Your drawings” strip; home overwrites this record instead of appending a new save.
     var continuingSavedDrawingId: UUID?
     /// When continuing from the home “last drawing” strip, flattened art to show under new strokes.
@@ -940,13 +947,13 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         if isFreeDrawing, strokeView.hasUserPaint, coloringBookPages.indices.contains(pageIndex) {
             // Persist free-drawing session to LastDrawingStore so it appears in the grid.
             let title = coloringBookPages[pageIndex].title
-            let pxScale = view.window?.screen.scale ?? UIScreen.main.scale
             // Legacy flat resume hides the line overlay; outlines live inside the JPEG — no true line-free underlay to save.
             let canSaveLineFreeUnderlay = resumeSnapshotView.isHidden || !templateLineOverlayView.isHidden
-            let composite = captureCanvasForExport()
+            let composite = captureCanvasForSavedDrawing(includeLineOverlay: true)
             let underlay = canSaveLineFreeUnderlay
-                ? captureCanvasBitmap(includeLineOverlay: false, displayScale: pxScale)
+                ? captureCanvasForSavedDrawing(includeLineOverlay: false)
                 : nil
+            let thumbMaxEdge = SavedDrawingCapture.galleryThumbnailMaxEdge
             let continueTargetId = continuingSavedDrawingId ?? LastDrawingStore.peekContinueDrawingSessionId()
             if let existingId = continueTargetId {
                 let didUpdate = LastDrawingStore.updateRecord(
@@ -955,7 +962,8 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
                     pageIndex: pageIndex,
                     pageTitle: title,
                     composite: composite,
-                    resumeUnderlay: underlay
+                    resumeUnderlay: underlay,
+                    thumbnailMaxEdge: thumbMaxEdge
                 )
                 if !didUpdate {
                     _ = LastDrawingStore.save(
@@ -963,7 +971,8 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
                         pageIndex: pageIndex,
                         pageTitle: title,
                         composite: composite,
-                        resumeUnderlay: underlay
+                        resumeUnderlay: underlay,
+                        thumbnailMaxEdge: thumbMaxEdge
                     )
                 }
                 continuingSavedDrawingId = nil
@@ -973,7 +982,8 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
                     pageIndex: pageIndex,
                     pageTitle: title,
                     composite: composite,
-                    resumeUnderlay: underlay
+                    resumeUnderlay: underlay,
+                    thumbnailMaxEdge: thumbMaxEdge
                 )
             }
             LastDrawingStore.clearContinueDrawingSession()
@@ -1893,10 +1903,37 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         ) ?? image
     }
 
+    /// Scale factor so saved JPEGs have enough pixels for full-screen resume (not just point-size × 1×).
+    private func exportScaleForSavedDrawing() -> CGFloat {
+        view.layoutIfNeeded()
+        let pt = strokeView.bounds.size
+        guard pt.width > 1, pt.height > 1 else {
+            return view.window?.screen.scale ?? UIScreen.main.scale
+        }
+        let screenScale = view.window?.screen.scale ?? UIScreen.main.scale
+        let widthTarget = max(
+            pt.width * screenScale,
+            min(SavedDrawingCapture.minPixelWidth, pt.width * screenScale * 1.25)
+        )
+        var scale = widthTarget / pt.width
+        let longEdge = max(pt.width, pt.height)
+        if longEdge * scale > SavedDrawingCapture.maxPixelEdge {
+            scale = SavedDrawingCapture.maxPixelEdge / longEdge
+        }
+        return max(scale, 1)
+    }
+
+    /// High-resolution capture for `LastDrawingStore` (composite + resume underlay).
+    private func captureCanvasForSavedDrawing(includeLineOverlay: Bool) -> UIImage {
+        captureCanvasBitmap(
+            includeLineOverlay: includeLineOverlay,
+            displayScale: exportScaleForSavedDrawing()
+        )
+    }
+
     /// Capture for saving to Photos (Retina resolution).
     private func captureCanvasForExport() -> UIImage {
-        let s = view.window?.screen.scale ?? UIScreen.main.scale
-        return captureCanvasBitmap(includeLineOverlay: true, displayScale: s)
+        captureCanvasForSavedDrawing(includeLineOverlay: true)
     }
 
     @objc private func saveColoringTapped() {
