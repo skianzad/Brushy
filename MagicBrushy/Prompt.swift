@@ -146,7 +146,7 @@ Your job: **two or three** short spoken sentences (about **25–45 words** total
         return """
 \(opener) The photo shows the **whole coloring page** together (all outlines and all paint).
 
-They just tapped their mascot buddy asking for a big cheer for their **entire drawing so far**—not only the newest dab of paint. Look at the full picture: how colors spread across the scene, how the page feels as one piece, and the subject of the line art if you can tell.
+The child just tapped their mascot buddy asking for a big cheer for their **entire drawing so far**—not only the newest dab of paint. Look at the full picture: how colors spread across the scene, how the page feels as one piece, and the subject of the line art if you can tell.
 
 Your job: one warm, very short message in simple kid words about **the whole picture**—what you like about how they filled the page overall. If you can, mention **two** small things you like (for example a color choice **and** the character or scene), but keep it to one or two tiny sentences. Vary how you start (\(neverYouHaveOpenersRule)). \(noMapDirectionsRule)
 

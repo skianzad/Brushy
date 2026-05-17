@@ -18,6 +18,7 @@ enum MascotReactionState: String, CaseIterable, Codable {
     case celebrating = "MascotStateCelebrating"
     case listening = "MascotStateListening"
     case tapReaction = "MascotStateTapReaction"
+    /// Long painting inactivity only — not mapped from coach VLM text (`Reaction`).
     case sleepy = "MascotStateSleepy"
 
     /// Catalog imageset name (same as `rawValue`).

@@ -40,6 +40,11 @@
 		B1LNG000000000000000001 /* MagicBrushyLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1LNG000000000000000101 /* MagicBrushyLanguage.swift */; };
 		B1PRM000000000000000001 /* Prompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1PRM000000000000000101 /* Prompt.swift */; };
 		B1COA000000000000000001 /* MagicBrushyCoachVoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1COA000000000000000101 /* MagicBrushyCoachVoice.swift */; };
+		B1BST000000000000000001 /* BrushiBootstrapViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1BST000000000000000101 /* BrushiBootstrapViewController.swift */; };
+		B1BST000000000000000002 /* BrushiFigmaDownloadProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1BST000000000000000102 /* BrushiFigmaDownloadProgressView.swift */; };
+		B1HOM000000000000000001 /* HomeBrushiTitleBadgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1HOM000000000000000101 /* HomeBrushiTitleBadgeView.swift */; };
+		B1MOD000000000000000001 /* HomeModePickerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1MOD000000000000000101 /* HomeModePickerViewController.swift */; };
+		B1DBK000000000000000001 /* MagicBrushyDiamondBackButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1DBK000000000000000101 /* MagicBrushyDiamondBackButton.swift */; };
 		B1KOK000000000000000411 /* SherpaKokoroVoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1KOK000000000000000401 /* SherpaKokoroVoice.swift */; };
 		B1KOK000000000000000611 /* KokoroEnV019 in Resources */ = {isa = PBXBuildFile; fileRef = B1KOK000000000000000601 /* KokoroEnV019 */; };
 		B1BGM000000000000000002 /* MagicBrushyBackgroundTrack.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = B1BGM000000000000000102 /* MagicBrushyBackgroundTrack.mp3 */; };
@@ -94,6 +99,11 @@
 		B1LNG000000000000000101 /* MagicBrushyLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagicBrushyLanguage.swift; sourceTree = "<group>"; };
 		B1PRM000000000000000101 /* Prompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Prompt.swift; sourceTree = "<group>"; };
 		B1COA000000000000000101 /* MagicBrushyCoachVoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagicBrushyCoachVoice.swift; sourceTree = "<group>"; };
+		B1BST000000000000000101 /* BrushiBootstrapViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrushiBootstrapViewController.swift; sourceTree = "<group>"; };
+		B1BST000000000000000102 /* BrushiFigmaDownloadProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrushiFigmaDownloadProgressView.swift; sourceTree = "<group>"; };
+		B1HOM000000000000000101 /* HomeBrushiTitleBadgeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeBrushiTitleBadgeView.swift; sourceTree = "<group>"; };
+		B1MOD000000000000000101 /* HomeModePickerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeModePickerViewController.swift; sourceTree = "<group>"; };
+		B1DBK000000000000000101 /* MagicBrushyDiamondBackButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagicBrushyDiamondBackButton.swift; sourceTree = "<group>"; };
 		B1KOK000000000000000401 /* SherpaKokoroVoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SherpaKokoroVoice.swift; path = ../ASU/SmartDraw/SmartDraw/SherpaKokoroVoice.swift; sourceTree = SOURCE_ROOT; };
 		B1KOK000000000000000601 /* KokoroEnV019 */ = {isa = PBXFileReference; lastKnownFileType = folder; name = KokoroEnV019; path = ../ASU/SmartDraw/SmartDraw/KokoroEnV019; sourceTree = SOURCE_ROOT; };
 		B1BGM000000000000000102 /* MagicBrushyBackgroundTrack.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = MagicBrushyBackgroundTrack.mp3; sourceTree = "<group>"; };
@@ -147,6 +157,11 @@
 				B1SET000000000000000101 /* MagicBrushySettingsViewController.swift */,
 				B1LNG000000000000000101 /* MagicBrushyLanguage.swift */,
 				B1COA000000000000000101 /* MagicBrushyCoachVoice.swift */,
+				B1BST000000000000000101 /* BrushiBootstrapViewController.swift */,
+				B1BST000000000000000102 /* BrushiFigmaDownloadProgressView.swift */,
+				B1HOM000000000000000101 /* HomeBrushiTitleBadgeView.swift */,
+				B1MOD000000000000000101 /* HomeModePickerViewController.swift */,
+				B1DBK000000000000000101 /* MagicBrushyDiamondBackButton.swift */,
 				B1PRM000000000000000101 /* Prompt.swift */,
 				B1BGM000000000000000102 /* MagicBrushyBackgroundTrack.mp3 */,
 				A1B100000000000000000103 /* VLM */,
@@ -338,6 +353,11 @@
 				B1LNG000000000000000001 /* MagicBrushyLanguage.swift in Sources */,
 				B1PRM000000000000000001 /* Prompt.swift in Sources */,
 				B1COA000000000000000001 /* MagicBrushyCoachVoice.swift in Sources */,
+				B1BST000000000000000001 /* BrushiBootstrapViewController.swift in Sources */,
+				B1BST000000000000000002 /* BrushiFigmaDownloadProgressView.swift in Sources */,
+				B1HOM000000000000000001 /* HomeBrushiTitleBadgeView.swift in Sources */,
+				B1MOD000000000000000001 /* HomeModePickerViewController.swift in Sources */,
+				B1DBK000000000000000001 /* MagicBrushyDiamondBackButton.swift in Sources */,
 				B1EAD0000411 /* SherpaOnnx.swift in Sources */,
 				B1EAD0000412 /* SherpaPiperAlbaVoice.swift in Sources */,
 				B1KOK000000000000000411 /* SherpaKokoroVoice.swift in Sources */,
@@ -494,7 +514,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIconBrushi;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
@@ -543,7 +563,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIconBrushi;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;

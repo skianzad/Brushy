@@ -7,22 +7,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let windowScene = scene as? UIWindowScene else { return }
         let window = UIWindow(windowScene: windowScene)
-        let nav = UINavigationController(rootViewController: HomeViewController())
-        let root = LandscapeLetterboxHostViewController(embedded: nav)
-        let barAppearance = UINavigationBarAppearance()
-        barAppearance.configureWithTransparentBackground()
-        barAppearance.shadowColor = .clear
-        barAppearance.shadowImage = UIImage()
-        nav.navigationBar.standardAppearance = barAppearance
-        nav.navigationBar.scrollEdgeAppearance = barAppearance
-        nav.navigationBar.compactAppearance = barAppearance
-        if #available(iOS 15.0, *) {
-            nav.navigationBar.compactScrollEdgeAppearance = barAppearance
-        }
-        nav.navigationBar.isTranslucent = true
-        nav.navigationBar.setBackgroundImage(UIImage(), for: .default)
-        nav.navigationBar.shadowImage = UIImage()
-        nav.navigationBar.isHidden = true
+        let root = LandscapeLetterboxHostViewController(embedded: BrushiBootstrapViewController())
         window.rootViewController = root
         window.makeKeyAndVisible()
         self.window = window

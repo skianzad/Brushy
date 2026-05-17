@@ -4,6 +4,22 @@
 <dict>
 	<key>CFBundleDisplayName</key>
 	<string>Brushi</string>
+	<key>CFBundleIcons</key>
+	<dict>
+		<key>CFBundlePrimaryIcon</key>
+		<dict>
+			<key>CFBundleIconName</key>
+			<string>AppIconBrushi</string>
+		</dict>
+		<key>CFBundleAlternateIcons</key>
+		<dict>
+			<key>Classic</key>
+			<dict>
+				<key>CFBundleIconName</key>
+				<string>AppIcon</string>
+			</dict>
+		</dict>
+	</dict>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Brushi saves your finished coloring page to Photos when you tap Save.</string>
 	<key>UIApplicationSceneManifest</key>

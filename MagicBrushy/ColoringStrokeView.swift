@@ -269,8 +269,8 @@ final class ColoringStrokeView: UIView {
         )
     }
 
-    /// Rect around the **last finished** stroke, expanded by half its width on the left and right and half its height above and below, then grown so width and height are each at least **half the canvas**, clamped to `bounds`. Used to crop the image sent to the VLM.
-    func vlmCropRectAroundLastFinishedStroke() -> CGRect? {
+    /// Rect around the **last finished** stroke, padded, then grown so width and height are each at least `minCanvasFraction` of the canvas. Used to crop the image sent to the VLM.
+    func vlmCropRectAroundLastFinishedStroke(minCanvasFraction: CGFloat = 0.5) -> CGRect? {
         guard let last = strokes.last else { return nil }
         let b = tightBounds(of: last)
         let bw = max(b.width, 8)
@@ -281,8 +281,9 @@ final class ColoringStrokeView: UIView {
         let r = expanded.intersection(bounds)
         guard r.width > 1, r.height > 1 else { return nil }
 
-        let minW = max(8, bounds.width * 0.5)
-        let minH = max(8, bounds.height * 0.5)
+        let fraction = min(1, max(0.1, minCanvasFraction))
+        let minW = max(8, bounds.width * fraction)
+        let minH = max(8, bounds.height * fraction)
         var w = max(r.width, minW)
         var h = max(r.height, minH)
         w = min(w, bounds.width)

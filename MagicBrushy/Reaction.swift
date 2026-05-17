@@ -4,6 +4,13 @@ import NaturalLanguage
 /// Mascot pose from VLM coach text (pose labels / prompts live in `Prompt.swift`).
 enum Reaction {
 
+    /// Poses reserved for app-driven moments (e.g. long inactivity), not coach reply mapping.
+    private static let coachExcludedReactions: Set<MascotReactionState> = [.sleepy]
+
+    private static func coachMappable(_ state: MascotReactionState) -> MascotReactionState {
+        coachExcludedReactions.contains(state) ? .neutral : state
+    }
+
     // MARK: - Semantic anchors (Apple `NLEmbedding` sentence vectors)
 
     /// Short lines whose **meaning** should match typical Alba coach utterances per pose (English).
@@ -83,11 +90,6 @@ enum Reaction {
             "Uh oh playful smudge we can laugh about it.",
             "Whoops a tiny boop of paint went wild.",
         ],
-        .sleepy: [
-            "That soft part feels cozy like bedtime.",
-            "Gentle yawn this corner looks sleepy and calm.",
-            "Restful colors like a quiet nap time scene.",
-        ],
     ]
 
     private static let embedLock = NSLock()
@@ -102,7 +104,8 @@ enum Reaction {
         guard !cleaned.isEmpty else { return .neutral }
 
         if let explicit = Self.parseWholeWordReactionIdentifier(from: cleaned) {
-            return Self.applyAvoidRepeat(best: explicit, score: 1.0, ranked: [(explicit, 1.0)], last: last)
+            let mapped = Self.coachMappable(explicit)
+            return Self.applyAvoidRepeat(best: mapped, score: 1.0, ranked: [(mapped, 1.0)], last: last)
         }
 
         if let picked = Self.poseFromSentenceEmbedding(cleaned, avoidingRepeatOf: last) {
@@ -122,11 +125,11 @@ enum Reaction {
         guard !cleaned.isEmpty else { return nil }
 
         if let id = Self.parseWholeWordReactionIdentifier(from: cleaned) {
-            return id
+            return coachExcludedReactions.contains(id) ? nil : id
         }
 
         let lc = cleaned.lowercased()
-        for state in MascotReactionState.allCases {
+        for state in MascotReactionState.allCases where !coachExcludedReactions.contains(state) {
             let asset = state.rawValue.lowercased()
             if lc.contains(asset) {
                 return state
@@ -150,7 +153,10 @@ enum Reaction {
 
         for name in namesByLength {
             if Self.containsWholeWord(lc, word: name) {
-                return MascotReactionState.allCases.first { String(describing: $0).lowercased() == name }
+                guard let state = MascotReactionState.allCases.first(where: { String(describing: $0).lowercased() == name }) else {
+                    continue
+                }
+                return coachExcludedReactions.contains(state) ? nil : state
             }
         }
         return nil
@@ -172,7 +178,7 @@ enum Reaction {
         guard !protos.isEmpty else { return nil }
 
         var ranked: [(MascotReactionState, Double)] = []
-        for (state, proto) in protos {
+        for (state, proto) in protos where !coachExcludedReactions.contains(state) {
             let s = Self.dot(textVec, proto)
             ranked.append((state, s))
         }
@@ -218,7 +224,7 @@ enum Reaction {
         }
 
         var out: [MascotReactionState: [Double]] = [:]
-        for state in MascotReactionState.allCases {
+        for state in MascotReactionState.allCases where !coachExcludedReactions.contains(state) {
             let phrases = reactionAnchorPhrases[state] ?? []
             var vecs: [[Double]] = []
             for phrase in phrases {
@@ -277,8 +283,8 @@ enum Reaction {
         if has(#"\b(curio|wonder|hmm|what a|look at that)\b"#) { return .curious }
         if has(#"\b(think|maybe try|try adding|next time)\b"#) { return .thinking }
         if has(#"\b(listen|hear you|tell me)\b"#) { return .listening }
-        if has(#"\b(sleepy|tired|rest|nap)\b"#) { return .sleepy }
-        if has(#"\b(hug|care|gentle|sweet heart|lovely heart)\b"#) { return .caringHeart }
+        if has(#"\b(cozy|calm|gentle|quiet|soft|peaceful)\b"#) { return .caringHeart }
+        if has(#"\b(hug|care|sweet heart|lovely heart)\b"#) { return .caringHeart }
         if has(#"\b(thumbs|high five|you did it)\b"#) { return .thumbsUp }
         if has(#"\b(hello|hi there|hey there)\b"#) { return .hello }
         if has(#"\b(support|keep going|you've got|proud of you)\b"#) { return .supportive }

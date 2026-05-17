@@ -14,11 +14,9 @@ final class HomeViewController: UIViewController {
         case sports = 7
         case vehicles = 8
         case winterSports = 9
-        case freeDrawing = 10
 
         var title: String {
             switch self {
-            case .freeDrawing: return "Free draw"
             case .ocean: return "Ocean"
             case .animals: return "Animals"
             case .dinosaurs: return "Dinosaurs"
@@ -34,7 +32,6 @@ final class HomeViewController: UIViewController {
 
         var packId: String {
             switch self {
-            case .freeDrawing: return BuiltInColoringPages.savedDrawingsPackId
             case .ocean: return "ocean"
             case .animals: return "animals"
             case .dinosaurs: return "dinosaurs"
@@ -50,7 +47,6 @@ final class HomeViewController: UIViewController {
 
         var accent: UIColor {
             switch self {
-            case .freeDrawing: return FigmaTheme.actionBlue
             case .animals: return FigmaTheme.animalsAccent
             case .ocean: return FigmaTheme.oceanAccent
             case .dinosaurs: return FigmaTheme.dinosaursAccent
@@ -66,7 +62,7 @@ final class HomeViewController: UIViewController {
 
         var isFreeTier: Bool {
             switch self {
-            case .freeDrawing, .ocean, .animals:
+            case .ocean, .animals:
                 return true
             default:
                 return false
@@ -85,7 +81,7 @@ final class HomeViewController: UIViewController {
     private let categoryGridPanelStroke = UIView()
     private let categoryGridPanel = UIView()
     private let mascotView = UIImageView()
-    private let titleLabel = UILabel()
+    private let homeTitleBadge = HomeBrushiTitleBadgeView()
     private let bodyStack = UIStackView()
     private let gridStack = UIStackView()
     private let categoryGridScrollView = UIScrollView()
@@ -94,6 +90,7 @@ final class HomeViewController: UIViewController {
     private let unlockButton = UIButton(type: .custom)
 
     private lazy var settingsButton: UIButton = makeMagicBrushySettingsGearButton()
+    private let diamondBackButton = MagicBrushyDiamondBackButton()
 
     private let assetsLoadChip = UIView()
     private let assetsLoadSpinner = UIActivityIndicatorView(style: .medium)
@@ -132,6 +129,9 @@ final class HomeViewController: UIViewController {
         static let panelStrokeBorderWidth: CGFloat = 7.42
         static let panelStrokeOutset: CGFloat = 7.42
         static var panelStrokeSizeDelta: CGFloat { panelStrokeOutset * 2 }
+
+        /// Figma title lockup (`122:1001`) — width fills column; height capped so mascot keeps room.
+        static let titleBadgeMaxHeightFraction: CGFloat = 0.40
     }
 
     override func viewDidLoad() {
@@ -171,15 +171,10 @@ final class HomeViewController: UIViewController {
         mascotView.contentMode = .scaleAspectFit
         mascotView.translatesAutoresizingMaskIntoConstraints = false
 
-        titleLabel.numberOfLines = 2
-        titleLabel.textAlignment = .center
-        titleLabel.lineBreakMode = .byTruncatingTail
-        titleLabel.adjustsFontSizeToFitWidth = true
-        titleLabel.minimumScaleFactor = 0.72
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        titleLabel.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
-        titleLabel.setContentCompressionResistancePriority(.required, for: .vertical)
-        applyTitleAttributedText()
+        homeTitleBadge.translatesAutoresizingMaskIntoConstraints = false
+        homeTitleBadge.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+        homeTitleBadge.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
+        homeTitleBadge.setContentHuggingPriority(.defaultHigh, for: .vertical)
 
         gridStack.axis = .vertical
         gridStack.spacing = HomeCategoryTileMetrics.rowSpacing
@@ -205,7 +200,7 @@ final class HomeViewController: UIViewController {
         bodyStack.addArrangedSubview(mascotColumn)
         bodyStack.addArrangedSubview(categoryGridPanelWrapper)
 
-        mascotColumn.addSubview(titleLabel)
+        mascotColumn.addSubview(homeTitleBadge)
         mascotColumn.addSubview(mascotView)
 
         configureUnlockButton()
@@ -219,6 +214,8 @@ final class HomeViewController: UIViewController {
         topChromeRow.alignment = .center
         topChromeRow.distribution = .fill
         topChromeRow.translatesAutoresizingMaskIntoConstraints = false
+        diamondBackButton.isHidden = true
+        diamondBackButton.addTarget(self, action: #selector(backTapped), for: .touchUpInside)
         topChromeRow.addArrangedSubview(settingsButton)
         topChromeRow.addArrangedSubview(unlockButton)
 
@@ -237,6 +234,7 @@ final class HomeViewController: UIViewController {
 
         view.addSubview(heroView)
         view.addSubview(homeMainStack)
+        view.addSubview(diamondBackButton)
         view.addSubview(topChromeRow)
 
         // viewport height is now driven by the panel size (scroll view fills the panel)
@@ -254,17 +252,28 @@ final class HomeViewController: UIViewController {
             heroView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             heroView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
-                topChromeRow.topAnchor.constraint(equalTo: g.topAnchor, constant: 4),
+            diamondBackButton.topAnchor.constraint(equalTo: g.topAnchor, constant: 4),
+            diamondBackButton.leadingAnchor.constraint(equalTo: g.leadingAnchor, constant: 12),
+
+            topChromeRow.topAnchor.constraint(equalTo: g.topAnchor, constant: 4),
             topChromeRow.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -16),
-            topChromeRow.leadingAnchor.constraint(greaterThanOrEqualTo: g.leadingAnchor, constant: 16),
+            topChromeRow.leadingAnchor.constraint(greaterThanOrEqualTo: diamondBackButton.trailingAnchor, constant: 8),
             unlockButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 44),
 
-            titleLabel.topAnchor.constraint(equalTo: mascotColumn.topAnchor, constant: 2),
-            titleLabel.centerXAnchor.constraint(equalTo: mascotColumn.centerXAnchor),
-            titleLabel.leadingAnchor.constraint(greaterThanOrEqualTo: mascotColumn.leadingAnchor, constant: 2),
-            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: mascotColumn.trailingAnchor, constant: -2),
+            homeTitleBadge.topAnchor.constraint(equalTo: mascotColumn.topAnchor),
+            homeTitleBadge.centerXAnchor.constraint(equalTo: mascotColumn.centerXAnchor),
+            homeTitleBadge.leadingAnchor.constraint(equalTo: mascotColumn.leadingAnchor),
+            homeTitleBadge.trailingAnchor.constraint(equalTo: mascotColumn.trailingAnchor),
+            homeTitleBadge.heightAnchor.constraint(
+                equalTo: homeTitleBadge.widthAnchor,
+                multiplier: HomeBrushiTitleBadgeView.Metrics.heightPerWidth
+            ),
+            homeTitleBadge.heightAnchor.constraint(
+                lessThanOrEqualTo: mascotColumn.heightAnchor,
+                multiplier: HomeCategoryTileMetrics.titleBadgeMaxHeightFraction
+            ),
 
-            mascotView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 10),
+            mascotView.topAnchor.constraint(equalTo: homeTitleBadge.bottomAnchor, constant: 8),
             mascotView.leadingAnchor.constraint(equalTo: mascotColumn.leadingAnchor, constant: 2),
             mascotView.trailingAnchor.constraint(equalTo: mascotColumn.trailingAnchor, constant: -2),
             mascotView.bottomAnchor.constraint(equalTo: mascotColumn.bottomAnchor),
@@ -313,6 +322,7 @@ final class HomeViewController: UIViewController {
         populateCategoryGrid()
         applySubscribeButtonEnabledState()
         Task { await SubscriptionManager.shared.refreshEntitlements() }
+        view.bringSubviewToFront(diamondBackButton)
         view.bringSubviewToFront(topChromeRow)
 
         installAssetsLoadPanel()
@@ -398,6 +408,7 @@ final class HomeViewController: UIViewController {
         }
 
         categoryGridPanel.bringSubviewToFront(assetsLoadChip)
+        view.bringSubviewToFront(diamondBackButton)
         view.bringSubviewToFront(topChromeRow)
     }
 
@@ -503,9 +514,8 @@ final class HomeViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        Task { @MainActor in
-            await LeapVLMModel.shared.load()
-        }
+        // Model load runs on `BrushiBootstrapViewController` before home is shown; refresh chip if still in flight.
+        refreshAssetsLoadOverlay()
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -513,6 +523,16 @@ final class HomeViewController: UIViewController {
         refreshAssetsLoadOverlay()
         Task { await SubscriptionManager.shared.refreshEntitlements() }
         applySubscribeButtonEnabledState()
+        updateBackButtonVisibility()
+    }
+
+    private func updateBackButtonVisibility() {
+        let showBack = navigationController.map { $0.viewControllers.first !== self } ?? false
+        diamondBackButton.isHidden = !showBack
+    }
+
+    @objc private func backTapped() {
+        navigationController?.popViewController(animated: true)
     }
 
     private var isCompactHeight: Bool {
@@ -525,7 +545,6 @@ final class HomeViewController: UIViewController {
         bodyBottomConstraint?.constant = compact ? -10 : -22
         homeMainStack.spacing = compact ? 10 : 16
         bodyStack.spacing = compact ? 8 : HomeCategoryTileMetrics.bodyStackSpacing
-        applyTitleAttributedText()
         updateCategoryGridViewportHeightIfNeeded()
     }
 
@@ -533,24 +552,6 @@ final class HomeViewController: UIViewController {
         super.traitCollectionDidChange(previousTraitCollection)
         guard previousTraitCollection?.verticalSizeClass != traitCollection.verticalSizeClass else { return }
         applyLayoutMetricsForCurrentTraits()
-    }
-
-    private func applyTitleAttributedText() {
-        let text = "Color with\nBrushi"
-        let fontSize: CGFloat = isCompactHeight ? 36 : 56
-        let font = FigmaTheme.titleFont(size: fontSize)
-        let paragraph = NSMutableParagraphStyle()
-        paragraph.alignment = .center
-        paragraph.lineBreakMode = .byTruncatingTail
-        paragraph.lineSpacing = 2
-        let attrs: [NSAttributedString.Key: Any] = [
-            .font: font,
-            .foregroundColor: FigmaTheme.creamText,
-            .strokeColor: FigmaTheme.titleStroke,
-            .strokeWidth: -4,
-            .paragraphStyle: paragraph,
-        ]
-        titleLabel.attributedText = NSAttributedString(string: text, attributes: attrs)
     }
 
     private func configureUnlockButton() {
@@ -636,39 +637,6 @@ final class HomeViewController: UIViewController {
         card.addSubview(lockHost)
         lockHost.addSubview(lock)
 
-        if category == .freeDrawing {
-            let plusBadge = UIView()
-            plusBadge.translatesAutoresizingMaskIntoConstraints = false
-            plusBadge.backgroundColor = FigmaTheme.primaryOrange
-            plusBadge.layer.cornerRadius = 22
-            plusBadge.layer.borderWidth = 3
-            plusBadge.layer.borderColor = FigmaTheme.primaryOrangeBorder.cgColor
-            plusBadge.isUserInteractionEnabled = false
-            FigmaTheme.applyCardShadow(to: plusBadge.layer)
-
-            let plusIcon = UIImageView(
-                image: UIImage(
-                    systemName: "plus",
-                    withConfiguration: UIImage.SymbolConfiguration(pointSize: 22, weight: .bold)
-                )
-            )
-            plusIcon.translatesAutoresizingMaskIntoConstraints = false
-            plusIcon.tintColor = .white
-            plusIcon.contentMode = .scaleAspectFit
-            plusBadge.addSubview(plusIcon)
-            card.addSubview(plusBadge)
-
-            NSLayoutConstraint.activate([
-                plusBadge.centerXAnchor.constraint(equalTo: preview.centerXAnchor),
-                plusBadge.centerYAnchor.constraint(equalTo: preview.centerYAnchor),
-                plusBadge.widthAnchor.constraint(equalToConstant: 44),
-                plusBadge.heightAnchor.constraint(equalToConstant: 44),
-                plusIcon.centerXAnchor.constraint(equalTo: plusBadge.centerXAnchor),
-                plusIcon.centerYAnchor.constraint(equalTo: plusBadge.centerYAnchor),
-            ])
-            card.bringSubviewToFront(plusBadge)
-        }
-
         let tap = UITapGestureRecognizer(target: self, action: #selector(categoryTapped(_:)))
         container.addGestureRecognizer(tap)
 
@@ -730,21 +698,24 @@ final class HomeViewController: UIViewController {
         row3.spacing = HomeCategoryTileMetrics.columnSpacing
         row3.distribution = .fillEqually
 
-        row0.addArrangedSubview(makeTile(for: .freeDrawing))
         row0.addArrangedSubview(makeTile(for: .ocean))
         row0.addArrangedSubview(makeTile(for: .animals))
-        row1.addArrangedSubview(makeTile(for: .dinosaurs))
+        row0.addArrangedSubview(makeTile(for: .dinosaurs))
         row1.addArrangedSubview(makeTile(for: .famousArt))
         row1.addArrangedSubview(makeTile(for: .fantasyAndMagic))
-        row2.addArrangedSubview(makeTile(for: .food))
+        row1.addArrangedSubview(makeTile(for: .food))
         row2.addArrangedSubview(makeTile(for: .naturePlants))
         row2.addArrangedSubview(makeTile(for: .sports))
-        row3.addArrangedSubview(makeTile(for: .vehicles))
+        row2.addArrangedSubview(makeTile(for: .vehicles))
         row3.addArrangedSubview(makeTile(for: .winterSports))
         let row3Spacer = UIView()
         row3Spacer.backgroundColor = .clear
         row3Spacer.isUserInteractionEnabled = false
         row3.addArrangedSubview(row3Spacer)
+        let row3Spacer2 = UIView()
+        row3Spacer2.backgroundColor = .clear
+        row3Spacer2.isUserInteractionEnabled = false
+        row3.addArrangedSubview(row3Spacer2)
         gridStack.addArrangedSubview(row0)
         gridStack.addArrangedSubview(row1)
         gridStack.addArrangedSubview(row2)
@@ -761,7 +732,7 @@ final class HomeViewController: UIViewController {
             UIImpactFeedbackGenerator(style: .medium).impactOccurred()
             let sheet = UIAlertController(
                 title: "Locked",
-                message: "Subscribe on the home screen to open every category, or try Free draw, Ocean, and Animals in the top row.",
+                message: "Subscribe to open every category, or try Ocean and Animals for free.",
                 preferredStyle: .alert
             )
             sheet.addAction(UIAlertAction(title: "OK", style: .default))
@@ -778,7 +749,7 @@ final class HomeViewController: UIViewController {
         guard !SubscriptionManager.shared.hasFullLibraryAccess else { return }
         let sheet = UIAlertController(
             title: "Full library",
-            message: "Subscribe with your Apple ID, restore a past purchase, or solve a quick multiplication puzzle to unlock every category. The top row (Free draw, Ocean, Animals) stays free.",
+            message: "Subscribe with your Apple ID, restore a past purchase, or solve a quick multiplication puzzle to unlock every coloring category. Ocean and Animals stay free.",
             preferredStyle: .actionSheet
         )
         sheet.addAction(UIAlertAction(title: "Subscribe", style: .default, handler: { [weak self] _ in

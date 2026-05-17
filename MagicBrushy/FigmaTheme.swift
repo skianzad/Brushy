@@ -30,7 +30,19 @@ enum FigmaTheme {
     static let actionBlue = UIColor(red: 60 / 255, green: 152 / 255, blue: 239 / 255, alpha: 1)
     static let actionBlueBorder = UIColor(red: 32 / 255, green: 109 / 255, blue: 180 / 255, alpha: 1)
 
+    /// Home mode picker — Figma `122:824` Free Draw card.
+    static let freeDrawModeFill = UIColor(red: 153 / 255, green: 1, blue: 102 / 255, alpha: 1)
+    static let freeDrawModeBorder = UIColor(red: 36 / 255, green: 160 / 255, blue: 2 / 255, alpha: 1)
+    /// Home mode picker — Figma `122:989` Coloring card.
+    static let coloringModeFill = UIColor(red: 102 / 255, green: 222 / 255, blue: 1, alpha: 1)
+    static let coloringModeBorder = UIColor(red: 1 / 255, green: 174 / 255, blue: 1, alpha: 1)
+
     static let skyBlue = UIColor(red: 160 / 255, green: 232 / 255, blue: 251 / 255, alpha: 1)
+
+    /// Bootstrap / download screen (Figma export).
+    static let bootstrapSky = UIColor(red: 0.627, green: 0.91, blue: 0.984, alpha: 1)
+    static let bootstrapProgressBorder = UIColor(red: 0.002, green: 0.684, blue: 1, alpha: 1)
+    static let bootstrapProgressTrack = UIColor(red: 0.4, green: 0.87, blue: 1, alpha: 1)
     static let canvasBorder = UIColor(red: 0, green: 98 / 255, blue: 1, alpha: 1)
     static let canvasFill = UIColor.white
 

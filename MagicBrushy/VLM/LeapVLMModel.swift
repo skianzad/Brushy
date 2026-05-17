@@ -152,7 +152,9 @@ final class LeapVLMModel {
         if modelRunner != nil { return .ready }
         if modelLoadDidFail { return .failed(message: modelLoadStatusText.isEmpty ? "Load error" : modelLoadStatusText) }
         if isModelLoadPanelVisible {
-            if modelDownloadProgressFraction < 1 - 1e-6 { return .downloading(progress: modelDownloadProgressFraction) }
+            if modelLoadStatusText.localizedCaseInsensitiveContains("download") {
+                return .downloading(progress: modelDownloadProgressFraction)
+            }
             return .loadingIntoMemory
         }
         return .idleNotLoaded
@@ -189,8 +191,15 @@ final class LeapVLMModel {
         NotificationCenter.default.post(name: .leapVLMLoadPanelStateDidChange, object: self)
     }
 
-    public func prepareImageForModelPreview(_ image: UIImage) -> UIImage? {
-        Self.resizedImage(from: image, maxEdge: Self.maxImageEdge)
+    public func prepareImageForModelPreview(
+        _ image: UIImage,
+        minDimensionFractionOfSource: CGFloat = 1.0 / 3.0
+    ) -> UIImage? {
+        Self.resizedImage(
+            from: image,
+            maxEdge: Self.maxImageEdge,
+            minDimensionFractionOfSource: minDimensionFractionOfSource
+        )
     }
 
     private func publishLoadPanel(visible: Bool, progress: Double, status: String, failed: Bool) {
@@ -243,12 +252,18 @@ final class LeapVLMModel {
                             guard let self else { return }
                             if progress < 1.0 {
                                 let pct = Int((progress * 100).rounded(.down))
-                                let status = pct > 0
-                                    ? "Download the model… \(pct)%"
-                                    : "Download the model…"
+                                let status: String
+                                let reportedProgress: Double
+                                if pct > 0 {
+                                    status = "Download the model… \(pct)%"
+                                    reportedProgress = Double(progress)
+                                } else {
+                                    status = "Loading…"
+                                    reportedProgress = 0
+                                }
                                 self.publishLoadPanel(
                                     visible: true,
-                                    progress: Double(progress),
+                                    progress: reportedProgress,
                                     status: status,
                                     failed: false)
                             } else {
@@ -418,18 +433,40 @@ final class LeapVLMModel {
         notifyLoadPanelStateChanged()
     }
 
-    private static func resizedJPEGData(from image: UIImage, maxEdge: CGFloat) -> Data? {
-        guard let resized = resizedImage(from: image, maxEdge: maxEdge) else { return nil }
+    private static func resizedJPEGData(
+        from image: UIImage,
+        maxEdge: CGFloat,
+        minDimensionFractionOfSource: CGFloat = 1.0 / 3.0
+    ) -> Data? {
+        guard let resized = resizedImage(
+            from: image,
+            maxEdge: maxEdge,
+            minDimensionFractionOfSource: minDimensionFractionOfSource
+        ) else { return nil }
         return resized.jpegData(compressionQuality: 0.9)
     }
 
-    private static func resizedImage(from image: UIImage, maxEdge: CGFloat) -> UIImage? {
+    /// Downscales for the VLM cap but never below `minDimensionFractionOfSource` of the source width or height.
+    private static func resizedImage(
+        from image: UIImage,
+        maxEdge: CGFloat,
+        minDimensionFractionOfSource: CGFloat = 1.0 / 3.0
+    ) -> UIImage? {
         let size = image.size
         guard size.width > 0, size.height > 0 else { return nil }
 
-        let ratio = min(maxEdge / size.width, maxEdge / size.height, 1)
-        let newSize = CGSize(width: size.width * ratio, height: size.height * ratio)
+        let fraction = min(1, max(0.1, minDimensionFractionOfSource))
+        let minW = size.width * fraction
+        let minH = size.height * fraction
+        var w = size.width
+        var h = size.height
+        let downscale = min(maxEdge / w, maxEdge / h, 1)
+        w *= downscale
+        h *= downscale
+        w = max(w, minW)
+        h = max(h, minH)
 
+        let newSize = CGSize(width: w, height: h)
         let renderer = UIGraphicsImageRenderer(size: newSize)
         return renderer.image { _ in
             image.draw(in: CGRect(origin: .zero, size: newSize))
