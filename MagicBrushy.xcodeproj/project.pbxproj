@@ -39,6 +39,9 @@
 		B1SET000000000000000001 /* MagicBrushySettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1SET000000000000000101 /* MagicBrushySettingsViewController.swift */; };
 		B1LNG000000000000000001 /* MagicBrushyLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1LNG000000000000000101 /* MagicBrushyLanguage.swift */; };
 		B1PRM000000000000000001 /* Prompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1PRM000000000000000101 /* Prompt.swift */; };
+		B1COA000000000000000001 /* MagicBrushyCoachVoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1COA000000000000000101 /* MagicBrushyCoachVoice.swift */; };
+		B1KOK000000000000000411 /* SherpaKokoroVoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1KOK000000000000000401 /* SherpaKokoroVoice.swift */; };
+		B1KOK000000000000000611 /* KokoroEnV019 in Resources */ = {isa = PBXBuildFile; fileRef = B1KOK000000000000000601 /* KokoroEnV019 */; };
 		B1BGM000000000000000002 /* MagicBrushyBackgroundTrack.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = B1BGM000000000000000102 /* MagicBrushyBackgroundTrack.mp3 */; };
 		C1CLR000000000000000001 /* Colors in Resources */ = {isa = PBXBuildFile; fileRef = C1CLR000000000000000101 /* Colors */; };
 /* End PBXBuildFile section */
@@ -90,6 +93,9 @@
 		B1SET000000000000000101 /* MagicBrushySettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagicBrushySettingsViewController.swift; sourceTree = "<group>"; };
 		B1LNG000000000000000101 /* MagicBrushyLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagicBrushyLanguage.swift; sourceTree = "<group>"; };
 		B1PRM000000000000000101 /* Prompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Prompt.swift; sourceTree = "<group>"; };
+		B1COA000000000000000101 /* MagicBrushyCoachVoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagicBrushyCoachVoice.swift; sourceTree = "<group>"; };
+		B1KOK000000000000000401 /* SherpaKokoroVoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SherpaKokoroVoice.swift; path = ../ASU/SmartDraw/SmartDraw/SherpaKokoroVoice.swift; sourceTree = SOURCE_ROOT; };
+		B1KOK000000000000000601 /* KokoroEnV019 */ = {isa = PBXFileReference; lastKnownFileType = folder; name = KokoroEnV019; path = ../ASU/SmartDraw/SmartDraw/KokoroEnV019; sourceTree = SOURCE_ROOT; };
 		B1BGM000000000000000102 /* MagicBrushyBackgroundTrack.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = MagicBrushyBackgroundTrack.mp3; sourceTree = "<group>"; };
 		C1CLR000000000000000101 /* Colors */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Colors; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -140,6 +146,7 @@
 				B1BGM000000000000000101 /* MagicBrushyBackgroundMusic.swift */,
 				B1SET000000000000000101 /* MagicBrushySettingsViewController.swift */,
 				B1LNG000000000000000101 /* MagicBrushyLanguage.swift */,
+				B1COA000000000000000101 /* MagicBrushyCoachVoice.swift */,
 				B1PRM000000000000000101 /* Prompt.swift */,
 				B1BGM000000000000000102 /* MagicBrushyBackgroundTrack.mp3 */,
 				A1B100000000000000000103 /* VLM */,
@@ -175,8 +182,10 @@
 				B1EAD0000302 /* sherpa-onnx.xcframework */,
 				B1EAD0000401 /* SherpaOnnx.swift */,
 				B1EAD0000402 /* SherpaPiperAlbaVoice.swift */,
+				B1KOK000000000000000401 /* SherpaKokoroVoice.swift */,
 				B1EAD0000403 /* SherpaVLMPlayback.swift */,
 				B1EAD0000601 /* PiperAlba */,
+				B1KOK000000000000000601 /* KokoroEnV019 */,
 			);
 			name = AlbaTTS_via_SmartDraw;
 			sourceTree = "<group>";
@@ -252,6 +261,7 @@
 				A1B200000000000000000010 /* Assets.xcassets in Resources */,
 				A1B200000000000000000008 /* Main.storyboard in Resources */,
 				B1EAD0000611 /* PiperAlba in Resources */,
+				B1KOK000000000000000611 /* KokoroEnV019 in Resources */,
 				B1BGM000000000000000002 /* MagicBrushyBackgroundTrack.mp3 in Resources */,
 				C1CLR000000000000000001 /* Colors in Resources */,
 			);
@@ -327,8 +337,10 @@
 				B1SET000000000000000001 /* MagicBrushySettingsViewController.swift in Sources */,
 				B1LNG000000000000000001 /* MagicBrushyLanguage.swift in Sources */,
 				B1PRM000000000000000001 /* Prompt.swift in Sources */,
+				B1COA000000000000000001 /* MagicBrushyCoachVoice.swift in Sources */,
 				B1EAD0000411 /* SherpaOnnx.swift in Sources */,
 				B1EAD0000412 /* SherpaPiperAlbaVoice.swift in Sources */,
+				B1KOK000000000000000411 /* SherpaKokoroVoice.swift in Sources */,
 				B1EAD0000413 /* SherpaVLMPlayback.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

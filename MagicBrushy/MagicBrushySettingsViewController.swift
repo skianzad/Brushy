@@ -8,12 +8,13 @@ final class MagicBrushySettingsViewController: UIViewController {
     private let musicRow = UIStackView()
     private let musicIcon = UIImageView()
     private let musicSlider = UISlider()
+    private let coachVoiceButton = UIButton(type: .system)
     private let languageButton = UIButton(type: .system)
 
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = UIColor.black.withAlphaComponent(0.35)
-        preferredContentSize = CGSize(width: 320, height: 268)
+        preferredContentSize = CGSize(width: 320, height: 368)
 
         cardView.translatesAutoresizingMaskIntoConstraints = false
         cardView.backgroundColor = UIColor(white: 0.12, alpha: 0.94)
@@ -56,6 +57,34 @@ final class MagicBrushySettingsViewController: UIViewController {
         musicRow.addArrangedSubview(musicIcon)
         musicRow.addArrangedSubview(musicSlider)
 
+        // MARK: Coach voice row
+
+        let voiceCaption = makeCaption("Coach voice")
+        let voiceIconView = UIImageView(image: UIImage(systemName: "waveform"))
+        voiceIconView.translatesAutoresizingMaskIntoConstraints = false
+        voiceIconView.tintColor = FigmaTheme.primaryOrange
+        voiceIconView.contentMode = .scaleAspectFit
+        voiceIconView.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 20, weight: .semibold)
+        voiceIconView.setContentHuggingPriority(.required, for: .horizontal)
+
+        coachVoiceButton.translatesAutoresizingMaskIntoConstraints = false
+        coachVoiceButton.titleLabel?.font = FigmaTheme.bodyFont(size: 16, weight: .semibold)
+        coachVoiceButton.setTitleColor(FigmaTheme.creamText, for: .normal)
+        coachVoiceButton.backgroundColor = UIColor.white.withAlphaComponent(0.12)
+        coachVoiceButton.layer.cornerRadius = 10
+        if #available(iOS 13.0, *) { coachVoiceButton.layer.cornerCurve = .continuous }
+        coachVoiceButton.contentHorizontalAlignment = .left
+        coachVoiceButton.titleEdgeInsets = UIEdgeInsets(top: 0, left: 10, bottom: 0, right: 10)
+        coachVoiceButton.accessibilityLabel = "Coach voice"
+        coachVoiceButton.accessibilityHint = "Offline English voices or the device voice. Plays a short preview when you pick one."
+        setupCoachVoiceMenu()
+
+        let voiceRow = UIStackView(arrangedSubviews: [voiceIconView, coachVoiceButton])
+        voiceRow.axis = .horizontal
+        voiceRow.alignment = .center
+        voiceRow.spacing = 10
+        voiceRow.translatesAutoresizingMaskIntoConstraints = false
+
         // MARK: Language row
 
         let langCaption = makeCaption("Response language")
@@ -95,6 +124,8 @@ final class MagicBrushySettingsViewController: UIViewController {
         cardView.addSubview(titleLabel)
         cardView.addSubview(musicCaption)
         cardView.addSubview(musicRow)
+        cardView.addSubview(voiceCaption)
+        cardView.addSubview(voiceRow)
         cardView.addSubview(divider)
         cardView.addSubview(langCaption)
         cardView.addSubview(langRow)
@@ -123,7 +154,19 @@ final class MagicBrushySettingsViewController: UIViewController {
             musicIcon.widthAnchor.constraint(equalToConstant: 28),
             musicIcon.heightAnchor.constraint(equalToConstant: 28),
 
-            divider.topAnchor.constraint(equalTo: musicRow.bottomAnchor, constant: 18),
+            voiceCaption.topAnchor.constraint(equalTo: musicRow.bottomAnchor, constant: 16),
+            voiceCaption.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 20),
+            voiceCaption.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -20),
+
+            voiceRow.topAnchor.constraint(equalTo: voiceCaption.bottomAnchor, constant: 10),
+            voiceRow.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 20),
+            voiceRow.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -20),
+
+            voiceIconView.widthAnchor.constraint(equalToConstant: 28),
+            voiceIconView.heightAnchor.constraint(equalToConstant: 28),
+            coachVoiceButton.heightAnchor.constraint(equalToConstant: 38),
+
+            divider.topAnchor.constraint(equalTo: voiceRow.bottomAnchor, constant: 18),
             divider.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 20),
             divider.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -20),
             divider.heightAnchor.constraint(equalToConstant: 1),
@@ -165,6 +208,51 @@ final class MagicBrushySettingsViewController: UIViewController {
     @objc private func musicVolumeChanged(_ sender: UISlider) {
         MagicBrushyBackgroundMusic.setUserVolumeScale(sender.value)
         applyMusicVolumeIcon()
+    }
+
+    // MARK: - Coach voice
+
+    private func setupCoachVoiceMenu() {
+        updateCoachVoiceButtonTitle(MagicBrushyCoachVoice.stored())
+
+        if #available(iOS 14.0, *) {
+            let actions = MagicBrushyCoachVoice.selectableCases.map { voice in
+                UIAction(title: voice.displayName, state: MagicBrushyCoachVoice.stored() == voice ? .on : .off) { [weak self] _ in
+                    MagicBrushyCoachVoice.store(voice)
+                    self?.updateCoachVoiceButtonTitle(voice)
+                    self?.setupCoachVoiceMenu()
+                    Task { @MainActor in
+                        await FeedbackAlbaSpeech.speakFeedback(MagicBrushyCoachVoice.previewPhrase)
+                    }
+                }
+            }
+            coachVoiceButton.menu = UIMenu(title: "", children: actions)
+            coachVoiceButton.showsMenuAsPrimaryAction = true
+        } else {
+            coachVoiceButton.addTarget(self, action: #selector(coachVoiceButtonTapped), for: .touchUpInside)
+        }
+    }
+
+    private func updateCoachVoiceButtonTitle(_ voice: MagicBrushyCoachVoice) {
+        coachVoiceButton.setTitle("  \(voice.displayName)", for: .normal)
+    }
+
+    @objc private func coachVoiceButtonTapped() {
+        let sheet = UIAlertController(title: "Coach voice", message: nil, preferredStyle: .actionSheet)
+        for voice in MagicBrushyCoachVoice.selectableCases {
+            let current = MagicBrushyCoachVoice.stored() == voice
+            let action = UIAlertAction(title: (current ? "✓ " : "    ") + voice.displayName, style: .default) { [weak self] _ in
+                MagicBrushyCoachVoice.store(voice)
+                self?.updateCoachVoiceButtonTitle(voice)
+                Task { @MainActor in
+                    await FeedbackAlbaSpeech.speakFeedback(MagicBrushyCoachVoice.previewPhrase)
+                }
+            }
+            sheet.addAction(action)
+        }
+        sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        sheet.popoverPresentationController?.sourceView = coachVoiceButton
+        present(sheet, animated: true)
     }
 
     // MARK: - Language

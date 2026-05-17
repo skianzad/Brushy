@@ -1,6 +1,6 @@
 import AVFoundation
 
-/// Reads feedback aloud with bundled Piper Alba (Sherpa ONNX, same bundle layout as SmartDraw), then falls back to system en-GB.
+/// Reads feedback aloud with bundled Sherpa voices (Alba / Kokoro) or Apple TTS.
 enum FeedbackAlbaSpeech {
 
     /// Optional mascot mouth driver (set from `ColoringViewController`).
@@ -38,18 +38,29 @@ enum FeedbackAlbaSpeech {
 
         let lang = MagicBrushyLanguage.stored()
 
-        // Piper Alba is English-only — use it only when English is selected.
-        if lang.usesPiperAlba, SherpaPiperAlbaVoice.isBundledVoiceAvailable {
-            do {
-                try await SherpaPiperAlbaVoice.speakAlbaBritishEnglish(clean) { text, duration in
-                    Self.mascotLipSync?.startSherpaDrivenLipSync(text: text, duration: duration)
-                }
-            } catch {}
-            Self.mascotLipSync?.sessionEnded()
-            return
+        if lang.usesPiperAlba {
+            let coach = MagicBrushyCoachVoice.stored()
+            if coach.usesSherpaAlba, SherpaPiperAlbaVoice.isBundledVoiceAvailable {
+                do {
+                    try await SherpaPiperAlbaVoice.speakAlbaBritishEnglish(clean) { text, duration in
+                        Self.mascotLipSync?.startSherpaDrivenLipSync(text: text, duration: duration)
+                    }
+                } catch {}
+                Self.mascotLipSync?.sessionEnded()
+                return
+            }
+            if let sid = coach.kokoroSpeakerId, SherpaKokoroVoice.isBundledVoiceAvailable {
+                do {
+                    try await SherpaKokoroVoice.speak(clean, speakerId: sid) { text, duration in
+                        Self.mascotLipSync?.startSherpaDrivenLipSync(text: text, duration: duration)
+                    }
+                } catch {}
+                Self.mascotLipSync?.sessionEnded()
+                return
+            }
         }
 
-        // All other languages (and English fallback) go through Apple TTS
+        // Non-English languages, explicit device voice, or missing Sherpa bundles.
         // with the matching voice for the selected language.
         await AppleFeedbackSynth.shared.speak(clean, languageTag: lang.bcp47Tag)
     }
