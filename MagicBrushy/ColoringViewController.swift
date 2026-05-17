@@ -12,7 +12,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         /// Mascot tap / whole-page cheer (longer reply OK).
         static let wholeDrawingMaxOutput = 96
         /// Page-open welcome: ~2 short sentences (model was emitting 80+ tokens at 128).
-        static let pageLoadWelcomeMaxOutput = 40
+        static let pageLoadWelcomeMaxOutput = 60
     }
 
     private enum TopChromeMetrics {

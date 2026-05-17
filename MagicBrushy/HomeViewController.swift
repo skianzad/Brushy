@@ -103,6 +103,9 @@ final class HomeViewController: UIViewController {
     private var bodyBottomConstraint: NSLayoutConstraint!
     private var mascotWidthConstraint: NSLayoutConstraint!
     private var mascotHeightConstraint: NSLayoutConstraint!
+    private var mascotCenterXConstraint: NSLayoutConstraint!
+    private var mascotFillLeadingConstraint: NSLayoutConstraint!
+    private var mascotFillTrailingConstraint: NSLayoutConstraint!
     private var mascotColumnWidthFractionConstraint: NSLayoutConstraint!
     private var mascotColumnFixedWidthConstraint: NSLayoutConstraint!
 
@@ -285,7 +288,6 @@ final class HomeViewController: UIViewController {
             ),
 
             mascotView.topAnchor.constraint(greaterThanOrEqualTo: homeTitleBadge.bottomAnchor, constant: 8),
-            mascotView.centerXAnchor.constraint(equalTo: mascotColumn.centerXAnchor),
             mascotView.bottomAnchor.constraint(equalTo: mascotColumn.bottomAnchor),
 
             bodyTopToHeaderConstraint,
@@ -421,10 +423,12 @@ final class HomeViewController: UIViewController {
         view.bringSubviewToFront(diamondBackButton)
         view.bringSubviewToFront(topChromeRow)
 
-        let mascotSize = BrushiMascotLayout.displaySize(for: traitCollection, image: mascotView.image)
+        mascotCenterXConstraint = mascotView.centerXAnchor.constraint(equalTo: mascotColumn.centerXAnchor)
+        mascotFillLeadingConstraint = mascotView.leadingAnchor.constraint(equalTo: mascotColumn.leadingAnchor, constant: 2)
+        mascotFillTrailingConstraint = mascotView.trailingAnchor.constraint(equalTo: mascotColumn.trailingAnchor, constant: -2)
+        let mascotSize = BrushiMascotLayout.homeDisplaySize(for: traitCollection, image: mascotView.image)
         mascotWidthConstraint = mascotView.widthAnchor.constraint(equalToConstant: mascotSize.width)
         mascotHeightConstraint = mascotView.heightAnchor.constraint(equalToConstant: mascotSize.height)
-        NSLayoutConstraint.activate([mascotWidthConstraint, mascotHeightConstraint])
 
         applyTopChromeLayout(for: traitCollection)
         applyMascotLayout(for: traitCollection)
@@ -432,14 +436,24 @@ final class HomeViewController: UIViewController {
 
     private func applyMascotLayout(for traitCollection: UITraitCollection) {
         let phone = MagicBrushyChromeMetrics.isPhone(traitCollection)
-        let mascotSize = BrushiMascotLayout.displaySize(for: traitCollection, image: mascotView.image)
-        mascotWidthConstraint?.constant = mascotSize.width
-        mascotHeightConstraint?.constant = mascotSize.height
         if phone {
+            let mascotSize = BrushiMascotLayout.homeDisplaySize(for: traitCollection, image: mascotView.image)
+            mascotWidthConstraint.constant = mascotSize.width
+            mascotHeightConstraint.constant = mascotSize.height
+            mascotWidthConstraint.isActive = true
+            mascotHeightConstraint.isActive = true
+            mascotCenterXConstraint.isActive = true
+            mascotFillLeadingConstraint.isActive = false
+            mascotFillTrailingConstraint.isActive = false
             mascotColumnWidthFractionConstraint.isActive = false
             mascotColumnFixedWidthConstraint.isActive = true
             mascotColumnFixedWidthConstraint.constant = mascotSize.width + 8
         } else {
+            mascotWidthConstraint.isActive = false
+            mascotHeightConstraint.isActive = false
+            mascotCenterXConstraint.isActive = false
+            mascotFillLeadingConstraint.isActive = true
+            mascotFillTrailingConstraint.isActive = true
             mascotColumnFixedWidthConstraint.isActive = false
             mascotColumnWidthFractionConstraint.isActive = true
         }

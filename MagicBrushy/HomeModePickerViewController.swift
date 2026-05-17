@@ -54,6 +54,9 @@ final class HomeModePickerViewController: UIViewController {
     private var homeMainTrailingConstraint: NSLayoutConstraint!
     private var mascotWidthConstraint: NSLayoutConstraint!
     private var mascotHeightConstraint: NSLayoutConstraint!
+    private var mascotCenterXConstraint: NSLayoutConstraint!
+    private var mascotFillLeadingConstraint: NSLayoutConstraint!
+    private var mascotFillTrailingConstraint: NSLayoutConstraint!
     private var subscriptionAccessObserver: NSObjectProtocol?
 
     override func viewDidLoad() {
@@ -188,7 +191,6 @@ final class HomeModePickerViewController: UIViewController {
             ),
 
             mascotView.topAnchor.constraint(greaterThanOrEqualTo: homeTitleBadge.bottomAnchor, constant: 8),
-            mascotView.centerXAnchor.constraint(equalTo: mascotColumn.centerXAnchor),
             mascotView.bottomAnchor.constraint(equalTo: mascotColumn.bottomAnchor),
 
             freeCard.widthAnchor.constraint(equalTo: coloringCard.widthAnchor),
@@ -206,10 +208,12 @@ final class HomeModePickerViewController: UIViewController {
             freeCard.widthAnchor.constraint(equalTo: coloringCard.widthAnchor),
             freeCardHeightConstraint,
         ])
-        let mascotSize = BrushiMascotLayout.displaySize(for: traitCollection, image: mascotView.image)
+        mascotCenterXConstraint = mascotView.centerXAnchor.constraint(equalTo: mascotColumn.centerXAnchor)
+        mascotFillLeadingConstraint = mascotView.leadingAnchor.constraint(equalTo: mascotColumn.leadingAnchor, constant: 2)
+        mascotFillTrailingConstraint = mascotView.trailingAnchor.constraint(equalTo: mascotColumn.trailingAnchor, constant: -2)
+        let mascotSize = BrushiMascotLayout.homeDisplaySize(for: traitCollection, image: mascotView.image)
         mascotWidthConstraint = mascotView.widthAnchor.constraint(equalToConstant: mascotSize.width)
         mascotHeightConstraint = mascotView.heightAnchor.constraint(equalToConstant: mascotSize.height)
-        NSLayoutConstraint.activate([mascotWidthConstraint, mascotHeightConstraint])
 
         applyBodyLayout(for: traitCollection)
 
@@ -293,9 +297,23 @@ final class HomeModePickerViewController: UIViewController {
     }
 
     private func applyMascotLayout(for traitCollection: UITraitCollection) {
-        let mascotSize = BrushiMascotLayout.displaySize(for: traitCollection, image: mascotView.image)
-        mascotWidthConstraint?.constant = mascotSize.width
-        mascotHeightConstraint?.constant = mascotSize.height
+        let phone = MagicBrushyChromeMetrics.isPhone(traitCollection)
+        if phone {
+            let mascotSize = BrushiMascotLayout.homeDisplaySize(for: traitCollection, image: mascotView.image)
+            mascotWidthConstraint.constant = mascotSize.width
+            mascotHeightConstraint.constant = mascotSize.height
+            mascotWidthConstraint.isActive = true
+            mascotHeightConstraint.isActive = true
+            mascotCenterXConstraint.isActive = true
+            mascotFillLeadingConstraint.isActive = false
+            mascotFillTrailingConstraint.isActive = false
+        } else {
+            mascotWidthConstraint.isActive = false
+            mascotHeightConstraint.isActive = false
+            mascotCenterXConstraint.isActive = false
+            mascotFillLeadingConstraint.isActive = true
+            mascotFillTrailingConstraint.isActive = true
+        }
     }
 
     deinit {
@@ -333,8 +351,7 @@ final class HomeModePickerViewController: UIViewController {
         let bodyH = bodyStack.bounds.height
         guard mainW > 80, bodyH > 60 else { return }
 
-        let mascotDisplayW = BrushiMascotLayout.layoutWidth(for: traitCollection)
-        let mascotW = max(mascotDisplayW + 8, min(132, mainW * 0.26))
+        let mascotW = max(min(132, mainW * 0.26), min(mainW * 0.37, BrushiMascotLayout.homeDisplaySize(for: traitCollection, image: mascotView.image).width + 8))
         mascotFixedWidthConstraint.constant = mascotW
 
         let cardRowW = mainW - mascotW - bodyStack.spacing
