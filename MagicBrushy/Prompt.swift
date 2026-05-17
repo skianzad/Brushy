@@ -29,6 +29,44 @@ enum Prompt {
 
     // MARK: - Coach (stroke idle)
 
+    /// Short praise openers rotated into per-stroke prompts so the model does not repeat “Great job using…”.
+    private static let strokePraiseOpeners: [String] = [
+        "Wow, that color pops!",
+        "Ooh, what a bright dab!",
+        "Nice pick for that spot!",
+        "That shade looks so cheerful!",
+        "I love how that area glows!",
+        "What a happy splash of paint!",
+        "That bit looks extra special!",
+        "You made that patch shine!",
+        "So pretty on that part!",
+        "That stroke looks super smooth!",
+        "What a cozy color touch!",
+        "That hue fits right in!",
+        "Look how fun that looks!",
+        "That color makes me smile!",
+        "Yay, more life on the page!",
+        "What a playful brush of color!",
+        "That spot looks warm and friendly!",
+        "How neat you filled that in!",
+        "That area looks bold and bright!",
+        "What a lovely color choice!",
+        "You’re making the picture sing!",
+        "That paint looks just right there!",
+        "What a sweet little color hug!",
+        "That corner looks so lively now!",
+        "How bright and brave that is!",
+        "That dab feels full of energy!",
+        "What a sunny color moment!",
+        "You colored that in so nicely!",
+        "That patch looks proud and happy!",
+        "What a magic bit of color!",
+    ]
+
+    private static func randomStrokePraiseOpener() -> String {
+        strokePraiseOpeners.randomElement() ?? "Wow, nice color!"
+    }
+
     /// After the child pauses painting: praise the latest stroke / color.
     static func strokeFeedback(
         pageTitle: String?,
@@ -40,22 +78,27 @@ enum Prompt {
             lastStrokePointCount: lastStrokePointCount,
             lastPaintColorName: lastPaintColorName
         )
+        let praiseStarter = randomStrokePraiseOpener()
         let lang = languageInstruction(for: MagicBrushyLanguage.stored())
+        let language = MagicBrushyLanguage.stored()
+        let openerLanguageNote = language == .english
+            ? ""
+            : " Say the opening in \(language.rawValue), keeping the same cheerful tone."
 
         return """
 \(opener) Look at the picture.
 
 \(paletteHint)
 
-Your job:  Say sth about pychology of the color+object in simple kid words. If the subject is very obvious, you may weave it in briefly—do not guess random objects. \(noMapDirectionsRule)
+Your job: exactly **one or two** very short sentences total (nothing longer). Name the color they used if you can see it. You may add one tiny idea about how that color feels with what they painted—only if it is obvious; do not guess random objects. \(noMapDirectionsRule)
+
+**Start** your spoken reply with a phrase in the spirit of: “\(praiseStarter)” — adapt the words to fit their color and picture; do not copy “Great job using the … color” or long lectures.\(openerLanguageNote)
 
 \(spokenToChildRule)
 
 \(spokenReplyOnlyFooter)\(lang)
 
 """
-
-//say one cheery thing that names the color they just added with the object,
     }
 
     // MARK: - Coach (mascot tap — whole page)
@@ -112,13 +155,13 @@ If unsure, use neutral.
         lastPaintColorName: String?
     ) -> String {
         if lastStrokePointCount > 30, let paintWord = lastPaintColorName {
-            return "Their most recent big brush used palette color “\(paintWord)”—celebrate that color if you see it in the photo."
+            return "Their most recent big brush used palette color “\(paintWord)”— you may celebrate that color if you see it in the photo."
         }
         if lastStrokePointCount > 0, let paintWord = lastPaintColorName {
-            return "Their most recent brush used palette color “\(paintWord)”—celebrate that color if you see it in the photo."
+            return "Their most recent brush used palette color “\(paintWord)”— you may celebrate that color if you see it in the photo."
         }
         if lastStrokePointCount > 0 {
-            return "They added a little paint recently; give a warm cheer without insisting on a specific color name."
+            return "They added a little paint recently; you may give a warm cheer without insisting on a specific color name."
         }
         return "No new stroke tracked; peek at the picture and cheer gently."
     }
@@ -130,9 +173,8 @@ If unsure, use neutral.
         "never open with “You have a”, “You have an”, or “You’ve got a”"
 
     private static let spokenToChildRule = """
-Speak to THEM: one or two very short sentences, easy words, use "you" or "your". Open with varied praise —never start with the stock phrase “You have a” or “You have an” or “You’ve got a”. Sound warm; you may add a tiny color-feeling phrase that fits that color.
+Speak to THEM: easy words, “you” or “your”. Never start with “You have a”, “You have an”, or “You’ve got a”. No third sentence.
 """
-
     private static let spokenReplyOnlyFooter = """
 IMPORTANT: Reply with ONLY the words you say aloud—no rules, no quotes about yourself, no repeating this text, no bullets, no markdown, no symbols like <>. Never mention AI, robots, computers, phones, apps, or internet.
 """

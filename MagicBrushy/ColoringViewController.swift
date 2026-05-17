@@ -5,6 +5,14 @@ import Photos
 /// No Bluetooth pen stack — input is multitouch / Pencil only.
 final class ColoringViewController: UIViewController, UIGestureRecognizerDelegate {
 
+    /// Output length caps passed to `LeapVLMModel.generate(maxOutputTokens:)` — prompt text unchanged.
+    private enum VLMCoachTokenLimits {
+        /// Idle per-stroke feedback: ~1–2 short kid sentences.
+        static let strokeFeedbackMaxOutput = 60
+        /// Mascot tap / whole-page cheer (longer reply OK).
+        static let wholeDrawingMaxOutput = 96
+    }
+
     private enum TopChromeMetrics {
         /// Pin the nav row to the safe-area top (no extra gap under the status bar).
         static let menuTopOffset: CGFloat = 0
@@ -1520,17 +1528,18 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             self.showVLMInputPreview(previewImage)
             let prompt = self.makeStrokeFeedbackPrompt()
 
-            model.maxTokens = 120
+            let strokeTokenCap = VLMCoachTokenLimits.strokeFeedbackMaxOutput
+            model.maxTokens = strokeTokenCap
             #if DEBUG
             print("""
-            [Brushi][VLM][Feedback] image \(Int(img.size.width))x\(Int(img.size.height)), max tokens 96
+            [Brushi][VLM][Feedback] image \(Int(img.size.width))x\(Int(img.size.height)), max tokens \(strokeTokenCap)
             \(prompt)
             """)
             #endif
             let task = await model.generate(
                 image: previewImage,
                 prompt: prompt,
-                maxOutputTokens: 96
+                maxOutputTokens: strokeTokenCap
             )
             await task.value
             guard feedbackGen == self.feedbackGeneration else { return }
@@ -1570,17 +1579,18 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             self.showVLMInputPreview(previewImage)
             let prompt = self.makeWholeDrawingCheerPrompt()
 
-            model.maxTokens = 120
+            let wholePageTokenCap = VLMCoachTokenLimits.wholeDrawingMaxOutput
+            model.maxTokens = wholePageTokenCap
             #if DEBUG
             print("""
-            [Brushi][VLM][WholeDrawing] image \(Int(img.size.width))x\(Int(img.size.height)), max tokens 96
+            [Brushi][VLM][WholeDrawing] image \(Int(img.size.width))x\(Int(img.size.height)), max tokens \(wholePageTokenCap)
             \(prompt)
             """)
             #endif
             let task = await model.generate(
                 image: previewImage,
                 prompt: prompt,
-                maxOutputTokens: 96
+                maxOutputTokens: wholePageTokenCap
             )
             await task.value
             guard feedbackGen == self.feedbackGeneration else { return }
