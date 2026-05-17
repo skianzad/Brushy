@@ -170,8 +170,10 @@ final class LeapVLMModel {
     private static let quantization = "Q4_0"
     /// Upper bound for vision encoder input (longest edge in **pixels**).
     private static let maxImageEdge: CGFloat = 512
-    /// Coach calls (stroke / whole-page / welcome) use a smaller cap for faster on-device inference.
+    /// Coach calls (stroke / whole-page) use a smaller cap for faster on-device inference.
     static let coachMaxImageEdge: CGFloat = 384
+    /// Page-open welcome: smaller image → fewer vision tokens and faster prefill.
+    static let coachPageLoadMaxImageEdge: CGFloat = 288
 
     var maxTokens = 240
     let displayEveryNTokens = 4

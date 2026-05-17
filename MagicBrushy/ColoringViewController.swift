@@ -11,8 +11,8 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         static let strokeFeedbackMaxOutput = 60
         /// Mascot tap / whole-page cheer (longer reply OK).
         static let wholeDrawingMaxOutput = 96
-        /// Page-open welcome (subject + prior paint + encourage finishing — a bit longer than stroke feedback).
-        static let pageLoadWelcomeMaxOutput = 128
+        /// Page-open welcome: ~2 short sentences (model was emitting 80+ tokens at 128).
+        static let pageLoadWelcomeMaxOutput = 40
     }
 
     private enum TopChromeMetrics {
@@ -687,10 +687,11 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         // activateVLMInputPreviewConstraints(safeGuide: g)
         // #endif
 
-        if isFreeDrawingSession {
+        if isFreeDrawingSession || MagicBrushyChromeMetrics.isPhone(traitCollection) {
             selectedStrokeSizeIndex = 0
         }
         applyStrokeWidthFromSelection()
+        refreshStrokeSizeAppearance()
 
         installPhoneCanvasZoomGestures()
         applyCanvasVisualTransform()
@@ -1808,7 +1809,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             self?.runPageLoadWelcome(pageAtSchedule: pageAtSchedule)
         }
         pendingPageWelcomeWork = work
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.65, execute: work)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: work)
     }
 
     private func runPageLoadWelcome(pageAtSchedule: Int) {
@@ -1823,6 +1824,8 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
 
         let welcomeGen = feedbackGeneration
         applyMascotReaction(.hello)
+        vlm.cancel()
+        FeedbackAlbaSpeech.stopSpeaking()
 
         Task { @MainActor [weak self] in
             guard let self else { return }
@@ -1846,22 +1849,22 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
 
             self.welcomedPageIndices.insert(pageAtSchedule)
             let img = self.captureCanvasForVLMFullPage()
-            let previewImage = self.prepareImageForVLMInput(img)
             let prompt = self.makePageLoadWelcomePrompt()
-            // self.showVLMInputPreview(previewImage, prompt: prompt, tag: "Page open")
 
             let tokenCap = VLMCoachTokenLimits.pageLoadWelcomeMaxOutput
             model.maxTokens = tokenCap
             #if DEBUG
             print("""
-            [Brushi][VLM][PageLoad] image \(Int(img.size.width))x\(Int(img.size.height)), max tokens \(tokenCap)
+            [Brushi][VLM][PageLoad] image \(Int(img.size.width))x\(Int(img.size.height)), max tokens \(tokenCap), edge \(Int(LeapVLMModel.coachPageLoadMaxImageEdge))
             \(prompt)
             """)
             #endif
             let task = await model.generate(
-                image: previewImage,
+                image: img,
                 prompt: prompt,
-                maxOutputTokens: tokenCap
+                maxOutputTokens: tokenCap,
+                maxImageEdge: LeapVLMModel.coachPageLoadMaxImageEdge,
+                minDimensionFractionOfSource: self.usesFullPageVLMInput ? 0.35 : (1.0 / 3.0)
             )
             await task.value
             guard welcomeGen == self.feedbackGeneration else { return }
