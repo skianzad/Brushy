@@ -108,27 +108,15 @@ Your job: exactly **one or two** very short sentences total (nothing longer). Na
         let opener = sheetOpener(pageTitle: pageTitle)
         let lang = languageInstruction(for: MagicBrushyLanguage.stored())
         let progressNote = hasPriorPaint
-            ? """
-The picture already has **some colored areas** from before (saved progress). You must mention that they already started—name **one** color or area you can see.
-"""
-            : """
-The picture is mostly **uncolored** so far. Welcome them to today’s sheet and invite them to pick colors and start filling it in.
-"""
+            ? "Some areas already have color—name one you see and cheer them on."
+            : "Mostly uncolored—welcome them and invite them to start coloring."
 
         return """
-\(opener) The photo is the **whole coloring page** (outlines plus any paint).
-
-The child just opened this page. Look at the line art and the paint.
+\(opener) Whole page photo; the child just opened it.
 
 \(progressNote)
 
-Your job: **two or three** short spoken sentences (about **25–45 words** total)—warm, simple kid words, not a lecture. Cover these beats **talking TO the child** (use the examples’ tone):
-1) Name today’s picture.
-2) Invite the child to keep going.
-
-\(spokenToChildRule)
-\(neverThirdPersonSpokenRule)
-\(noMapDirectionsRule) \(neverYouHaveOpenersRule)
+**Two** short sentences only (~20–30 words). Name the picture, then invite them to color. Talk TO the child (you/your). \(neverYouHaveOpenersRule)
 
 \(spokenReplyOnlyFooter)\(lang)
 
