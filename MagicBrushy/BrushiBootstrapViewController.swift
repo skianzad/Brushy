@@ -9,6 +9,8 @@ final class BrushiBootstrapViewController: UIViewController {
     private let retryButton = UIButton(type: .system)
     private var loadPanelObserver: NSObjectProtocol?
     private var didTransitionToHome = false
+    /// UI fill never moves backward during one bootstrap download attempt.
+    private var displayedDownloadProgress: CGFloat = 0
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -79,12 +81,21 @@ final class BrushiBootstrapViewController: UIViewController {
         ) { [weak self] _ in
             self?.refreshFromModelState()
         }
+
+        progressView.setProgress(0.02, animated: false)
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        view.layoutIfNeeded()
+        progressView.setProgress(displayedDownloadProgress, animated: false)
         refreshFromModelState()
         startBootstrapLoadIfNeeded()
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        refreshProgressBarFromDisplayedFraction()
     }
 
     deinit {
@@ -131,8 +142,10 @@ final class BrushiBootstrapViewController: UIViewController {
 
     @objc private func retryTapped() {
         retryButton.isHidden = true
-        setCaptionText("Loading content...")
+        displayedDownloadProgress = 0
+        setCaptionText("Downloading content… 0%")
         progressView.isHidden = false
+        progressView.setProgress(0, animated: false)
         Task { @MainActor in
             await LeapVLMModel.shared.load()
             refreshFromModelState()
@@ -157,19 +170,17 @@ final class BrushiBootstrapViewController: UIViewController {
         switch vlm.modelBadgeState {
         case .downloading(let p):
             progressView.setIndeterminateActive(false)
-            let pct = Int((p * 100).rounded(.down))
-            if pct > 0 {
-                setCaptionText("Downloading content… \(pct)%")
-            } else {
-                setCaptionText("Downloading content...")
-            }
-            progressView.setProgress(CGFloat(p), animated: true)
-            progressView.accessibilityLabel = "Download progress, \(max(0, pct)) percent"
+            displayedDownloadProgress = max(displayedDownloadProgress, CGFloat(p))
+            let pct = Int((displayedDownloadProgress * 100).rounded(.down))
+            setCaptionText("Downloading content… \(pct)%")
+            refreshProgressBarFromDisplayedFraction(animated: true)
+            progressView.accessibilityLabel = "Download progress, \(pct) percent"
         case .loadingIntoMemory:
-            setCaptionText("Loading content...")
-            progressView.setProgress(1, animated: true)
+            setCaptionText("Loading content…")
+            displayedDownloadProgress = 1
             progressView.setIndeterminateActive(true)
-            progressView.accessibilityLabel = "Loading content"
+            progressView.setProgress(1, animated: true)
+            progressView.accessibilityLabel = "Loading content into memory"
         case .ready, .simulatorPreview:
             progressView.setIndeterminateActive(false)
             progressView.setProgress(1, animated: true)
@@ -177,12 +188,17 @@ final class BrushiBootstrapViewController: UIViewController {
             progressView.accessibilityLabel = "Loading content"
         default:
             progressView.setIndeterminateActive(false)
-            setCaptionText("Loading content...")
-            progressView.setProgress(0.04, animated: false)
-            progressView.accessibilityLabel = "Loading content"
+            setCaptionText("Downloading content… 0%")
+            displayedDownloadProgress = max(displayedDownloadProgress, 0.02)
+            refreshProgressBarFromDisplayedFraction(animated: false)
+            progressView.accessibilityLabel = "Download starting"
         }
 
         transitionToHomeIfNeeded()
+    }
+
+    private func refreshProgressBarFromDisplayedFraction(animated: Bool = false) {
+        progressView.setProgress(displayedDownloadProgress, animated: animated)
     }
 
     private func transitionToHomeIfNeeded() {

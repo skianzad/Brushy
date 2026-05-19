@@ -8,6 +8,8 @@ final class BrushiFigmaDownloadProgressView: UIView {
     private let fillView = UIView()
     private let fillGradient = CAGradientLayer()
     private var fillWidthConstraint: NSLayoutConstraint?
+    private var displayedProgress: CGFloat = 0
+    private var pendingAnimateAfterLayout = false
 
     var progress: CGFloat = 0 {
         didSet { setProgress(progress, animated: true) }
@@ -35,9 +37,12 @@ final class BrushiFigmaDownloadProgressView: UIView {
 
         waveOverlay.translatesAutoresizingMaskIntoConstraints = false
         waveOverlay.isUserInteractionEnabled = false
+        waveOverlay.layer.zPosition = 0
 
         fillView.translatesAutoresizingMaskIntoConstraints = false
         fillView.clipsToBounds = true
+        fillView.backgroundColor = UIColor(red: 1, green: 0.9, blue: 0.35, alpha: 1)
+        fillView.layer.zPosition = 1
         fillGradient.colors = [
             UIColor(red: 1, green: 0.82, blue: 0.12, alpha: 1).cgColor,
             UIColor(red: 1, green: 0.96, blue: 0.72, alpha: 1).cgColor,
@@ -49,8 +54,9 @@ final class BrushiFigmaDownloadProgressView: UIView {
         addSubview(trackContainer)
         trackContainer.addSubview(waveOverlay)
         trackContainer.addSubview(fillView)
+        trackContainer.bringSubviewToFront(fillView)
 
-        fillWidthConstraint = fillView.widthAnchor.constraint(equalTo: trackContainer.widthAnchor, multiplier: 0.01)
+        fillWidthConstraint = fillView.widthAnchor.constraint(equalToConstant: 0)
 
         let inset: CGFloat = 8
         NSLayoutConstraint.activate([
@@ -79,26 +85,23 @@ final class BrushiFigmaDownloadProgressView: UIView {
         layer.cornerRadius = r
         trackContainer.layer.cornerRadius = max(0, r - 8)
         fillView.layer.cornerRadius = max(0, r - 8)
-        CATransaction.begin()
-        CATransaction.setDisableActions(true)
-        fillGradient.frame = fillView.bounds
-        CATransaction.commit()
+
+        if trackContainer.bounds.width > 1 {
+            let animate = pendingAnimateAfterLayout
+            pendingAnimateAfterLayout = false
+            applyFillWidth(animated: animate)
+        }
+        syncFillGradientFrame()
     }
 
     func setProgress(_ value: CGFloat, animated: Bool) {
         stopIndeterminateAnimation()
-        let clamped = min(1, max(0, value))
-        fillWidthConstraint?.isActive = false
-        fillWidthConstraint = fillView.widthAnchor.constraint(
-            equalTo: trackContainer.widthAnchor,
-            multiplier: max(0.01, clamped)
-        )
-        fillWidthConstraint?.isActive = true
-        if animated {
-            UIView.animate(withDuration: 0.28, delay: 0, options: [.curveEaseOut, .allowUserInteraction]) {
-                self.layoutIfNeeded()
-            }
+        displayedProgress = min(1, max(0, value))
+        if trackContainer.bounds.width > 1 {
+            applyFillWidth(animated: animated)
         } else {
+            pendingAnimateAfterLayout = animated
+            setNeedsLayout()
             layoutIfNeeded()
         }
     }
@@ -110,6 +113,40 @@ final class BrushiFigmaDownloadProgressView: UIView {
         } else {
             stopIndeterminateAnimation()
         }
+    }
+
+    private func applyFillWidth(animated: Bool) {
+        let trackW = trackContainer.bounds.width
+        guard trackW > 1 else { return }
+
+        let clamped = displayedProgress
+        let minFill: CGFloat = clamped > 0 ? 8 : 0
+        let targetW = max(minFill, trackW * clamped)
+        fillWidthConstraint?.constant = targetW
+
+        let layoutFill = { [weak self] in
+            guard let self else { return }
+            self.trackContainer.layoutIfNeeded()
+            self.syncFillGradientFrame()
+        }
+
+        if animated {
+            UIView.animate(
+                withDuration: 0.4,
+                delay: 0,
+                options: [.curveEaseInOut, .beginFromCurrentState, .allowUserInteraction],
+                animations: layoutFill
+            )
+        } else {
+            layoutFill()
+        }
+    }
+
+    private func syncFillGradientFrame() {
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        fillGradient.frame = fillView.bounds
+        CATransaction.commit()
     }
 
     private func startIndeterminateAnimation() {
@@ -142,6 +179,7 @@ private final class BrushiProgressWaveOverlayView: UIView {
         super.init(frame: frame)
         waveLayer.fillColor = UIColor(red: 0.22, green: 0.72, blue: 0.95, alpha: 0.35).cgColor
         isOpaque = false
+        isUserInteractionEnabled = false
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }

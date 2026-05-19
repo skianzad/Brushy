@@ -151,15 +151,31 @@ final class LeapVLMModel {
     public private(set) var modelLoadStatusText = ""
     public private(set) var modelLoadDidFail = false
 
+    private enum ModelLoadPhase {
+        case idle
+        case downloading
+        case loadingIntoMemory
+    }
+
+    private var modelLoadPhase: ModelLoadPhase = .idle
+    /// Display-only; never moves backward during a single download attempt.
+    private var peakDownloadProgressFraction: Double = 0
+    /// After this fraction the file is on disk; remaining work is load-into-memory (Leap often never sends exactly 1.0).
+    private static let downloadFinishedProgressThreshold = 0.99
+
     /// Shown next to an on-screen status dot (download / loaded / failure).
     public var modelBadgeState: ModelBadgeState {
         if modelRunner != nil { return .ready }
         if modelLoadDidFail { return .failed(message: modelLoadStatusText.isEmpty ? "Load error" : modelLoadStatusText) }
         if isModelLoadPanelVisible {
-            if modelLoadStatusText.localizedCaseInsensitiveContains("download") {
+            switch modelLoadPhase {
+            case .downloading:
                 return .downloading(progress: modelDownloadProgressFraction)
+            case .loadingIntoMemory:
+                return .loadingIntoMemory
+            case .idle:
+                break
             }
-            return .loadingIntoMemory
         }
         return .idleNotLoaded
     }
@@ -216,6 +232,10 @@ final class LeapVLMModel {
         modelDownloadProgressFraction = min(1, max(0, progress))
         modelLoadStatusText = status
         modelLoadDidFail = failed
+        if failed {
+            modelLoadPhase = .idle
+            peakDownloadProgressFraction = 0
+        }
         modelInfo = status
         notifyLoadPanelStateChanged()
     }
@@ -225,7 +245,44 @@ final class LeapVLMModel {
         modelDownloadProgressFraction = 1
         modelLoadDidFail = false
         modelLoadStatusText = ""
+        modelLoadPhase = .idle
+        peakDownloadProgressFraction = 0
         modelInfo = "Loaded"
+        notifyLoadPanelStateChanged()
+    }
+
+    private func publishDownloadProgress(_ rawProgress: Double) {
+        guard modelLoadPhase != .loadingIntoMemory else { return }
+        modelLoadPhase = .downloading
+        let clamped = min(1, max(0, rawProgress))
+        peakDownloadProgressFraction = max(peakDownloadProgressFraction, clamped)
+        modelDownloadProgressFraction = peakDownloadProgressFraction
+        let pct = Int((peakDownloadProgressFraction * 100).rounded(.down))
+        modelLoadStatusText = "Downloading model… \(pct)%"
+        modelLoadDidFail = false
+        isModelLoadPanelVisible = true
+        modelInfo = modelLoadStatusText
+        notifyLoadPanelStateChanged()
+    }
+
+    private func publishLoadingIntoMemory() {
+        modelLoadPhase = .loadingIntoMemory
+        modelDownloadProgressFraction = 1
+        modelLoadStatusText = "Loading model into memory…"
+        modelLoadDidFail = false
+        isModelLoadPanelVisible = true
+        modelInfo = modelLoadStatusText
+        notifyLoadPanelStateChanged()
+    }
+
+    private func resetLoadAttemptState() {
+        modelLoadPhase = .downloading
+        peakDownloadProgressFraction = 0
+        modelDownloadProgressFraction = 0
+        modelLoadDidFail = false
+        isModelLoadPanelVisible = true
+        modelLoadStatusText = "Downloading model… 0%"
+        modelInfo = modelLoadStatusText
         notifyLoadPanelStateChanged()
     }
 
@@ -244,11 +301,9 @@ final class LeapVLMModel {
             return
         }
 
-        publishLoadPanel(
-            visible: true,
-            progress: 0,
-            status: "Loading…",
-            failed: false)
+        resetLoadAttemptState()
+        UIApplication.shared.isIdleTimerDisabled = true
+        defer { UIApplication.shared.isIdleTimerDisabled = false }
 
         let task = Task<Void, Never> { @MainActor [weak self] in
             guard let self else { return }
@@ -259,28 +314,15 @@ final class LeapVLMModel {
                     progress: { [weak self] progress, _ in
                         Task { @MainActor in
                             guard let self else { return }
-                            if progress < 1.0 {
-                                let pct = Int((progress * 100).rounded(.down))
-                                let status: String
-                                let reportedProgress: Double
-                                if pct > 0 {
-                                    status = "Download the model… \(pct)%"
-                                    reportedProgress = Double(progress)
-                                } else {
-                                    status = "Loading…"
-                                    reportedProgress = 0
-                                }
-                                self.publishLoadPanel(
-                                    visible: true,
-                                    progress: reportedProgress,
-                                    status: status,
-                                    failed: false)
+                            let fraction = Double(progress)
+                            if self.modelLoadPhase == .loadingIntoMemory {
+                                return
+                            }
+                            if fraction >= 1.0 || fraction >= Self.downloadFinishedProgressThreshold {
+                                self.publishDownloadProgress(1.0)
+                                self.publishLoadingIntoMemory()
                             } else {
-                                self.publishLoadPanel(
-                                    visible: true,
-                                    progress: 1,
-                                    status: "Loading…",
-                                    failed: false)
+                                self.publishDownloadProgress(fraction)
                             }
                         }
                     }
@@ -288,6 +330,8 @@ final class LeapVLMModel {
                 self.modelRunner = runner
                 self.hideLoadPanelLoaded()
             } catch {
+                self.modelLoadPhase = .idle
+                self.peakDownloadProgressFraction = 0
                 self.publishLoadPanel(
                     visible: true,
                     progress: 0,

@@ -80,6 +80,7 @@ final class HomeViewController: UIViewController {
     private let categoryGridPanelWrapper = UIView()
     private let categoryGridPanelStroke = UIView()
     private let categoryGridPanel = UIView()
+    private let categoryGridPanelWood = UIImageView()
     private let mascotView = UIImageView()
     private let homeTitleBadge = HomeBrushiTitleBadgeView()
     private let bodyStack = UIStackView()
@@ -123,11 +124,9 @@ final class HomeViewController: UIViewController {
         static let cardCornerRadius: CGFloat = 10
         static let cardBorderWidth: CGFloat = 4
         static let footerHeight: CGFloat = 36
-        static let footerOutset: CGFloat = 4
         static let labelFontSize: CGFloat = 15
         static let previewHorizontalInset: CGFloat = 8
         static let previewTopInset: CGFloat = 6
-        static let previewBottomToFooter: CGFloat = 4
         static let lockSize: CGFloat = 26
         static let cardAspectHeightPerWidth: CGFloat = 254.0 / 329.0
         static let panelContentInset: CGFloat = 12
@@ -167,12 +166,19 @@ final class HomeViewController: UIViewController {
         }
 
         categoryGridPanel.translatesAutoresizingMaskIntoConstraints = false
-        categoryGridPanel.backgroundColor = UIColor(red: 0.4, green: 0.87, blue: 1, alpha: 1)
+        categoryGridPanel.backgroundColor = FigmaTheme.categoryPanelWoodFallback
         categoryGridPanel.layer.cornerRadius = HomeCategoryTileMetrics.panelFillCornerRadius
         categoryGridPanel.clipsToBounds = true
         if #available(iOS 13.0, *) {
             categoryGridPanel.layer.cornerCurve = .continuous
         }
+
+        categoryGridPanelWood.translatesAutoresizingMaskIntoConstraints = false
+        categoryGridPanelWood.image = UIImage(named: "CategoryGridPanelWood")
+        categoryGridPanelWood.contentMode = .scaleAspectFill
+        categoryGridPanelWood.clipsToBounds = true
+        categoryGridPanelWood.isUserInteractionEnabled = false
+
         FigmaTheme.applyCardShadow(to: categoryGridPanelWrapper.layer)
 
         mascotView.image = UIImage(named: "BrushMascot")
@@ -198,6 +204,7 @@ final class HomeViewController: UIViewController {
 
         categoryGridPanelWrapper.addSubview(categoryGridPanelStroke)
         categoryGridPanelWrapper.addSubview(categoryGridPanel)
+        categoryGridPanel.addSubview(categoryGridPanelWood)
         categoryGridPanel.addSubview(categoryGridScrollView)
 
         bodyStack.axis = .horizontal
@@ -304,6 +311,11 @@ final class HomeViewController: UIViewController {
             categoryGridPanelStroke.centerYAnchor.constraint(equalTo: categoryGridPanel.centerYAnchor),
             categoryGridPanelStroke.widthAnchor.constraint(equalTo: categoryGridPanel.widthAnchor, constant: HomeCategoryTileMetrics.panelStrokeSizeDelta),
             categoryGridPanelStroke.heightAnchor.constraint(equalTo: categoryGridPanel.heightAnchor, constant: HomeCategoryTileMetrics.panelStrokeSizeDelta),
+
+            categoryGridPanelWood.topAnchor.constraint(equalTo: categoryGridPanel.topAnchor),
+            categoryGridPanelWood.leadingAnchor.constraint(equalTo: categoryGridPanel.leadingAnchor),
+            categoryGridPanelWood.trailingAnchor.constraint(equalTo: categoryGridPanel.trailingAnchor),
+            categoryGridPanelWood.bottomAnchor.constraint(equalTo: categoryGridPanel.bottomAnchor),
 
             categoryGridScrollView.topAnchor.constraint(equalTo: categoryGridPanel.topAnchor, constant: HomeCategoryTileMetrics.panelContentInset),
             categoryGridScrollView.leadingAnchor.constraint(equalTo: categoryGridPanel.leadingAnchor, constant: HomeCategoryTileMetrics.panelContentInset),
@@ -663,12 +675,19 @@ final class HomeViewController: UIViewController {
         let card = UIView()
         card.translatesAutoresizingMaskIntoConstraints = false
         card.backgroundColor = .white
+        card.clipsToBounds = true
         card.layer.cornerRadius = HomeCategoryTileMetrics.cardCornerRadius
         card.layer.borderWidth = HomeCategoryTileMetrics.cardBorderWidth
         card.layer.borderColor = category.accent.cgColor
         FigmaTheme.applyCardShadow(to: card.layer)
 
         let unlockedAll = SubscriptionManager.shared.hasFullLibraryAccess
+
+        let previewFrame = UIView()
+        previewFrame.translatesAutoresizingMaskIntoConstraints = false
+        previewFrame.backgroundColor = .white
+        previewFrame.clipsToBounds = true
+
         let preview = UIImageView(image: BuiltInColoringPages.previewImage(packId: category.packId))
         preview.contentMode = .scaleAspectFit
         preview.translatesAutoresizingMaskIntoConstraints = false
@@ -676,6 +695,7 @@ final class HomeViewController: UIViewController {
         let footer = UIView()
         footer.translatesAutoresizingMaskIntoConstraints = false
         footer.backgroundColor = category.accent
+        footer.clipsToBounds = true
 
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -698,7 +718,8 @@ final class HomeViewController: UIViewController {
         lock.translatesAutoresizingMaskIntoConstraints = false
 
         container.addSubview(card)
-        card.addSubview(preview)
+        card.addSubview(previewFrame)
+        previewFrame.addSubview(preview)
         card.addSubview(footer)
         footer.addSubview(label)
         card.addSubview(lockHost)
@@ -714,20 +735,25 @@ final class HomeViewController: UIViewController {
             card.bottomAnchor.constraint(equalTo: container.bottomAnchor),
             card.heightAnchor.constraint(equalTo: card.widthAnchor, multiplier: HomeCategoryTileMetrics.cardAspectHeightPerWidth),
 
-            footer.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: -HomeCategoryTileMetrics.footerOutset),
-            footer.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: HomeCategoryTileMetrics.footerOutset),
-            footer.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: HomeCategoryTileMetrics.footerOutset),
+            previewFrame.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: HomeCategoryTileMetrics.previewHorizontalInset),
+            previewFrame.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -HomeCategoryTileMetrics.previewHorizontalInset),
+            previewFrame.topAnchor.constraint(equalTo: card.topAnchor, constant: HomeCategoryTileMetrics.previewTopInset),
+            previewFrame.bottomAnchor.constraint(equalTo: footer.topAnchor),
+
+            preview.leadingAnchor.constraint(equalTo: previewFrame.leadingAnchor),
+            preview.trailingAnchor.constraint(equalTo: previewFrame.trailingAnchor),
+            preview.topAnchor.constraint(equalTo: previewFrame.topAnchor),
+            preview.bottomAnchor.constraint(equalTo: previewFrame.bottomAnchor),
+
+            footer.leadingAnchor.constraint(equalTo: card.leadingAnchor),
+            footer.trailingAnchor.constraint(equalTo: card.trailingAnchor),
+            footer.bottomAnchor.constraint(equalTo: card.bottomAnchor),
             footer.heightAnchor.constraint(equalToConstant: HomeCategoryTileMetrics.footerHeight),
 
             label.leadingAnchor.constraint(equalTo: footer.leadingAnchor, constant: 6),
             label.trailingAnchor.constraint(equalTo: footer.trailingAnchor, constant: -6),
             label.topAnchor.constraint(equalTo: footer.topAnchor, constant: 2),
             label.bottomAnchor.constraint(equalTo: footer.bottomAnchor, constant: -2),
-
-            preview.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: HomeCategoryTileMetrics.previewHorizontalInset),
-            preview.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -HomeCategoryTileMetrics.previewHorizontalInset),
-            preview.topAnchor.constraint(equalTo: card.topAnchor, constant: HomeCategoryTileMetrics.previewTopInset),
-            preview.bottomAnchor.constraint(equalTo: footer.topAnchor, constant: -HomeCategoryTileMetrics.previewBottomToFooter),
 
             lockHost.leadingAnchor.constraint(equalTo: card.leadingAnchor),
             lockHost.trailingAnchor.constraint(equalTo: card.trailingAnchor),

@@ -46,6 +46,9 @@ enum FigmaTheme {
     static let canvasBorder = UIColor(red: 0, green: 98 / 255, blue: 1, alpha: 1)
     static let canvasFill = UIColor.white
 
+    /// Home category grid panel (Figma wood fill behind tiles).
+    static let categoryPanelWoodFallback = UIColor(red: 0.35, green: 0.72, blue: 0.95, alpha: 1)
+
     /// Browse grid (category chips + soft page background), inspired by coastal coloring sites.
     static let coastBackground = UIColor(red: 186 / 255, green: 228 / 255, blue: 248 / 255, alpha: 1)
     static let coastTitle = UIColor(red: 12 / 255, green: 58 / 255, blue: 118 / 255, alpha: 1)
