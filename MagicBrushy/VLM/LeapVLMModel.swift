@@ -162,6 +162,40 @@ final class LeapVLMModel {
     private var peakDownloadProgressFraction: Double = 0
     /// After this fraction the file is on disk; remaining work is load-into-memory (Leap often never sends exactly 1.0).
     private static let downloadFinishedProgressThreshold = 0.99
+    private static let modelBundleOnDiskKey = "magicBrushy.vlmModelBundleOnDisk"
+
+    private static var hasModelBundleOnDisk: Bool {
+        UserDefaults.standard.bool(forKey: modelBundleOnDiskKey)
+    }
+
+    private static func markModelBundleOnDisk() {
+        UserDefaults.standard.set(true, forKey: modelBundleOnDiskKey)
+    }
+
+    /// True when the GGUF bundle is already present (persisted flag or on-disk scan for upgrades).
+    private static func modelBundleIsAvailableLocally() -> Bool {
+        if hasModelBundleOnDisk { return true }
+        let fm = FileManager.default
+        let roots = [
+            fm.urls(for: .applicationSupportDirectory, in: .userDomainMask).first,
+            fm.urls(for: .cachesDirectory, in: .userDomainMask).first,
+        ].compactMap { $0 }
+        for root in roots {
+            guard let enumerator = fm.enumerator(
+                at: root,
+                includingPropertiesForKeys: nil,
+                options: [.skipsHiddenFiles]
+            ) else { continue }
+            for case let url as URL in enumerator {
+                guard url.pathExtension.lowercased() == "gguf" else { continue }
+                if url.lastPathComponent.localizedCaseInsensitiveContains(modelName) {
+                    markModelBundleOnDisk()
+                    return true
+                }
+            }
+        }
+        return false
+    }
 
     /// Shown next to an on-screen status dot (download / loaded / failure).
     public var modelBadgeState: ModelBadgeState {
@@ -241,6 +275,7 @@ final class LeapVLMModel {
     }
 
     private func hideLoadPanelLoaded() {
+        Self.markModelBundleOnDisk()
         isModelLoadPanelVisible = false
         modelDownloadProgressFraction = 1
         modelLoadDidFail = false
@@ -266,6 +301,7 @@ final class LeapVLMModel {
     }
 
     private func publishLoadingIntoMemory() {
+        Self.markModelBundleOnDisk()
         modelLoadPhase = .loadingIntoMemory
         modelDownloadProgressFraction = 1
         modelLoadStatusText = "Loading model into memory…"
@@ -276,14 +312,18 @@ final class LeapVLMModel {
     }
 
     private func resetLoadAttemptState() {
-        modelLoadPhase = .downloading
-        peakDownloadProgressFraction = 0
-        modelDownloadProgressFraction = 0
         modelLoadDidFail = false
         isModelLoadPanelVisible = true
-        modelLoadStatusText = "Downloading model… 0%"
-        modelInfo = modelLoadStatusText
-        notifyLoadPanelStateChanged()
+        peakDownloadProgressFraction = 0
+        modelDownloadProgressFraction = 0
+        if Self.modelBundleIsAvailableLocally() {
+            publishLoadingIntoMemory()
+        } else {
+            modelLoadPhase = .downloading
+            modelLoadStatusText = "Downloading model… 0%"
+            modelInfo = modelLoadStatusText
+            notifyLoadPanelStateChanged()
+        }
     }
 
     private func _load() async throws {
@@ -320,6 +360,9 @@ final class LeapVLMModel {
                             }
                             if fraction >= 1.0 || fraction >= Self.downloadFinishedProgressThreshold {
                                 self.publishDownloadProgress(1.0)
+                                self.publishLoadingIntoMemory()
+                            } else if Self.modelBundleIsAvailableLocally() {
+                                // Cached bundle: low progress values are load-into-memory, not download.
                                 self.publishLoadingIntoMemory()
                             } else {
                                 self.publishDownloadProgress(fraction)

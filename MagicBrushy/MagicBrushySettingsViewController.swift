@@ -9,12 +9,15 @@ final class MagicBrushySettingsViewController: UIViewController {
     private let musicIcon = UIImageView()
     private let musicSlider = UISlider()
     private let coachVoiceButton = UIButton(type: .system)
+    private let coachFeedbackRow = UIStackView()
+    private let coachFeedbackCheckmark = UIImageView()
+    private let coachFeedbackToggleButton = UIButton(type: .system)
     private let languageButton = UIButton(type: .system)
 
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = UIColor.black.withAlphaComponent(0.35)
-        preferredContentSize = CGSize(width: 320, height: 368)
+        preferredContentSize = CGSize(width: 320, height: 428)
 
         cardView.translatesAutoresizingMaskIntoConstraints = false
         cardView.backgroundColor = UIColor(white: 0.12, alpha: 0.94)
@@ -85,6 +88,65 @@ final class MagicBrushySettingsViewController: UIViewController {
         voiceRow.spacing = 10
         voiceRow.translatesAutoresizingMaskIntoConstraints = false
 
+        // MARK: Coach feedback toggle
+
+        let feedbackCaption = makeCaption("Coach feedback")
+        let feedbackIconView = UIImageView(image: UIImage(systemName: "bubble.left.and.bubble.right.fill"))
+        feedbackIconView.translatesAutoresizingMaskIntoConstraints = false
+        feedbackIconView.tintColor = FigmaTheme.primaryOrange
+        feedbackIconView.contentMode = .scaleAspectFit
+        feedbackIconView.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 20, weight: .semibold)
+        feedbackIconView.setContentHuggingPriority(.required, for: .horizontal)
+
+        let feedbackLabel = UILabel()
+        feedbackLabel.translatesAutoresizingMaskIntoConstraints = false
+        feedbackLabel.text = "Automatic tips while coloring"
+        feedbackLabel.textColor = FigmaTheme.creamText
+        feedbackLabel.font = FigmaTheme.bodyFont(size: 16, weight: .semibold)
+        feedbackLabel.numberOfLines = 2
+
+        coachFeedbackCheckmark.translatesAutoresizingMaskIntoConstraints = false
+        coachFeedbackCheckmark.tintColor = FigmaTheme.primaryOrange
+        coachFeedbackCheckmark.contentMode = .scaleAspectFit
+        coachFeedbackCheckmark.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 22, weight: .bold)
+        coachFeedbackCheckmark.setContentHuggingPriority(.required, for: .horizontal)
+        coachFeedbackCheckmark.setContentCompressionResistancePriority(.required, for: .horizontal)
+        coachFeedbackCheckmark.isAccessibilityElement = false
+
+        coachFeedbackToggleButton.translatesAutoresizingMaskIntoConstraints = false
+        coachFeedbackToggleButton.backgroundColor = UIColor.white.withAlphaComponent(0.12)
+        coachFeedbackToggleButton.layer.cornerRadius = 10
+        if #available(iOS 13.0, *) { coachFeedbackToggleButton.layer.cornerCurve = .continuous }
+        coachFeedbackToggleButton.addTarget(self, action: #selector(coachFeedbackToggleTapped), for: .touchUpInside)
+        coachFeedbackToggleButton.accessibilityLabel = "Coach feedback"
+        coachFeedbackToggleButton.accessibilityHint = "Turns automatic spoken tips on or off while you color."
+
+        let feedbackTextStack = UIStackView(arrangedSubviews: [feedbackLabel])
+        feedbackTextStack.axis = .vertical
+        feedbackTextStack.alignment = .leading
+
+        coachFeedbackRow.axis = .horizontal
+        coachFeedbackRow.alignment = .center
+        coachFeedbackRow.spacing = 10
+        coachFeedbackRow.translatesAutoresizingMaskIntoConstraints = false
+        coachFeedbackRow.isLayoutMarginsRelativeArrangement = true
+        coachFeedbackRow.layoutMargins = UIEdgeInsets(top: 0, left: 10, bottom: 0, right: 12)
+        coachFeedbackRow.addArrangedSubview(feedbackIconView)
+        coachFeedbackRow.addArrangedSubview(feedbackTextStack)
+        coachFeedbackRow.addArrangedSubview(coachFeedbackCheckmark)
+        coachFeedbackRow.isUserInteractionEnabled = false
+        feedbackIconView.isUserInteractionEnabled = false
+        feedbackLabel.isUserInteractionEnabled = false
+        feedbackTextStack.isUserInteractionEnabled = false
+        coachFeedbackCheckmark.isUserInteractionEnabled = false
+        coachFeedbackToggleButton.addSubview(coachFeedbackRow)
+        NSLayoutConstraint.activate([
+            coachFeedbackRow.topAnchor.constraint(equalTo: coachFeedbackToggleButton.topAnchor),
+            coachFeedbackRow.leadingAnchor.constraint(equalTo: coachFeedbackToggleButton.leadingAnchor),
+            coachFeedbackRow.trailingAnchor.constraint(equalTo: coachFeedbackToggleButton.trailingAnchor),
+            coachFeedbackRow.bottomAnchor.constraint(equalTo: coachFeedbackToggleButton.bottomAnchor),
+        ])
+
         // MARK: Language row
 
         let langCaption = makeCaption("Response language")
@@ -126,6 +188,8 @@ final class MagicBrushySettingsViewController: UIViewController {
         cardView.addSubview(musicRow)
         cardView.addSubview(voiceCaption)
         cardView.addSubview(voiceRow)
+        cardView.addSubview(feedbackCaption)
+        cardView.addSubview(coachFeedbackToggleButton)
         cardView.addSubview(divider)
         cardView.addSubview(langCaption)
         cardView.addSubview(langRow)
@@ -166,7 +230,21 @@ final class MagicBrushySettingsViewController: UIViewController {
             voiceIconView.heightAnchor.constraint(equalToConstant: 28),
             coachVoiceButton.heightAnchor.constraint(equalToConstant: 38),
 
-            divider.topAnchor.constraint(equalTo: voiceRow.bottomAnchor, constant: 18),
+            feedbackCaption.topAnchor.constraint(equalTo: voiceRow.bottomAnchor, constant: 16),
+            feedbackCaption.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 20),
+            feedbackCaption.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -20),
+
+            coachFeedbackToggleButton.topAnchor.constraint(equalTo: feedbackCaption.bottomAnchor, constant: 10),
+            coachFeedbackToggleButton.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 20),
+            coachFeedbackToggleButton.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -20),
+            coachFeedbackToggleButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 44),
+
+            feedbackIconView.widthAnchor.constraint(equalToConstant: 28),
+            feedbackIconView.heightAnchor.constraint(equalToConstant: 28),
+            coachFeedbackCheckmark.widthAnchor.constraint(equalToConstant: 26),
+            coachFeedbackCheckmark.heightAnchor.constraint(equalToConstant: 26),
+
+            divider.topAnchor.constraint(equalTo: coachFeedbackToggleButton.bottomAnchor, constant: 18),
             divider.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 20),
             divider.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -20),
             divider.heightAnchor.constraint(equalToConstant: 1),
@@ -186,6 +264,7 @@ final class MagicBrushySettingsViewController: UIViewController {
         ])
 
         syncMusicControlsFromStorage()
+        syncCoachFeedbackControls()
 
         let dismissTap = UITapGestureRecognizer(target: self, action: #selector(dismissFromBackgroundTap(_:)))
         dismissTap.delegate = self
@@ -201,6 +280,8 @@ final class MagicBrushySettingsViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         syncMusicControlsFromStorage()
+        syncCoachFeedbackControls()
+        syncCoachVoiceForCurrentLanguage()
     }
 
     // MARK: - Music
@@ -220,13 +301,42 @@ final class MagicBrushySettingsViewController: UIViewController {
         applyMusicVolumeIcon()
     }
 
+    // MARK: - Coach feedback
+
+    private func syncCoachFeedbackControls() {
+        let on = MagicBrushyCoachAutoFeedback.isEnabled
+        coachFeedbackCheckmark.image = UIImage(systemName: on ? "checkmark.circle.fill" : "circle")
+        coachFeedbackToggleButton.accessibilityValue = on ? "On" : "Off"
+    }
+
+    @objc private func coachFeedbackToggleTapped() {
+        let next = !MagicBrushyCoachAutoFeedback.isEnabled
+        MagicBrushyCoachAutoFeedback.isEnabled = next
+        syncCoachFeedbackControls()
+    }
+
     // MARK: - Coach voice
 
-    private func setupCoachVoiceMenu() {
+    private func syncCoachVoiceForCurrentLanguage() {
+        let lang = MagicBrushyLanguage.stored()
+        MagicBrushyCoachVoice.applyLanguageChange(lang)
         updateCoachVoiceButtonTitle(MagicBrushyCoachVoice.stored())
+        setupCoachVoiceMenu()
+        let englishOnly = lang != .english
+        coachVoiceButton.isEnabled = !englishOnly
+        coachVoiceButton.alpha = englishOnly ? 0.72 : 1
+        coachVoiceButton.accessibilityHint = englishOnly
+            ? "Offline English voices are only available when response language is English."
+            : "Offline English voices or the device voice. Plays a short preview when you pick one."
+    }
+
+    private func setupCoachVoiceMenu() {
+        let lang = MagicBrushyLanguage.stored()
+        updateCoachVoiceButtonTitle(MagicBrushyCoachVoice.stored())
+        let voices = MagicBrushyCoachVoice.selectableCases(for: lang)
 
         if #available(iOS 14.0, *) {
-            let actions = MagicBrushyCoachVoice.selectableCases.map { voice in
+            let actions = voices.map { voice in
                 UIAction(title: voice.displayName, state: MagicBrushyCoachVoice.stored() == voice ? .on : .off) { [weak self] _ in
                     MagicBrushyCoachVoice.store(voice)
                     self?.updateCoachVoiceButtonTitle(voice)
@@ -237,7 +347,7 @@ final class MagicBrushySettingsViewController: UIViewController {
                 }
             }
             coachVoiceButton.menu = UIMenu(title: "", children: actions)
-            coachVoiceButton.showsMenuAsPrimaryAction = true
+            coachVoiceButton.showsMenuAsPrimaryAction = lang == .english
         } else {
             coachVoiceButton.addTarget(self, action: #selector(coachVoiceButtonTapped), for: .touchUpInside)
         }
@@ -248,8 +358,10 @@ final class MagicBrushySettingsViewController: UIViewController {
     }
 
     @objc private func coachVoiceButtonTapped() {
+        let lang = MagicBrushyLanguage.stored()
+        guard lang == .english else { return }
         let sheet = UIAlertController(title: "Coach voice", message: nil, preferredStyle: .actionSheet)
-        for voice in MagicBrushyCoachVoice.selectableCases {
+        for voice in MagicBrushyCoachVoice.selectableCases(for: lang) {
             let current = MagicBrushyCoachVoice.stored() == voice
             let action = UIAlertAction(title: (current ? "✓ " : "    ") + voice.displayName, style: .default) { [weak self] _ in
                 MagicBrushyCoachVoice.store(voice)
@@ -276,6 +388,7 @@ final class MagicBrushySettingsViewController: UIViewController {
                     MagicBrushyLanguage.store(lang)
                     self?.updateLanguageButtonTitle(lang)
                     self?.setupLanguageMenu()
+                    self?.syncCoachVoiceForCurrentLanguage()
                 }
             }
             languageButton.menu = UIMenu(title: "", children: actions)
@@ -296,6 +409,7 @@ final class MagicBrushySettingsViewController: UIViewController {
             let action = UIAlertAction(title: (current ? "✓ " : "    ") + lang.displayName, style: .default) { [weak self] _ in
                 MagicBrushyLanguage.store(lang)
                 self?.updateLanguageButtonTitle(lang)
+                self?.syncCoachVoiceForCurrentLanguage()
             }
             sheet.addAction(action)
         }
@@ -343,13 +457,7 @@ final class MagicBrushySettingsGearButton: UIButton {
         configuration = cfg
         translatesAutoresizingMaskIntoConstraints = false
         accessibilityLabel = "Settings"
-        accessibilityHint = "Background music volume and preferences."
-        backgroundColor = FigmaTheme.actionBlue
-        layer.borderColor = FigmaTheme.actionBlueBorder.cgColor
-        layer.shadowColor = UIColor.black.cgColor
-        layer.shadowOpacity = 0.18
-        layer.shadowRadius = 4
-        layer.shadowOffset = CGSize(width: 0, height: 2)
+        accessibilityHint = "Background music, coach feedback, voice, and language."
         widthConstraint = widthAnchor.constraint(equalToConstant: 52)
         heightConstraint = heightAnchor.constraint(equalToConstant: 52)
         NSLayoutConstraint.activate([widthConstraint, heightConstraint])
@@ -364,8 +472,13 @@ final class MagicBrushySettingsGearButton: UIButton {
         let side = MagicBrushyChromeMetrics.chromeButtonSide(traitCollection)
         widthConstraint.constant = side
         heightConstraint.constant = side
-        layer.cornerRadius = MagicBrushyChromeMetrics.chromeCornerRadius(traitCollection)
-        layer.borderWidth = MagicBrushyChromeMetrics.chromeBorderWidth(traitCollection)
+        MagicBrushyChromeMetrics.applySquareChrome(
+            to: self,
+            fill: FigmaTheme.actionBlue,
+            border: FigmaTheme.actionBlueBorder,
+            traitCollection: traitCollection,
+            contentInsets: MagicBrushyChromeMetrics.navChromeContentInsets
+        )
         var cfg = configuration ?? UIButton.Configuration.plain()
         cfg.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(
             pointSize: MagicBrushyChromeMetrics.chromeSymbolPointSize(traitCollection),

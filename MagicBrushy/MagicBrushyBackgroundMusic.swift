@@ -5,8 +5,6 @@ enum MagicBrushyBackgroundMusic {
 
     private static var player: AVAudioPlayer?
     private static var didAttemptStart = false
-    /// When true, `resumeIfNeeded()` is a no-op so scene-active / other callers do not restart music during coach mute.
-    private static var coachMuteSilencesMusic = false
     /// While mascot/coach TTS is playing, volume tracks the ducked reference × user scale.
     private static var isSpeechDucked = false
 
@@ -78,7 +76,6 @@ enum MagicBrushyBackgroundMusic {
                 queue: .main
             ) { _ in
                 Task { @MainActor in
-                    guard !coachMuteSilencesMusic else { return }
                     guard let pl = player, !pl.isPlaying else { return }
                     pl.play()
                 }
@@ -102,7 +99,6 @@ enum MagicBrushyBackgroundMusic {
                     } ?? true
                     if shouldResume {
                         Task { @MainActor in
-                            guard !coachMuteSilencesMusic else { return }
                             player?.play()
                         }
                     }
@@ -122,27 +118,12 @@ enum MagicBrushyBackgroundMusic {
 
     @MainActor
     static func resumeIfNeeded() {
-        guard !coachMuteSilencesMusic else { return }
         guard player != nil else {
             startIfNeeded()
             return
         }
         player?.play()
         applyCurrentVolumeToPlayer()
-    }
-
-    /// Pauses loop while the user has muted coach feedback (speaker); cleared by `resumeAfterCoachMuteSilence`.
-    @MainActor
-    static func pauseForCoachMuteSilence() {
-        coachMuteSilencesMusic = true
-        pause()
-    }
-
-    /// Call when coach mute ends (user or timer) so music can play again.
-    @MainActor
-    static func resumeAfterCoachMuteSilence() {
-        coachMuteSilencesMusic = false
-        resumeIfNeeded()
     }
 
     /// Lowers music while the mascot / coach voice plays.

@@ -116,8 +116,12 @@ final class HomeViewController: UIViewController {
         /// Wider column so the mascot reads larger next to the grid.
         static let mascotColumnWidthFraction: CGFloat = 0.37
         /// Scroll viewport height = this many tile rows (3 columns fixed).
-        static let categoryGridVisibleRowsRegular: CGFloat = 3.5
-        static let categoryGridVisibleRowsCompact: CGFloat = 2.25
+        /// Slightly more than 3 full rows so the top of the 4th row peeks (scroll affordance).
+        static let categoryGridVisibleRowsRegular: CGFloat = 3.35
+        static let categoryGridVisibleRowsCompact: CGFloat = 2.35
+        /// Gap between settings/unlock row and the category panel.
+        static let headerToBodyGapRegular: CGFloat = 20
+        static let headerToBodyGapCompact: CGFloat = 12
         static let rowSpacing: CGFloat = 8
         static let columnSpacing: CGFloat = 8
         static let bodyStackSpacing: CGFloat = 12
@@ -208,12 +212,14 @@ final class HomeViewController: UIViewController {
         categoryGridPanel.addSubview(categoryGridScrollView)
 
         bodyStack.axis = .horizontal
-        bodyStack.alignment = .fill
+        bodyStack.alignment = .top
         bodyStack.spacing = HomeCategoryTileMetrics.bodyStackSpacing
         bodyStack.distribution = .fill
         bodyStack.translatesAutoresizingMaskIntoConstraints = false
         bodyStack.addArrangedSubview(mascotColumn)
         bodyStack.addArrangedSubview(categoryGridPanelWrapper)
+        categoryGridPanelWrapper.setContentHuggingPriority(.required, for: .vertical)
+        categoryGridPanelWrapper.setContentCompressionResistancePriority(.required, for: .vertical)
 
         mascotColumn.addSubview(homeTitleBadge)
         mascotColumn.addSubview(mascotView)
@@ -256,13 +262,11 @@ final class HomeViewController: UIViewController {
         view.addSubview(diamondBackButton)
         view.addSubview(topChromeRow)
 
-        // viewport height is now driven by the panel size (scroll view fills the panel)
         categoryGridViewportHeightConstraint = categoryGridScrollView.heightAnchor.constraint(equalToConstant: 240)
-        categoryGridViewportHeightConstraint.priority = .defaultLow
 
         let g = view.safeAreaLayoutGuide
 
-        bodyTopToHeaderConstraint = homeMainStack.topAnchor.constraint(equalTo: topChromeRow.bottomAnchor, constant: 8)
+        bodyTopToHeaderConstraint = homeMainStack.topAnchor.constraint(equalTo: topChromeRow.bottomAnchor, constant: HomeCategoryTileMetrics.headerToBodyGapRegular)
         bodyBottomConstraint = homeMainStack.bottomAnchor.constraint(equalTo: g.bottomAnchor, constant: -22)
 
         NSLayoutConstraint.activate([
@@ -305,7 +309,11 @@ final class HomeViewController: UIViewController {
             categoryGridPanel.topAnchor.constraint(equalTo: categoryGridPanelWrapper.topAnchor),
             categoryGridPanel.leadingAnchor.constraint(equalTo: categoryGridPanelWrapper.leadingAnchor),
             categoryGridPanel.trailingAnchor.constraint(equalTo: categoryGridPanelWrapper.trailingAnchor),
-            categoryGridPanel.bottomAnchor.constraint(equalTo: categoryGridPanelWrapper.bottomAnchor),
+            categoryGridPanel.bottomAnchor.constraint(
+                equalTo: categoryGridScrollView.bottomAnchor,
+                constant: HomeCategoryTileMetrics.panelContentInset
+            ),
+            categoryGridViewportHeightConstraint,
 
             categoryGridPanelStroke.centerXAnchor.constraint(equalTo: categoryGridPanel.centerXAnchor),
             categoryGridPanelStroke.centerYAnchor.constraint(equalTo: categoryGridPanel.centerYAnchor),
@@ -320,7 +328,10 @@ final class HomeViewController: UIViewController {
             categoryGridScrollView.topAnchor.constraint(equalTo: categoryGridPanel.topAnchor, constant: HomeCategoryTileMetrics.panelContentInset),
             categoryGridScrollView.leadingAnchor.constraint(equalTo: categoryGridPanel.leadingAnchor, constant: HomeCategoryTileMetrics.panelContentInset),
             categoryGridScrollView.trailingAnchor.constraint(equalTo: categoryGridPanel.trailingAnchor, constant: -HomeCategoryTileMetrics.panelContentInset),
-            categoryGridScrollView.bottomAnchor.constraint(equalTo: categoryGridPanel.bottomAnchor, constant: -HomeCategoryTileMetrics.panelContentInset),
+            categoryGridPanelWrapper.heightAnchor.constraint(
+                equalTo: categoryGridPanel.heightAnchor,
+                constant: HomeCategoryTileMetrics.panelStrokeSizeDelta
+            ),
 
             categoryGridContentView.topAnchor.constraint(equalTo: categoryGridScrollView.contentLayoutGuide.topAnchor),
             categoryGridContentView.leadingAnchor.constraint(equalTo: categoryGridScrollView.contentLayoutGuide.leadingAnchor),
@@ -576,8 +587,23 @@ final class HomeViewController: UIViewController {
         applyMascotLayout(for: traitCollection)
     }
 
-    /// The scroll view now fills the panel directly; no fixed viewport height needed.
-    private func updateCategoryGridViewportHeightIfNeeded() { }
+    /// Caps the category panel to a few tile rows so the header chrome has breathing room above it.
+    private func updateCategoryGridViewportHeightIfNeeded() {
+        let w = categoryGridScrollView.bounds.width
+        guard w > 1 else { return }
+
+        let col = HomeCategoryTileMetrics.columnSpacing
+        let aspect = HomeCategoryTileMetrics.cardAspectHeightPerWidth
+        let tileWidth = (w - 2 * col) / 3
+        let rowHeight = tileWidth * aspect
+        let visibleRows = isCompactHeight
+            ? HomeCategoryTileMetrics.categoryGridVisibleRowsCompact
+            : HomeCategoryTileMetrics.categoryGridVisibleRowsRegular
+        let rowGaps = max(0, visibleRows - 1) * HomeCategoryTileMetrics.rowSpacing
+        let viewportHeight = visibleRows * rowHeight + rowGaps
+        guard abs(categoryGridViewportHeightConstraint.constant - viewportHeight) > 0.5 else { return }
+        categoryGridViewportHeightConstraint.constant = viewportHeight
+    }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
@@ -608,7 +634,9 @@ final class HomeViewController: UIViewController {
 
     private func applyLayoutMetricsForCurrentTraits() {
         let compact = isCompactHeight
-        bodyTopToHeaderConstraint?.constant = compact ? 4 : 8
+        bodyTopToHeaderConstraint?.constant = compact
+            ? HomeCategoryTileMetrics.headerToBodyGapCompact
+            : HomeCategoryTileMetrics.headerToBodyGapRegular
         bodyBottomConstraint?.constant = compact ? -10 : -22
         homeMainStack.spacing = compact ? 10 : 16
         bodyStack.spacing = compact ? 8 : HomeCategoryTileMetrics.bodyStackSpacing

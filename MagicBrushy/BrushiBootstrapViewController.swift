@@ -82,7 +82,7 @@ final class BrushiBootstrapViewController: UIViewController {
             self?.refreshFromModelState()
         }
 
-        progressView.setProgress(0.02, animated: false)
+        progressView.setProgress(0, animated: false)
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -188,10 +188,14 @@ final class BrushiBootstrapViewController: UIViewController {
             progressView.accessibilityLabel = "Loading content"
         default:
             progressView.setIndeterminateActive(false)
-            setCaptionText("Downloading content… 0%")
-            displayedDownloadProgress = max(displayedDownloadProgress, 0.02)
+            if displayedDownloadProgress > 0 {
+                setCaptionText("Loading content…")
+                progressView.accessibilityLabel = "Loading content"
+            } else {
+                setCaptionText("Downloading content… 0%")
+                progressView.accessibilityLabel = "Download starting"
+            }
             refreshProgressBarFromDisplayedFraction(animated: false)
-            progressView.accessibilityLabel = "Download starting"
         }
 
         transitionToHomeIfNeeded()

@@ -93,6 +93,6 @@ enum MascotReactionState: String, CaseIterable, Codable {
      |13 | Celebrating    | ChatGPT Image May 9, 2026, 12_13_57 AM (4).png   |
      |14 | Listening      | ChatGPT Image May 9, 2026, 12_13_58 AM (5).png   |
      |15 | Tap Reaction   | ChatGPT Image May 9, 2026, 12_13_58 AM (6).png   |
-     |16 | Sleepy         | ChatGPT Image May 9, 2026, 12_13_58 AM (7).png   |
+     |16 | Sleepy         | ChatGPT Image May 19, 2026, 09_57_27 PM.png      |
      */
 }

@@ -35,10 +35,8 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     private let templateLineOverlayView = UIImageView()
     private let mascotImageView = UIImageView()
     private let mascotLipSync = MascotLipSyncDriver()
-    /// Wraps mascot art, pause badge, mute chip, and the tap-for-cheer gesture.
+    /// Wraps mascot art and the tap-for-cheer gesture.
     private let mascotContainer = UIView()
-    /// 5 min quiet mode for automatic coach speech; overlaid on the mascot.
-    private let mascotMuteButton = UIButton(type: .system)
     /// Segments filled in `viewDidLoad`; avoids building outline bitmaps during storyboard instantiation.
     private let pageControl = UISegmentedControl()
     private let feedbackButton = UIButton(type: .system)
@@ -95,9 +93,8 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     var pendingResumeHasSeparateLineOverlay = false
     private var didConsumePendingResumeComposite = false
 
-    private let skyView = UIView()
-    private let cloudContainer = UIView()
-    private let homeButton = UIButton(type: .system)
+    private let drawingBackgroundView = UIImageView()
+    private let homeButton = UIButton(type: .custom)
     private let toolRow = UIStackView()
     private let prevPageButton = UIButton(type: .system)
     private let nextPageButton = UIButton(type: .system)
@@ -109,6 +106,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     private let crayonStack = UIStackView()
     private var crayonControls: [MagicCrayonControl] = []
     private var crayonRowHeightConstraints: [NSLayoutConstraint] = []
+    private var crayonScrollViewportHeightConstraint: NSLayoutConstraint!
     /// Display order (top → bottom): vivid primaries first, neutrals / lights last.
     /// Each value is a 0-based index into `palette` / `Colors/NN-color.png` (01→0, 02→1 …).
     private var crayonPaletteDisplayOrder: [Int] {
@@ -147,7 +145,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             28,  // terracotta
             // ── Neutrals & lights last ───────────────────────────
             0,   // light pink
-            22,  // light yellow
+            22,  // white (pearl stroke)
             29,  // sand
             1,   // dark gray
         ]
@@ -162,19 +160,20 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     // ── Stroke-size picker (canvas top-trailing, five “paint blobs”) ───────
     private let templateStrokeWidthPresets: [CGFloat] = [10, 16, 22, 30, 40]
     private let freeDrawStrokeWidthPresets: [CGFloat] = [6, 10, 14, 18, 24]
+    /// Index into `strokeWidthPresets` (0 = smallest dot on the yellow strip).
     private var selectedStrokeSizeIndex: Int = 2
-    private var strokeSizeButtons: [UIButton] = []
-    private var strokeSizeDotViews: [UIView] = []
-    private let strokeSizeStack = UIStackView()
+    private let brushSizeBar = ColoringFigmaBrushSizeBarView()
+    private let undoChromeButton = UIButton(type: .custom)
+    private let cameraChromeButton = UIButton(type: .custom)
+    private let topChromeLeftRow = UIStackView()
+    private let topChromeRightRow = UIStackView()
 
     // ── Compact-layout adaptive constraints ──────────────────────────────────
-    /// Width + height constraints for nav bar buttons (home, undo, redo, save, settings, mute).
+    /// Width + height constraints for nav bar buttons (home, undo, redo, save, settings).
     private var navButtonSizeConstraints: [NSLayoutConstraint] = []
     /// Nav chrome buttons whose symbol size / corner radius adapt on iPhone.
     private var chromeNavButtons: [UIButton] = []
     private var settingsGearButton: MagicBrushySettingsGearButton?
-    /// Width + height constraints for stroke-size blob buttons.
-    private var strokeBlobSizeConstraints: [NSLayoutConstraint] = []
     /// Height constraints for brush / eraser tool buttons.
     private var toolButtonHeightConstraints: [NSLayoutConstraint] = []
     /// Right crayon-rail width.
@@ -188,7 +187,6 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     private var canvasPanGesture: UIPanGestureRecognizer!
     private var mascotImageWidthConstraint: NSLayoutConstraint!
     private var mascotImageHeightConstraint: NSLayoutConstraint!
-    private var feedbackPauseEndTimer: Timer?
 
     /// App-wide singleton model; loaded once at app startup from SceneDelegate.
     private let vlm = LeapVLMModel.shared
@@ -197,7 +195,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     private let paletteKidNames = [
         "light pink", "dark gray", "sky blue", "green", "yellow", "orange", "red", "pink purple", "purple", "magenta",
         "violet", "purple blue", "blue", "royal blue", "bright blue", "navy", "teal blue", "aqua", "sea green", "mint",
-        "forest green", "yellow green", "light yellow", "gold", "amber", "orange red", "rust red", "brown",
+        "forest green", "yellow green", "white", "gold", "amber", "orange red", "rust red", "brown",
         "terracotta", "sand",
     ]
 
@@ -224,22 +222,27 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     /// Page indices that already received the open-page VLM welcome this session.
     private var welcomedPageIndices = Set<Int>()
     private var pendingPageWelcomeWork: DispatchWorkItem?
-    /// When set, auto-feedback is suppressed until this date (user tapped mascot to mute).
-    private var feedbackPausedUntil: Date?
     /// Show **sleepy** only after this long without painting (not from coach text).
     private static let mascotLongInactivityDelay: TimeInterval = 60
     private var mascotInactivityWork: DispatchWorkItem?
     private var mascotShowingSleepyFromInactivity = false
     override func viewDidLoad() {
         super.viewDidLoad()
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(coachAutoFeedbackSettingChanged),
+            name: MagicBrushyCoachAutoFeedback.didChangeNotification,
+            object: nil
+        )
         additionalSafeAreaInsets = TopChromeMetrics.additionalSafeAreaShrink
         let g = view.safeAreaLayoutGuide
-        view.backgroundColor = FigmaTheme.skyBlue
+        view.backgroundColor = .black
 
-        skyView.translatesAutoresizingMaskIntoConstraints = false
-        skyView.backgroundColor = FigmaTheme.skyBlue
-        cloudContainer.translatesAutoresizingMaskIntoConstraints = false
-        cloudContainer.backgroundColor = .clear
+        drawingBackgroundView.translatesAutoresizingMaskIntoConstraints = false
+        drawingBackgroundView.image = UIImage(named: "ColoringDrawingBackground")
+        drawingBackgroundView.contentMode = .scaleAspectFill
+        drawingBackgroundView.clipsToBounds = true
+        drawingBackgroundView.backgroundColor = FigmaTheme.skyBlue
 
         templateView.contentMode = .scaleAspectFit
         templateView.clipsToBounds = true
@@ -306,8 +309,11 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         crayonScrollContainer.translatesAutoresizingMaskIntoConstraints = false
         crayonScrollContainer.backgroundColor = .clear
         crayonScrollContainer.clipsToBounds = true
-        crayonScrollContainer.setContentHuggingPriority(UILayoutPriority(1), for: .vertical)
-        crayonScrollContainer.setContentCompressionResistancePriority(UILayoutPriority(1), for: .vertical)
+        crayonScrollContainer.setContentHuggingPriority(.required, for: .vertical)
+        crayonScrollContainer.setContentCompressionResistancePriority(.required, for: .vertical)
+        crayonScrollViewportHeightConstraint = crayonScrollContainer.heightAnchor.constraint(
+            equalToConstant: ColoringCrayonPaletteLayout.scrollViewportHeight(for: traitCollection)
+        )
 
         crayonScrollView.translatesAutoresizingMaskIntoConstraints = false
         crayonScrollView.showsVerticalScrollIndicator = true
@@ -333,7 +339,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             crayonScrollView.leadingAnchor.constraint(equalTo: crayonScrollContainer.leadingAnchor),
             crayonScrollView.trailingAnchor.constraint(equalTo: crayonScrollContainer.trailingAnchor),
             crayonScrollView.bottomAnchor.constraint(equalTo: crayonScrollContainer.bottomAnchor),
-            crayonScrollContainer.heightAnchor.constraint(greaterThanOrEqualToConstant: ColoringCrayonPaletteLayout.scrollContainerMinHeight),
+            crayonScrollViewportHeightConstraint,
         ])
 
         crayonStack.axis = .vertical
@@ -397,17 +403,6 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
 
         let mascotDisplay = BrushiMascotLayout.coloringRailDisplaySize(for: traitCollection, image: mascotImage)
 
-        var muteCfg = UIButton.Configuration.plain()
-        muteCfg.image = UIImage(systemName: "speaker.wave.2.fill")
-        muteCfg.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 20, weight: .bold)
-        muteCfg.baseForegroundColor = .white
-        mascotMuteButton.configuration = muteCfg
-        styleChromeButton(mascotMuteButton, fill: FigmaTheme.actionBlue, border: FigmaTheme.actionBlueBorder, cornerRadius: 14)
-        mascotMuteButton.translatesAutoresizingMaskIntoConstraints = false
-        mascotMuteButton.addTarget(self, action: #selector(mascotMuteButtonTapped), for: .touchUpInside)
-        mascotMuteButton.accessibilityLabel = "Mute coach voice for five minutes"
-        mascotMuteButton.accessibilityHint = "Stops automatic spoken feedback for five minutes. Tap the mascot for a cheer about the whole picture."
-
         let mascotTap = UITapGestureRecognizer(target: self, action: #selector(mascotTapped))
         mascotTap.delegate = self
         mascotContainer.addGestureRecognizer(mascotTap)
@@ -423,8 +418,6 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             mascotImageHeightConstraint,
         ])
 
-        updateMascotMuteButtonAppearance()
-
         // ── Right panel ───────────────────────────────────────────────────────
         let rightPanelStack = UIStackView(arrangedSubviews: [mascotContainer, toolPairStack, crayonScrollContainer])
         rightPanelStack.axis = .vertical
@@ -438,69 +431,110 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         rightPanelStack.layer.zPosition = 100
         rightPanelStack.setCustomSpacing(ColoringCrayonPaletteLayout.mascotToToolsSpacing, after: mascotContainer)
 
-        // ── Top nav bar ───────────────────────────────────────────────────────
-        func makeNavButton(icon: String, fill: UIColor, border: UIColor) -> UIButton {
-            let b = UIButton(type: .system)
-            var cfg = UIButton.Configuration.plain()
-            cfg.image = UIImage(systemName: icon)
-            cfg.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 20, weight: .bold)
-            cfg.baseForegroundColor = .white
-            b.configuration = cfg
-            styleChromeButton(b, fill: fill, border: border, cornerRadius: 14)
-            b.translatesAutoresizingMaskIntoConstraints = false
-            let wc = b.widthAnchor.constraint(equalToConstant: 52)
-            let hc = b.heightAnchor.constraint(equalToConstant: 52)
-            NSLayoutConstraint.activate([wc, hc])
-            navButtonSizeConstraints += [wc, hc]
-            chromeNavButtons.append(b)
-            return b
-        }
-
-        var homeCfg = UIButton.Configuration.plain()
-        homeCfg.image = UIImage(systemName: "house.fill")
-        homeCfg.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 22, weight: .bold)
-        homeCfg.baseForegroundColor = .white
-        homeButton.configuration = homeCfg
-        styleChromeButton(homeButton, fill: FigmaTheme.primaryOrange, border: FigmaTheme.primaryOrangeBorder, cornerRadius: 14)
+        // ── Top nav bar (Figma `3-2098`) ─────────────────────────────────────
+        let navSide = MagicBrushyChromeMetrics.chromeButtonSide(traitCollection)
+        let navChromeInsets = MagicBrushyChromeMetrics.navChromeContentInsets
+        let homeSymbolSize: CGFloat = MagicBrushyChromeMetrics.isPhone(traitCollection) ? 18 : 22
+        let homeImage = UIImage(
+            systemName: "house.fill",
+            withConfiguration: UIImage.SymbolConfiguration(pointSize: homeSymbolSize, weight: .bold)
+        )
+        homeButton.setImage(homeImage, for: .normal)
+        homeButton.imageView?.contentMode = .scaleAspectFit
+        MagicBrushyChromeMetrics.applySquareChrome(
+            to: homeButton,
+            fill: FigmaTheme.primaryOrange,
+            border: FigmaTheme.primaryOrangeBorder,
+            traitCollection: traitCollection,
+            contentInsets: navChromeInsets
+        )
         homeButton.addTarget(self, action: #selector(homeTapped), for: .touchUpInside)
         homeButton.isHidden = navigationController == nil
         homeButton.translatesAutoresizingMaskIntoConstraints = false
-        let homeW = homeButton.widthAnchor.constraint(equalToConstant: 52)
-        let homeH = homeButton.heightAnchor.constraint(equalToConstant: 52)
+        let homeW = homeButton.widthAnchor.constraint(equalToConstant: navSide)
+        let homeH = homeButton.heightAnchor.constraint(equalToConstant: navSide)
         NSLayoutConstraint.activate([homeW, homeH])
         navButtonSizeConstraints += [homeW, homeH]
         chromeNavButtons.append(homeButton)
 
-        prevPageButton.addTarget(self, action: #selector(undoStroke), for: .touchUpInside)
-        nextPageButton.addTarget(self, action: #selector(redoStroke), for: .touchUpInside)
-        doneButton.addTarget(self, action: #selector(requestFeedback), for: .touchUpInside)
-
-        let prevBtn = makeNavButton(icon: "chevron.left", fill: FigmaTheme.actionBlue, border: FigmaTheme.actionBlueBorder)
-        prevBtn.accessibilityLabel = "Undo"
-        prevBtn.addTarget(self, action: #selector(undoStroke), for: .touchUpInside)
-        let nextBtn = makeNavButton(icon: "chevron.right", fill: FigmaTheme.actionBlue, border: FigmaTheme.actionBlueBorder)
-        nextBtn.accessibilityLabel = "Redo"
-        nextBtn.addTarget(self, action: #selector(redoStroke), for: .touchUpInside)
-        // let doneBtn = makeNavButton(icon: "checkmark", ...) — checkmark button removed (no-op)
-
-        let saveBtn = makeNavButton(icon: "square.and.arrow.down", fill: FigmaTheme.actionBlue, border: FigmaTheme.actionBlueBorder)
-        saveBtn.accessibilityLabel = "Save to Photos"
-        saveBtn.addTarget(self, action: #selector(saveColoringTapped), for: .touchUpInside)
-
         let settingsBtn = makeMagicBrushySettingsGearButton()
         settingsGearButton = settingsBtn
+
+        let cameraImage = UIImage(named: "ColoringToolbarCamera")?.withRenderingMode(.alwaysOriginal)
+        let undoImage = UIImage(named: "ColoringToolbarUndo")?.withRenderingMode(.alwaysOriginal)
+
+        cameraChromeButton.removeFromSuperview()
+        undoChromeButton.removeFromSuperview()
+        cameraChromeButton.translatesAutoresizingMaskIntoConstraints = false
+        undoChromeButton.translatesAutoresizingMaskIntoConstraints = false
+
+        MagicBrushyChromeMetrics.applySquareChrome(
+            to: cameraChromeButton,
+            fill: FigmaTheme.actionBlue,
+            border: FigmaTheme.actionBlueBorder,
+            traitCollection: traitCollection,
+            contentInsets: navChromeInsets
+        )
+        cameraChromeButton.setImage(cameraImage, for: .normal)
+        cameraChromeButton.imageView?.contentMode = .scaleAspectFit
+        cameraChromeButton.accessibilityLabel = "Save to Photos"
+        cameraChromeButton.addTarget(self, action: #selector(saveColoringTapped), for: .touchUpInside)
+
+        MagicBrushyChromeMetrics.applySquareChrome(
+            to: undoChromeButton,
+            fill: ColoringFigmaToolbarChrome.undoGreen,
+            border: ColoringFigmaToolbarChrome.undoGreenBorder,
+            traitCollection: traitCollection,
+            contentInsets: navChromeInsets
+        )
+        undoChromeButton.setImage(undoImage, for: .normal)
+        undoChromeButton.imageView?.contentMode = .scaleAspectFit
+        undoChromeButton.accessibilityLabel = "Undo"
+        undoChromeButton.addTarget(self, action: #selector(undoStroke), for: .touchUpInside)
+
+        let camW = cameraChromeButton.widthAnchor.constraint(equalToConstant: navSide)
+        let camH = cameraChromeButton.heightAnchor.constraint(equalToConstant: navSide)
+        let undoW = undoChromeButton.widthAnchor.constraint(equalToConstant: navSide)
+        let undoH = undoChromeButton.heightAnchor.constraint(equalToConstant: navSide)
+        NSLayoutConstraint.activate([camW, camH, undoW, undoH])
+        navButtonSizeConstraints += [camW, camH, undoW, undoH]
+        chromeNavButtons.append(contentsOf: [cameraChromeButton, undoChromeButton])
+
+        brushSizeBar.translatesAutoresizingMaskIntoConstraints = false
+        brushSizeBar.setContentCompressionResistancePriority(.required, for: .horizontal)
+        brushSizeBar.setContentHuggingPriority(.required, for: .horizontal)
+        brushSizeBar.dotCount = strokeWidthPresets.count
+        brushSizeBar.selectedIndex = selectedStrokeSizeIndex
+        brushSizeBar.onSelectionChanged = { [weak self] index in
+            guard let self else { return }
+            self.selectedStrokeSizeIndex = index
+            self.applyStrokeWidthFromSelection()
+            self.refreshStrokeSizeAppearance()
+        }
+        let barSize = ColoringFigmaToolbarChrome.brushBarSize(for: traitCollection, dotCount: strokeWidthPresets.count)
+        brushSizeBar.applyChromeMetrics(barWidth: barSize.width, barHeight: barSize.height)
+
+        topChromeLeftRow.axis = .horizontal
+        topChromeLeftRow.spacing = 8
+        topChromeLeftRow.alignment = .center
+        topChromeLeftRow.addArrangedSubview(homeButton)
+        topChromeLeftRow.addArrangedSubview(settingsBtn)
+        topChromeLeftRow.addArrangedSubview(cameraChromeButton)
+
+        topChromeRightRow.axis = .horizontal
+        topChromeRightRow.spacing = 10
+        topChromeRightRow.alignment = .center
+        topChromeRightRow.addArrangedSubview(brushSizeBar)
+        topChromeRightRow.addArrangedSubview(undoChromeButton)
 
         let navSpacer = UIView()
         navSpacer.setContentHuggingPriority(UILayoutPriority(1), for: .horizontal)
         toolRow.axis = .horizontal
         toolRow.spacing = 8
         toolRow.alignment = .center
-        toolRow.addArrangedSubview(homeButton)
-        toolRow.addArrangedSubview(prevBtn)
-        toolRow.addArrangedSubview(nextBtn)
-        toolRow.addArrangedSubview(saveBtn)
-        toolRow.addArrangedSubview(settingsBtn)
+        toolRow.addArrangedSubview(topChromeLeftRow)
         toolRow.addArrangedSubview(navSpacer)
+        toolRow.addArrangedSubview(topChromeRightRow)
         modelStatusStack.isHidden = true
 
         let bar = UIStackView(arrangedSubviews: [toolRow])
@@ -534,22 +568,6 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         canvasContainer.addSubview(strokeView)
         canvasContainer.addSubview(templateLineOverlayView)
 
-        strokeSizeStack.axis = .horizontal
-        strokeSizeStack.spacing = 8
-        strokeSizeStack.alignment = .center
-        strokeSizeStack.distribution = .fill
-        strokeSizeStack.translatesAutoresizingMaskIntoConstraints = false
-        strokeSizeStack.isUserInteractionEnabled = true
-        let dotVisualDiameters: [CGFloat] = [8, 11, 13, 16, 19]
-        strokeSizeButtons.removeAll()
-        strokeSizeDotViews.removeAll()
-        for i in 0..<min(5, strokeWidthPresets.count) {
-            let b = makeStrokeSizeBlobButton(index: i, dotDiameter: dotVisualDiameters[i])
-            strokeSizeButtons.append(b)
-            strokeSizeStack.addArrangedSubview(b)
-        }
-        // strokeSizeStack is added to view after the view hierarchy is assembled (see below)
-
         let paintRow = UIStackView()
         paintRow.axis = .horizontal
         paintRow.alignment = .fill
@@ -574,31 +592,9 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             headerStack.insertArrangedSubview(pageControl, at: 0)
         }
 
-        view.addSubview(skyView)
-        view.addSubview(cloudContainer)
+        view.addSubview(drawingBackgroundView)
         view.addSubview(headerStack)
         view.addSubview(paintRow)
-
-        // Stroke-size picker floats at the same vertical level as the nav bar (home/save row).
-        // Mute is a sibling of `paintRow` (not a child of `mascotContainer`) so it stays hit-testable
-        // while aligned to `toolRow` — subviews outside the parent's bounds do not receive touches.
-        view.addSubview(strokeSizeStack)
-        view.addSubview(mascotMuteButton)
-        let muteW = mascotMuteButton.widthAnchor.constraint(equalToConstant: 52)
-        let muteH = mascotMuteButton.heightAnchor.constraint(equalToConstant: 52)
-        navButtonSizeConstraints += [muteW, muteH]
-        chromeNavButtons.append(mascotMuteButton)
-        NSLayoutConstraint.activate([
-            strokeSizeStack.centerYAnchor.constraint(equalTo: toolRow.centerYAnchor),
-            strokeSizeStack.trailingAnchor.constraint(equalTo: templateView.trailingAnchor, constant: -10),
-
-            // Same vertical line as home + stroke-size chrome; 52pt matches nav / brush-size blobs.
-            mascotMuteButton.centerYAnchor.constraint(equalTo: toolRow.centerYAnchor),
-            mascotMuteButton.centerXAnchor.constraint(equalTo: mascotContainer.centerXAnchor),
-            muteW, muteH,
-        ])
-
-        installClouds()
 
         loadOverlay.translatesAutoresizingMaskIntoConstraints = false
         loadOverlay.backgroundColor = UIColor.black.withAlphaComponent(0.45)
@@ -625,15 +621,10 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         rightPanelWidthConstraint = rightPanelWidth
 
         NSLayoutConstraint.activate([
-            skyView.topAnchor.constraint(equalTo: view.topAnchor),
-            skyView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            skyView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            skyView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-
-            cloudContainer.topAnchor.constraint(equalTo: view.topAnchor),
-            cloudContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            cloudContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            cloudContainer.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 0.55),
+            drawingBackgroundView.topAnchor.constraint(equalTo: view.topAnchor),
+            drawingBackgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            drawingBackgroundView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            drawingBackgroundView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
             headerStack.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: TopChromeMetrics.menuTopOffset),
             headerStack.leadingAnchor.constraint(equalTo: canvasContainer.leadingAnchor, constant: TopChromeMetrics.navRowCanvasLeadingAlignmentOffset),
@@ -687,9 +678,14 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         // activateVLMInputPreviewConstraints(safeGuide: g)
         // #endif
 
+        let presetCount = strokeWidthPresets.count
         if isFreeDrawingSession || MagicBrushyChromeMetrics.isPhone(traitCollection) {
             selectedStrokeSizeIndex = 0
+        } else {
+            selectedStrokeSizeIndex = max(0, presetCount / 2)
         }
+        brushSizeBar.dotCount = presetCount
+        brushSizeBar.selectedIndex = selectedStrokeSizeIndex
         applyStrokeWidthFromSelection()
         refreshStrokeSizeAppearance()
 
@@ -759,112 +755,46 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         button.layer.shadowOffset = CGSize(width: 0, height: 2)
     }
 
-    /// Rounded “paint blob” matching nav chrome size; inner dot shows relative thickness.
-    private func makeStrokeSizeBlobButton(index: Int, dotDiameter: CGFloat) -> UIButton {
-        let b = UIButton(type: .custom)
-        b.tag = index
-        b.translatesAutoresizingMaskIntoConstraints = false
-        b.layer.cornerRadius = 26
-        b.clipsToBounds = false
-        b.backgroundColor = UIColor.white.withAlphaComponent(0.78)
-        b.layer.borderWidth = 0
-        b.layer.borderColor = nil
-        b.accessibilityLabel = "Brush size \(index + 1) of \(strokeWidthPresets.count)"
-        b.accessibilityHint = "Pick how thick your paint is"
-        let blobW = b.widthAnchor.constraint(equalToConstant: 52)
-        let blobH = b.heightAnchor.constraint(equalToConstant: 52)
-        NSLayoutConstraint.activate([blobW, blobH])
-        strokeBlobSizeConstraints += [blobW, blobH]
-        b.layer.shadowColor = UIColor.black.cgColor
-        b.layer.shadowRadius = 4
-        b.layer.shadowOffset = CGSize(width: 0, height: 2)
-        b.layer.shadowOpacity = 0.12
-
-        let dot = UIView()
-        dot.translatesAutoresizingMaskIntoConstraints = false
-        dot.backgroundColor = UIColor.white.withAlphaComponent(0.92)
-        dot.layer.cornerRadius = dotDiameter * 0.5
-        dot.isUserInteractionEnabled = false
-        b.addSubview(dot)
-        strokeSizeDotViews.append(dot)
-        NSLayoutConstraint.activate([
-            dot.centerXAnchor.constraint(equalTo: b.centerXAnchor),
-            dot.centerYAnchor.constraint(equalTo: b.centerYAnchor, constant: 1),
-            dot.widthAnchor.constraint(equalToConstant: dotDiameter),
-            dot.heightAnchor.constraint(equalToConstant: dotDiameter),
-        ])
-
-        let gloss = UIView()
-        gloss.translatesAutoresizingMaskIntoConstraints = false
-        gloss.backgroundColor = UIColor.white.withAlphaComponent(0.35)
-        gloss.layer.cornerRadius = 5
-        gloss.isUserInteractionEnabled = false
-        b.addSubview(gloss)
-        NSLayoutConstraint.activate([
-            gloss.leadingAnchor.constraint(equalTo: b.leadingAnchor, constant: 10),
-            gloss.topAnchor.constraint(equalTo: b.topAnchor, constant: 8),
-            gloss.widthAnchor.constraint(equalToConstant: 14),
-            gloss.heightAnchor.constraint(equalToConstant: 8),
-        ])
-        gloss.isHidden = true
-
-        b.addTarget(self, action: #selector(strokeSizeTouchDown(_:)), for: .touchDown)
-        b.addTarget(self, action: #selector(strokeSizeTouchUp(_:)), for: [.touchUpInside, .touchCancel, .touchDragExit])
-        b.addTarget(self, action: #selector(strokeSizeButtonTapped(_:)), for: .touchUpInside)
-        return b
+    private func activeCrayonStrokeColor() -> UIColor {
+        if isEraserMode { return .white }
+        let i = strokePaletteIndex.clamped(to: 0...(palette.count - 1))
+        return palette[i]
     }
 
     private func refreshStrokeSizeAppearance() {
-        let presets = strokeWidthPresets
-        guard !strokeSizeButtons.isEmpty else { return }
-        let cIdx = strokePaletteIndex.clamped(to: 0...(palette.count - 1))
-        let crayon = palette[cIdx]
-        let rim = crayon.magicBrushyStrokeChromeBorder()
-        for (i, b) in strokeSizeButtons.enumerated() {
-            let on = i == selectedStrokeSizeIndex
-            if on {
-                b.backgroundColor = UIColor.white.withAlphaComponent(0.94)
-                b.layer.borderWidth = 4
-                b.layer.borderColor = rim.cgColor
-                b.layer.shadowOpacity = 0.2
-            } else {
-                b.backgroundColor = UIColor.white.withAlphaComponent(0.78)
-                b.layer.borderWidth = 0
-                b.layer.borderColor = nil
-                b.layer.shadowOpacity = 0.12
-            }
-            let scale: CGFloat = on ? 1.06 : 1
-            b.transform = CGAffineTransform(scaleX: scale, y: scale)
-            if i < strokeSizeDotViews.count {
-                strokeSizeDotViews[i].backgroundColor = crayon.withAlphaComponent(on ? 1 : 0.92)
-            }
-            if i < presets.count {
-                b.accessibilityValue = "\(Int(presets[i])) points wide"
-                b.accessibilityTraits = on ? [.button, .selected] : .button
-            }
-        }
+        let index = selectedStrokeSizeIndex.clamped(to: 0...(strokeWidthPresets.count - 1))
+        // Never reset dotCount here — it rebuilds all buttons unnecessarily and wipes their frames.
+        brushSizeBar.selectedIndex = index
+        brushSizeBar.dotFillColor = activeCrayonStrokeColor()
+        let preset = strokeWidthPresets[index]
+        brushSizeBar.accessibilityValue = "\(Int(preset)) points wide"
     }
 
     private func applyStrokeWidthFromSelection() {
-        let i = selectedStrokeSizeIndex.clamped(to: 0...(strokeWidthPresets.count - 1))
-        strokeView.strokeWidth = strokeWidthPresets[i]
+        let index = selectedStrokeSizeIndex.clamped(to: 0...(strokeWidthPresets.count - 1))
+        strokeView.strokeWidth = strokeWidthPresets[index]
     }
+
+    private static let brushToolIconSide: CGFloat = 44 * 1.25
+    private static let eraserToolIdleFill = UIColor(red: 1, green: 0.93, blue: 0.86, alpha: 1)
 
     private func makeBrushToolButton() -> UIButton {
         let b = UIButton(type: .custom)
         b.tag = 0
         styleChromeButton(b, fill: FigmaTheme.primaryOrange, border: FigmaTheme.primaryOrangeBorder, cornerRadius: 14)
+        let iconSide = Self.brushToolIconSide
         if let img = UIImage(named: "FigmaBrush") {
             let iv = UIImageView(image: img)
             iv.contentMode = .scaleAspectFit
             iv.translatesAutoresizingMaskIntoConstraints = false
             iv.isUserInteractionEnabled = false
+            iv.transform = CGAffineTransform(rotationAngle: .pi / 4)
             b.addSubview(iv)
             NSLayoutConstraint.activate([
                 iv.centerXAnchor.constraint(equalTo: b.centerXAnchor),
                 iv.centerYAnchor.constraint(equalTo: b.centerYAnchor),
-                iv.widthAnchor.constraint(equalToConstant: 44),
-                iv.heightAnchor.constraint(equalToConstant: 44),
+                iv.widthAnchor.constraint(equalToConstant: iconSide),
+                iv.heightAnchor.constraint(equalToConstant: iconSide),
             ])
         } else {
             let icon = PaintBrushIconView()
@@ -874,8 +804,8 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             NSLayoutConstraint.activate([
                 icon.centerXAnchor.constraint(equalTo: b.centerXAnchor),
                 icon.centerYAnchor.constraint(equalTo: b.centerYAnchor),
-                icon.widthAnchor.constraint(equalToConstant: 42),
-                icon.heightAnchor.constraint(equalToConstant: 42),
+                icon.widthAnchor.constraint(equalToConstant: iconSide),
+                icon.heightAnchor.constraint(equalToConstant: iconSide),
             ])
         }
         b.addTarget(self, action: #selector(toolModeTapped(_:)), for: .touchUpInside)
@@ -889,9 +819,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     private func makeEraserToolButton() -> UIButton {
         let b = UIButton(type: .custom)
         b.tag = 1
-        // Orange chrome (matches app palette; distinct from solid brush button).
-        let fill = UIColor(red: 1, green: 0.93, blue: 0.86, alpha: 1)
-        styleChromeButton(b, fill: fill, border: FigmaTheme.primaryOrangeBorder, cornerRadius: 14)
+        styleChromeButton(b, fill: Self.eraserToolIdleFill, border: FigmaTheme.primaryOrangeBorder, cornerRadius: 14)
         b.layer.borderWidth = 5
         b.layer.shadowOpacity = 0.28
         b.layer.shadowRadius = 5
@@ -925,39 +853,6 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         eraserH.isActive = true
         toolButtonHeightConstraints.append(eraserH)
         return b
-    }
-
-    private func installClouds() {
-        cloudContainer.subviews.forEach { $0.removeFromSuperview() }
-        func makeCloud() -> UIImageView {
-            let iv = UIImageView(image: UIImage(systemName: "cloud.fill"))
-            iv.tintColor = UIColor.white.withAlphaComponent(0.9)
-            iv.contentMode = .scaleAspectFit
-            iv.translatesAutoresizingMaskIntoConstraints = false
-            return iv
-        }
-        let c1 = makeCloud()
-        let c2 = makeCloud()
-        let c3 = makeCloud()
-        cloudContainer.addSubview(c1)
-        cloudContainer.addSubview(c2)
-        cloudContainer.addSubview(c3)
-        NSLayoutConstraint.activate([
-            c1.leadingAnchor.constraint(equalTo: cloudContainer.leadingAnchor, constant: 6),
-            c1.topAnchor.constraint(equalTo: cloudContainer.topAnchor, constant: 8),
-            c1.widthAnchor.constraint(equalTo: cloudContainer.widthAnchor, multiplier: 0.42),
-            c1.heightAnchor.constraint(equalTo: c1.widthAnchor, multiplier: 0.55),
-
-            c2.leadingAnchor.constraint(equalTo: c1.trailingAnchor, constant: -36),
-            c2.topAnchor.constraint(equalTo: cloudContainer.topAnchor, constant: 22),
-            c2.widthAnchor.constraint(equalTo: cloudContainer.widthAnchor, multiplier: 0.36),
-            c2.heightAnchor.constraint(equalTo: c2.widthAnchor, multiplier: 0.55),
-
-            c3.trailingAnchor.constraint(equalTo: cloudContainer.trailingAnchor, constant: -4),
-            c3.topAnchor.constraint(equalTo: cloudContainer.topAnchor, constant: 36),
-            c3.widthAnchor.constraint(equalTo: cloudContainer.widthAnchor, multiplier: 0.34),
-            c3.heightAnchor.constraint(equalTo: c3.widthAnchor, multiplier: 0.55),
-        ])
     }
 
     @objc private func homeTapped() {
@@ -1051,16 +946,25 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             let i = strokePaletteIndex.clamped(to: 0...(palette.count - 1))
             strokeView.strokeColor = palette[i]
         }
+        updateToolButtonChrome()
+        refreshStrokeSizeAppearance()
+    }
+
+    private func updateToolButtonChrome() {
+        let selectedFill = FigmaTheme.primaryOrange
+        let idleFill = Self.eraserToolIdleFill
+        let border = FigmaTheme.primaryOrangeBorder
+        brushToolButton?.backgroundColor = isEraserMode ? idleFill : selectedFill
+        brushToolButton?.layer.borderColor = border.cgColor
+        eraserToolButton?.backgroundColor = isEraserMode ? selectedFill : idleFill
+        eraserToolButton?.layer.borderColor = border.cgColor
         brushToolButton?.alpha = isEraserMode ? 0.55 : 1.0
         eraserToolButton?.alpha = isEraserMode ? 1.0 : 0.95
-        brushToolButton?.transform = .identity
-        eraserToolButton?.transform = .identity
     }
 
     deinit {
         pollTimer?.invalidate()
         cancelFeedbackIdleTimer()
-        feedbackPauseEndTimer?.invalidate()
         NotificationCenter.default.removeObserver(self)
     }
 
@@ -1079,50 +983,74 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         applyLayoutForTraitCollection(traitCollection)
     }
 
+    private func updateCrayonScrollViewportHeightIfNeeded() {
+        crayonScrollViewportHeightConstraint?.constant = ColoringCrayonPaletteLayout.scrollViewportHeight(for: traitCollection)
+    }
+
     /// Adjusts button and panel sizes for iPhone vs iPad (and tighter spacing in landscape).
     private func applyLayoutForTraitCollection(_ tc: UITraitCollection) {
         let phone = MagicBrushyChromeMetrics.isPhone(tc)
         let compact = tc.verticalSizeClass == .compact
         let navSize = phone ? MagicBrushyChromeMetrics.chromeButtonSide(tc) : 52
-        let blobSize: CGFloat = phone ? 36 : 52
         let panelWidth = BrushiMascotLayout.rightRailWidth(for: tc)
         let toolHeight: CGFloat = phone ? 50 : ColoringCrayonPaletteLayout.toolButtonHeight
-        let blobSpacing: CGFloat = (phone && compact) ? 4 : (phone ? 6 : 8)
-        let blobCorner: CGFloat = phone ? 19 : 26
-        let navCorner = phone ? MagicBrushyChromeMetrics.chromeCornerRadius(tc) : 14
-        let navBorder = phone ? MagicBrushyChromeMetrics.chromeBorderWidth(tc) : 4
+        let navCorner = MagicBrushyChromeMetrics.chromeCornerRadius(tc)
+        let navBorder = MagicBrushyChromeMetrics.chromeBorderWidth(tc)
+        let navChromeInsets = MagicBrushyChromeMetrics.navChromeContentInsets
         let navSymbol = phone ? MagicBrushyChromeMetrics.chromeSymbolPointSize(tc) : 20
         let homeSymbol: CGFloat = phone ? 18 : 22
+        let barSize = ColoringFigmaToolbarChrome.brushBarSize(for: tc, dotCount: strokeWidthPresets.count)
 
         for c in navButtonSizeConstraints { c.constant = navSize }
-        for c in strokeBlobSizeConstraints { c.constant = blobSize }
         for c in toolButtonHeightConstraints { c.constant = toolHeight }
         rightPanelWidthConstraint?.constant = panelWidth
-        strokeSizeStack.spacing = blobSpacing
-        for b in strokeSizeButtons { b.layer.cornerRadius = blobCorner }
+        brushSizeBar.dotCount = strokeWidthPresets.count
+        brushSizeBar.applyChromeMetrics(barWidth: barSize.width, barHeight: barSize.height)
+        topChromeRightRow.spacing = (phone && compact) ? 6 : 10
+        topChromeLeftRow.spacing = phone ? 6 : 8
 
         for b in chromeNavButtons {
             b.layer.cornerRadius = navCorner
             b.layer.borderWidth = navBorder
-            var cfg = b.configuration ?? UIButton.Configuration.plain()
-            let symSize = (b === homeButton) ? homeSymbol : navSymbol
-            cfg.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: symSize, weight: .bold)
-            b.configuration = cfg
+            if b === homeButton {
+                MagicBrushyChromeMetrics.applySquareChrome(
+                    to: b,
+                    fill: FigmaTheme.primaryOrange,
+                    border: FigmaTheme.primaryOrangeBorder,
+                    traitCollection: tc,
+                    contentInsets: navChromeInsets
+                )
+                let homeImg = UIImage(
+                    systemName: "house.fill",
+                    withConfiguration: UIImage.SymbolConfiguration(pointSize: homeSymbol, weight: .bold)
+                )
+                b.setImage(homeImg, for: .normal)
+            } else if b === cameraChromeButton {
+                MagicBrushyChromeMetrics.applySquareChrome(
+                    to: b,
+                    fill: FigmaTheme.actionBlue,
+                    border: FigmaTheme.actionBlueBorder,
+                    traitCollection: tc,
+                    contentInsets: navChromeInsets
+                )
+            } else if b === undoChromeButton {
+                MagicBrushyChromeMetrics.applySquareChrome(
+                    to: b,
+                    fill: ColoringFigmaToolbarChrome.undoGreen,
+                    border: ColoringFigmaToolbarChrome.undoGreenBorder,
+                    traitCollection: tc,
+                    contentInsets: navChromeInsets
+                )
+            }
         }
         settingsGearButton?.applyStyle(for: tc)
 
         let crayonRowH = ColoringCrayonPaletteLayout.crayonRowHeight(for: tc)
         for c in crayonRowHeightConstraints { c.constant = crayonRowH }
         crayonStack.spacing = ColoringCrayonPaletteLayout.crayonStackSpacing(for: tc)
+        crayonScrollViewportHeightConstraint?.constant = ColoringCrayonPaletteLayout.scrollViewportHeight(for: tc)
 
-        mascotMuteButton.isHidden = phone
-        mascotMuteButton.isUserInteractionEnabled = !phone
-        if !phone {
-            updateMascotMuteButtonAppearance()
-        }
-        let mascotSize = BrushiMascotLayout.coloringRailDisplaySize(for: tc, image: mascotImageView.image)
-        mascotImageWidthConstraint?.constant = mascotSize.width
-        mascotImageHeightConstraint?.constant = mascotSize.height
+        updateMascotDisplaySize(for: tc)
         updatePhoneCanvasZoomGesturesEnabled(for: tc)
         if !phone {
             phoneCanvasUserZoom = 1
@@ -1209,7 +1137,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         applyLayoutForTraitCollection(traitCollection)
-        navigationController?.view.backgroundColor = FigmaTheme.skyBlue
+        navigationController?.view.backgroundColor = .black
         if let nav = navigationController {
             let barAppearance = UINavigationBarAppearance()
             barAppearance.configureWithTransparentBackground()
@@ -1230,6 +1158,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         super.viewDidLayoutSubviews()
         hideFullWidthHairlineUnderStatusBarIfNeeded()
         applyPendingResumeCompositeIfNeeded()
+        updateCrayonScrollViewportHeightIfNeeded()
     }
 
     /// Some `UISegmentedControl` builds add a ~1pt tall full-width separator along the **top** edge; hide it after layout.
@@ -1263,7 +1192,6 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         super.viewWillDisappear(animated)
         if isMovingFromParent {
             LastDrawingStore.clearContinueDrawingSession()
-            MagicBrushyBackgroundMusic.resumeAfterCoachMuteSilence()
         }
         FeedbackAlbaSpeech.stopSpeaking()
         FeedbackAlbaSpeech.mascotLipSync = nil
@@ -1357,14 +1285,14 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         guard !strokeView.chronologicalStrokeColors.isEmpty else { return }
         // Eraser pen-lift: do not schedule idle coach VLM.
         guard !isEraserMode else { return }
-        // Mascot-mute: skip auto-feedback while paused.
-        if let until = feedbackPausedUntil, Date() < until { return }
+        // Settings coach-feedback off: skip auto-feedback.
+        if !MagicBrushyCoachAutoFeedback.isEnabled { return }
 
         let work = DispatchWorkItem { [weak self] in
             guard let self else { return }
             self.pendingAutoFeedbackWork = nil
-            // Re-check pause at fire time (user may have muted after stroke ended).
-            if let until = self.feedbackPausedUntil, Date() < until { return }
+            // Re-check at fire time (user may have turned coach feedback off after stroke ended).
+            if !MagicBrushyCoachAutoFeedback.isEnabled { return }
             // User may have switched to eraser before the idle delay elapsed.
             guard !self.isEraserMode else { return }
             self.runSpeechFeedbackPipeline()
@@ -1382,7 +1310,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     private func scheduleMascotInactivityTimer() {
         cancelMascotInactivityTimer()
         guard view.window != nil else { return }
-        if let until = feedbackPausedUntil, Date() < until { return }
+        if !MagicBrushyCoachAutoFeedback.isEnabled { return }
 
         let work = DispatchWorkItem { [weak self] in
             guard let self else { return }
@@ -1401,7 +1329,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
 
     private func applyLongInactivitySleepyIfNeeded() {
         guard view.window != nil else { return }
-        if let until = feedbackPausedUntil, Date() < until { return }
+        if !MagicBrushyCoachAutoFeedback.isEnabled { return }
         if vlm.running {
             scheduleMascotInactivityTimer()
             return
@@ -1410,60 +1338,13 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         applyMascotReaction(.sleepy)
     }
 
-    private static let feedbackPauseDuration: TimeInterval = 5 * 60
-
-    @objc private func mascotMuteButtonTapped() {
-        toggleCoachFeedbackMute()
-    }
-
-    private func updateMascotMuteButtonAppearance() {
-        let muted = (feedbackPausedUntil.map { Date() < $0 } ?? false)
-        var cfg = mascotMuteButton.configuration ?? .plain()
-        cfg.image = UIImage(systemName: muted ? "speaker.slash.fill" : "speaker.wave.2.fill")
-        cfg.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 20, weight: .bold)
-        cfg.baseForegroundColor = .white
-        mascotMuteButton.configuration = cfg
-        mascotMuteButton.accessibilityLabel = muted ? "Turn coach voice back on" : "Mute coach voice for five minutes"
-        mascotMuteButton.accessibilityHint = muted
-            ? "Ends the five minute quiet period early."
-            : "Stops automatic spoken feedback for five minutes."
-    }
-
-    /// Five-minute quiet mode for auto coach speech (mute button only).
-    private func toggleCoachFeedbackMute() {
-        let now = Date()
-        if let until = feedbackPausedUntil, now < until {
-            feedbackPausedUntil = nil
-            feedbackPauseEndTimer?.invalidate()
-            feedbackPauseEndTimer = nil
-            applyMascotReaction(.hello)
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
-            MagicBrushyBackgroundMusic.resumeAfterCoachMuteSilence()
-            updateMascotMuteButtonAppearance()
-            return
-        }
-
-        feedbackPausedUntil = now.addingTimeInterval(Self.feedbackPauseDuration)
+    @objc private func coachAutoFeedbackSettingChanged() {
+        guard !MagicBrushyCoachAutoFeedback.isEnabled else { return }
         cancelFeedbackIdleTimer()
         cancelPendingReactionWork()
+        FeedbackAlbaSpeech.stopSpeaking()
         vlm.cancel()
-        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         applyMascotReaction(.supportive)
-        scheduleFeedbackPauseEnd()
-        MagicBrushyBackgroundMusic.pauseForCoachMuteSilence()
-        updateMascotMuteButtonAppearance()
-    }
-
-    private func scheduleFeedbackPauseEnd() {
-        feedbackPauseEndTimer?.invalidate()
-        feedbackPauseEndTimer = Timer.scheduledTimer(withTimeInterval: Self.feedbackPauseDuration, repeats: false) { [weak self] _ in
-            guard let self, self.feedbackPausedUntil != nil else { return }
-            self.feedbackPausedUntil = nil
-            self.feedbackPauseEndTimer = nil
-            self.applyMascotReaction(.hello)
-            MagicBrushyBackgroundMusic.resumeAfterCoachMuteSilence()
-            self.updateMascotMuteButtonAppearance()
-        }
     }
 
     private func playMascotClapHaptics() {
@@ -1475,7 +1356,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         }
     }
 
-    /// Tapping the mascot (not the mute chip): haptic “clap”, then coach praise for the **entire** page via VLM.
+    /// Tapping the mascot: haptic “clap”, then coach praise for the **entire** page via VLM.
     @objc private func mascotTapped() {
         playMascotClapHaptics()
         applyMascotReaction(.celebrating)
@@ -1493,12 +1374,6 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
         if gestureRecognizer === canvasPinchGesture || gestureRecognizer === canvasPanGesture {
             return true
-        }
-        guard !MagicBrushyChromeMetrics.isPhone(traitCollection) else { return true }
-        let p = touch.location(in: mascotContainer)
-        let muteInMascot = mascotContainer.convert(mascotMuteButton.bounds, from: mascotMuteButton)
-        if muteInMascot.contains(p), mascotMuteButton.isUserInteractionEnabled, !mascotMuteButton.isHidden {
-            return false
         }
         return true
     }
@@ -1638,25 +1513,6 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             // Line overlay stays visible above the snapshot.
         }
         schedulePageLoadWelcome()
-    }
-
-    @objc private func strokeSizeTouchDown(_ sender: UIButton) {
-        UIView.animate(withDuration: 0.12, delay: 0, options: [.curveEaseIn]) {
-            sender.transform = sender.transform.scaledBy(x: 0.92, y: 0.92)
-        }
-    }
-
-    @objc private func strokeSizeTouchUp(_ sender: UIButton) {
-        refreshStrokeSizeAppearance()
-    }
-
-    @objc private func strokeSizeButtonTapped(_ sender: UIButton) {
-        let i = sender.tag.clamped(to: 0...(strokeWidthPresets.count - 1))
-        guard i != selectedStrokeSizeIndex else { return }
-        selectedStrokeSizeIndex = i
-        applyStrokeWidthFromSelection()
-        refreshStrokeSizeAppearance()
-        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
     }
 
     @objc private func clearStrokes() {
@@ -1802,7 +1658,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         cancelPendingPageWelcomeWork()
         guard coloringBookPages.indices.contains(pageIndex) else { return }
         guard welcomedPageIndices.contains(pageIndex) == false else { return }
-        if let until = feedbackPausedUntil, Date() < until { return }
+        if !MagicBrushyCoachAutoFeedback.isEnabled { return }
 
         let pageAtSchedule = pageIndex
         let work = DispatchWorkItem { [weak self] in
@@ -1820,7 +1676,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         guard pageAtSchedule == pageIndex else { return }
         guard coloringBookPages.indices.contains(pageIndex) else { return }
         guard !welcomedPageIndices.contains(pageIndex) else { return }
-        if let until = feedbackPausedUntil, Date() < until { return }
+        if !MagicBrushyCoachAutoFeedback.isEnabled { return }
 
         let welcomeGen = feedbackGeneration
         applyMascotReaction(.hello)
@@ -1948,6 +1804,17 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         UIView.transition(with: mascotImageView, duration: 0.22, options: .transitionCrossDissolve) {
             self.mascotImageView.image = image
         }
+        updateMascotDisplaySize()
+    }
+
+    private func updateMascotDisplaySize(for traitCollection: UITraitCollection? = nil) {
+        let tc = traitCollection ?? self.traitCollection
+        let mascotSize = BrushiMascotLayout.coloringRailDisplaySize(for: tc, image: mascotImageView.image)
+        mascotImageWidthConstraint?.constant = mascotSize.width
+        mascotImageHeightConstraint?.constant = mascotSize.height
+        let sleepyVisual = lastMascotReaction == .sleepy
+        let scale = sleepyVisual ? BrushiMascotLayout.coloringSleepyVisualScale : 1
+        mascotImageView.transform = CGAffineTransform(scaleX: scale, y: scale)
     }
 
     /// Pixels of `image` laid out like `UIImageView` with **aspect fit** inside `bounds` (matches `templateView` on screen).
@@ -2327,8 +2194,25 @@ private enum MagicBrushyCrayonResources {
         return out
     }()
 
-    /// Brush / VLM stroke color: sampled from the **tip** of each swatch PNG (ends of the crayon), not the body/wrapper.
-    static let strokeColors: [UIColor] = swatchImages.map { strokeColorFromSwatchTip($0) }
+    /// Brush / VLM stroke color: sampled from the **tip** of each swatch PNG, with a few tuned overrides.
+    static let strokeColors: [UIColor] = {
+        var colors = swatchImages.map { strokeColorFromSwatchTip($0) }
+        applyStrokeColorOverrides(&colors)
+        return colors
+    }()
+
+    /// Canonical paint colors where swatch sampling reads too dull (yellow), gray (black), or off (pearl).
+    private static let strokeColorOverrides: [Int: UIColor] = [
+        1: UIColor(red: 0, green: 0, blue: 0, alpha: 1),           // black — full opacity
+        4: UIColor(red: 1, green: 0.92, blue: 0, alpha: 1),       // primary yellow
+        22: UIColor(red: 248 / 255, green: 245 / 255, blue: 238 / 255, alpha: 1), // white — pearl tone
+    ]
+
+    private static func applyStrokeColorOverrides(_ colors: inout [UIColor]) {
+        for (index, color) in strokeColorOverrides where colors.indices.contains(index) {
+            colors[index] = color
+        }
+    }
 
     /// Renders a small RGBA thumbnail, then averages non-white / non-transparent pixels in `col` / `row` ranges.
     private static func averageColor(
@@ -2458,6 +2342,15 @@ private enum ColoringCrayonPaletteLayout {
         MagicBrushyChromeMetrics.isPhone(traitCollection) ? 0 : stackSpacing
     }
     static let scrollContainerMinHeight: CGFloat = 180
+    /// How many crayon rows are visible in the rail (4.5 = half of the 5th peeks).
+    static let visibleCrayonRows: CGFloat = 4.5
+
+    static func scrollViewportHeight(for traitCollection: UITraitCollection) -> CGFloat {
+        let rowH = crayonRowHeight(for: traitCollection)
+        let spacing = crayonStackSpacing(for: traitCollection)
+        let rows = visibleCrayonRows
+        return rows * rowH + max(0, rows - 1) * spacing
+    }
     static let toolButtonHeight: CGFloat = 72
     /// Side gap between brush and eraser (~1 mm; scales with screen density).
     static var toolPairSpacing: CGFloat {
@@ -2597,7 +2490,7 @@ final class PaintBrushIconView: UIView {
 
         // Draw as a diagonal pencil (matching Figma's FigmaBrush shape)
         ctx.translateBy(x: cx, y: cy)
-        ctx.rotate(by: -.pi / 4)
+        ctx.rotate(by: .pi / 4)
 
         let pLen = min(w, h) * 1.28
         let pH   = pLen * 0.18

@@ -11,11 +11,11 @@ enum MagicBrushyCoachVoice: String, CaseIterable {
 
     var displayName: String {
         switch self {
-        case .alba: return "Alba (British)"
-        case .kokoroSky: return "Sky (American)"
-        case .kokoroBella: return "Bella (American)"
-        case .kokoroEmma: return "Emma (British)"
-        case .kokoroSarah: return "Sarah (American)"
+        case .alba: return "Alba"
+        case .kokoroSky: return "Sky"
+        case .kokoroBella: return "Bella"
+        case .kokoroEmma: return "Emma"
+        case .kokoroSarah: return "Sarah"
         case .apple: return "Device voice"
         }
     }
@@ -44,19 +44,53 @@ enum MagicBrushyCoachVoice: String, CaseIterable {
         }
     }
 
+    /// Sherpa / Kokoro voices are English-only; other languages use Apple TTS.
+    static func selectableCases(for language: MagicBrushyLanguage) -> [MagicBrushyCoachVoice] {
+        guard language == .english else { return [.apple] }
+        return selectableCases
+    }
+
     // MARK: - Persistence
 
     private static let defaultsKey = "magicBrushyCoachVoice"
+    private static let englishVoiceDefaultsKey = "magicBrushyCoachVoiceEnglish"
 
     static func stored() -> MagicBrushyCoachVoice {
+        if MagicBrushyLanguage.stored() != .english { return .apple }
+        return storedEnglishVoice()
+    }
+
+    static func store(_ voice: MagicBrushyCoachVoice) {
+        if MagicBrushyLanguage.stored() != .english {
+            if voice != .apple { return }
+            UserDefaults.standard.set(MagicBrushyCoachVoice.apple.rawValue, forKey: defaultsKey)
+            return
+        }
+        UserDefaults.standard.set(voice.rawValue, forKey: defaultsKey)
+        UserDefaults.standard.set(voice.rawValue, forKey: englishVoiceDefaultsKey)
+    }
+
+    /// Call when response language changes (from `MagicBrushyLanguage.store`).
+    static func applyLanguageChange(_ language: MagicBrushyLanguage) {
+        if language == .english {
+            if let raw = UserDefaults.standard.string(forKey: englishVoiceDefaultsKey),
+               let voice = MagicBrushyCoachVoice(rawValue: raw) {
+                UserDefaults.standard.set(voice.rawValue, forKey: defaultsKey)
+            }
+            return
+        }
+        let currentRaw = UserDefaults.standard.string(forKey: defaultsKey) ?? ""
+        if let current = MagicBrushyCoachVoice(rawValue: currentRaw), current != .apple {
+            UserDefaults.standard.set(currentRaw, forKey: englishVoiceDefaultsKey)
+        }
+        UserDefaults.standard.set(MagicBrushyCoachVoice.apple.rawValue, forKey: defaultsKey)
+    }
+
+    private static func storedEnglishVoice() -> MagicBrushyCoachVoice {
         let raw = UserDefaults.standard.string(forKey: defaultsKey) ?? ""
         if let v = MagicBrushyCoachVoice(rawValue: raw) { return v }
         if SherpaKokoroVoice.isBundledVoiceAvailable { return .kokoroSky }
         return .alba
-    }
-
-    static func store(_ voice: MagicBrushyCoachVoice) {
-        UserDefaults.standard.set(voice.rawValue, forKey: defaultsKey)
     }
 
     /// Short line used when previewing a voice in Settings.

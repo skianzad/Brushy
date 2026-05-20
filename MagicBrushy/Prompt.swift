@@ -57,10 +57,11 @@ enum Prompt {
         "That corner looks so lively now!",
         "How bright and brave that is!",
         "That dab feels full of energy!",
-        "What a sunny color moment!",
         "You colored that in so nicely!",
         "That patch looks proud and happy!",
         "What a magic bit of color!",
+        "You are so creative",
+        
     ]
 
     private static func randomStrokePraiseOpener() -> String {

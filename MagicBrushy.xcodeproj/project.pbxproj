@@ -21,6 +21,8 @@
 		B1BGM000000000000000002 /* MagicBrushyBackgroundTrack.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = B1BGM000000000000000102 /* MagicBrushyBackgroundTrack.mp3 */; };
 		B1BST000000000000000001 /* BrushiBootstrapViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1BST000000000000000101 /* BrushiBootstrapViewController.swift */; };
 		B1BST000000000000000002 /* BrushiFigmaDownloadProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1BST000000000000000102 /* BrushiFigmaDownloadProgressView.swift */; };
+		B1CLR000000000000000002 /* ColoringFigmaBrushSizeBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CLR000000000000000102 /* ColoringFigmaBrushSizeBarView.swift */; };
+		B1CAF000000000000000001 /* MagicBrushyCoachAutoFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CAF000000000000000101 /* MagicBrushyCoachAutoFeedback.swift */; };
 		B1COA000000000000000001 /* MagicBrushyCoachVoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1COA000000000000000101 /* MagicBrushyCoachVoice.swift */; };
 		B1DBK000000000000000001 /* MagicBrushyDiamondBackButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1DBK000000000000000101 /* MagicBrushyDiamondBackButton.swift */; };
 		B1EAD0000311 /* onnxruntime.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = B1EAD0000301 /* onnxruntime.xcframework */; };
@@ -80,6 +82,8 @@
 		B1BGM000000000000000102 /* MagicBrushyBackgroundTrack.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = MagicBrushyBackgroundTrack.mp3; sourceTree = "<group>"; };
 		B1BST000000000000000101 /* BrushiBootstrapViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrushiBootstrapViewController.swift; sourceTree = "<group>"; };
 		B1BST000000000000000102 /* BrushiFigmaDownloadProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrushiFigmaDownloadProgressView.swift; sourceTree = "<group>"; };
+		B1CLR000000000000000102 /* ColoringFigmaBrushSizeBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColoringFigmaBrushSizeBarView.swift; sourceTree = "<group>"; };
+		B1CAF000000000000000101 /* MagicBrushyCoachAutoFeedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagicBrushyCoachAutoFeedback.swift; sourceTree = "<group>"; };
 		B1COA000000000000000101 /* MagicBrushyCoachVoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagicBrushyCoachVoice.swift; sourceTree = "<group>"; };
 		B1DBK000000000000000101 /* MagicBrushyDiamondBackButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagicBrushyDiamondBackButton.swift; sourceTree = "<group>"; };
 		B1EAD0000301 /* onnxruntime.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = onnxruntime.xcframework; path = "../ASU/SmartDraw/ThirdParty/sherpa-onnx-ios/build-ios/ios-onnxruntime/1.17.1/onnxruntime.xcframework"; sourceTree = SOURCE_ROOT; };
@@ -156,9 +160,11 @@
 				B1BGM000000000000000101 /* MagicBrushyBackgroundMusic.swift */,
 				B1SET000000000000000101 /* MagicBrushySettingsViewController.swift */,
 				B1LNG000000000000000101 /* MagicBrushyLanguage.swift */,
+				B1CAF000000000000000101 /* MagicBrushyCoachAutoFeedback.swift */,
 				B1COA000000000000000101 /* MagicBrushyCoachVoice.swift */,
 				B1BST000000000000000101 /* BrushiBootstrapViewController.swift */,
 				B1BST000000000000000102 /* BrushiFigmaDownloadProgressView.swift */,
+				B1CLR000000000000000102 /* ColoringFigmaBrushSizeBarView.swift */,
 				B1HOM000000000000000101 /* HomeBrushiTitleBadgeView.swift */,
 				B1MOD000000000000000101 /* HomeModePickerViewController.swift */,
 				B1DBK000000000000000101 /* MagicBrushyDiamondBackButton.swift */,
@@ -352,9 +358,11 @@
 				B1SET000000000000000001 /* MagicBrushySettingsViewController.swift in Sources */,
 				B1LNG000000000000000001 /* MagicBrushyLanguage.swift in Sources */,
 				B1PRM000000000000000001 /* Prompt.swift in Sources */,
+				B1CAF000000000000000001 /* MagicBrushyCoachAutoFeedback.swift in Sources */,
 				B1COA000000000000000001 /* MagicBrushyCoachVoice.swift in Sources */,
 				B1BST000000000000000001 /* BrushiBootstrapViewController.swift in Sources */,
 				B1BST000000000000000002 /* BrushiFigmaDownloadProgressView.swift in Sources */,
+				B1CLR000000000000000002 /* ColoringFigmaBrushSizeBarView.swift in Sources */,
 				B1HOM000000000000000001 /* HomeBrushiTitleBadgeView.swift in Sources */,
 				B1MOD000000000000000001 /* HomeModePickerViewController.swift in Sources */,
 				B1DBK000000000000000001 /* MagicBrushyDiamondBackButton.swift in Sources */,

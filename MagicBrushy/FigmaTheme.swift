@@ -25,6 +25,7 @@ enum FigmaTheme {
     static let historyCultureAccent = UIColor(red: 139 / 255, green: 90 / 255, blue: 43 / 255, alpha: 1)
     static let landmarksAccent = UIColor(red: 46 / 255, green: 125 / 255, blue: 168 / 255, alpha: 1)
 
+    /// App icon + orange chrome buttons — Figma `122:593` (`#FF8903`).
     static let primaryOrange = UIColor(red: 1, green: 137 / 255, blue: 3 / 255, alpha: 1)
     static let primaryOrangeBorder = UIColor(red: 220 / 255, green: 103 / 255, blue: 39 / 255, alpha: 1)
     static let actionBlue = UIColor(red: 60 / 255, green: 152 / 255, blue: 239 / 255, alpha: 1)
@@ -104,6 +105,52 @@ enum MagicBrushyChromeMetrics {
         isPhone(traitCollection) ? 3 : 4
     }
 
+    static let navChromeContentInsets = UIEdgeInsets(top: 6, left: 6, bottom: 6, right: 6)
+
+    /// Rounded-square chrome shared by settings, camera, home, undo, and tool toggles.
+    static func applySquareChrome(
+        to button: UIButton,
+        fill: UIColor,
+        border: UIColor,
+        traitCollection: UITraitCollection,
+        contentInsets: UIEdgeInsets = navChromeContentInsets
+    ) {
+        let corner = chromeCornerRadius(traitCollection)
+        let borderW = chromeBorderWidth(traitCollection)
+
+        button.backgroundColor = fill
+        button.layer.cornerRadius = corner
+        button.layer.borderWidth = borderW
+        button.layer.borderColor = border.cgColor
+        button.tintColor = .white
+        button.contentEdgeInsets = contentInsets
+        button.clipsToBounds = false
+        button.layer.shadowColor = UIColor.black.cgColor
+        button.layer.shadowOpacity = 0.18
+        button.layer.shadowRadius = 4
+        button.layer.shadowOffset = CGSize(width: 0, height: 2)
+        if #available(iOS 13.0, *) {
+            button.layer.cornerCurve = .continuous
+        }
+
+        // `UIButton.Configuration` draws its own background — sync it so home/settings match camera.
+        if var cfg = button.configuration {
+            cfg.baseForegroundColor = .white
+            cfg.background.backgroundColor = fill
+            cfg.background.strokeColor = border
+            cfg.background.strokeWidth = borderW
+            cfg.background.cornerRadius = corner
+            cfg.cornerStyle = .fixed
+            cfg.contentInsets = NSDirectionalEdgeInsets(
+                top: contentInsets.top,
+                leading: contentInsets.left,
+                bottom: contentInsets.bottom,
+                trailing: contentInsets.right
+            )
+            button.configuration = cfg
+        }
+    }
+
     static let diamondStrokeSizeDelta: CGFloat = 5.04
     static let diamondBackFillColor = UIColor(red: 1, green: 0.539, blue: 0.012, alpha: 1)
 
@@ -147,6 +194,10 @@ enum BrushiMascotLayout {
     static let homePadMascotMultiplier: CGFloat = 2.0
     /// Extra scale for Brushi above the crayon rail on the coloring screen.
     static let coloringRailMascotMultiplier: CGFloat = 1.5
+    /// Applied on the coloring screen so the crayon rail can show a partial 5th swatch.
+    static let coloringMascotViewportScale: CGFloat = 0.95
+    /// `MascotStateSleepy` artwork fills more of its square — scale the image, not the layout slot (keeps crayons/tools from jumping).
+    static let coloringSleepyVisualScale: CGFloat = 609.0 / 742.0
     private static let maxHeightBase: CGFloat = 300
 
     /// Coloring right-rail width (also drives mascot size on home screens).
@@ -179,11 +230,12 @@ enum BrushiMascotLayout {
         return CGSize(width: w, height: h)
     }
 
-    /// Mascot atop the crayon palette on `ColoringViewController` (1.5× base home size).
+    /// Mascot atop the crayon palette on `ColoringViewController` (1.5× base, then `coloringMascotViewportScale`).
     static func coloringRailDisplaySize(for traitCollection: UITraitCollection, image: UIImage?) -> CGSize {
         let base = displaySize(for: traitCollection, image: image)
-        let w = base.width * coloringRailMascotMultiplier
-        let h = min(base.height * coloringRailMascotMultiplier, maxLayoutHeight(for: traitCollection) * coloringRailMascotMultiplier)
+        let scale = coloringRailMascotMultiplier * coloringMascotViewportScale
+        let w = base.width * scale
+        let h = min(base.height * scale, maxLayoutHeight(for: traitCollection) * scale)
         return CGSize(width: w, height: h)
     }
 }

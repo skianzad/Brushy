@@ -59,5 +59,6 @@ enum MagicBrushyLanguage: String, CaseIterable {
 
     static func store(_ lang: MagicBrushyLanguage) {
         UserDefaults.standard.set(lang.rawValue, forKey: defaultsKey)
+        MagicBrushyCoachVoice.applyLanguageChange(lang)
     }
 }
