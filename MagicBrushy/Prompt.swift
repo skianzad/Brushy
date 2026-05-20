@@ -112,7 +112,9 @@ enum Prompt {
 
 \(paletteHint)
 
-Your job: exactly **one or two** very short sentences total (nothing longer). Name the color they used if you can see it. You may add one tiny idea about how that color feels with what they painted—only if it is obvious; do not guess random objects. \(noMapDirectionsRule)
+\(vlmFlexibilityRule)
+
+You may offer exactly **one or two** very short sentences total (nothing longer). You may name the color they used if you can see it. You may add one tiny idea about how that color feels with what they painted—only if it is obvious; do not guess random objects. \(noMapDirectionsRule)
 
 **Start** your spoken reply with a phrase in the spirit of: “\(praiseStarter)” — adapt the words to fit their color and picture; do not copy “Great job using the … color” or long lectures.\(openerLanguageNote)
 
@@ -192,7 +194,9 @@ Your job: exactly **one or two** very short sentences total (nothing longer). Na
 
 \(drawingHint)
 
-Your job: exactly **one or two** very short sentences total. **Lead with the drawing**, praise the art and gently guess what shape or thing the marks might be (sun, house, animal, face, path, flower—only if the picture really suggests it). Or point to **what looks newly added** in this moment—the fresh line, blob, or shape compared with the rest of the page. You may **briefly** name a color only if it helps; do not make the whole reply about palette colors. \(noMapDirectionsRule)
+\(vlmFlexibilityRule)
+
+You may offer exactly **one or two** very short sentences total. You may **lead with the drawing**, praise the art and gently guess what shape or thing the marks might be (sun, house, animal, face, path, flower—only if the picture really suggests it). Or you may point to **what looks newly added** in this moment—the fresh line, blob, or shape compared with the rest of the page. You may **briefly** name a color only if it helps; do not make the whole reply about palette colors. \(noMapDirectionsRule)
 
 **Start** your spoken reply with a phrase in the spirit of: “\(praiseStarter)” — adapt it to their shapes and new marks.\(openerLanguageNote)
 
@@ -215,6 +219,113 @@ Your job: exactly **one or two** very short sentences total. **Lead with the dra
             return pageLoadWelcomeFreeDrawing(pageTitle: pageTitle, hasPriorPaint: hasPriorPaint)
         }
         return pageLoadWelcomeColoring(pageTitle: pageTitle, hasPriorPaint: hasPriorPaint)
+    }
+
+    // MARK: - Coach (home mode picker)
+
+    /// Spoken on the home screen with lip sync — references last coloring / free draw or introduces both modes.
+    /// - Parameter isPhone: On phone, cards are side by side (coloring left, free draw right); on iPad, stacked (top / bottom).
+    static func homeModePickerWelcome(
+        recents: RecentDrawingActivity.HomeRecentsSummary,
+        isPhone: Bool
+    ) -> String {
+        if recents.hasLastColoring, recents.hasLastFreeDraw {
+            return homeModePickerWelcomeBoth(isPhone: isPhone)
+        }
+        if recents.hasLastColoring {
+            return homeModePickerWelcomeColoringOnly(
+                pageTitle: recents.lastColoringPageTitle ?? "picture",
+                packTitle: recents.lastColoringPackTitle,
+                isPhone: isPhone
+            )
+        }
+        if recents.hasLastFreeDraw {
+            return homeModePickerWelcomeFreeDrawOnly(
+                drawingTitle: recents.lastFreeDrawTitle ?? "drawing",
+                isPhone: isPhone
+            )
+        }
+        return homeModePickerWelcomeIntro(isPhone: isPhone)
+    }
+
+    private static func homeModePickerWelcomeBoth(isPhone: Bool) -> String {
+        let lines: [String]
+        if isPhone {
+            lines = [
+                "Hi! You can keep coloring what you see on the left, or tap Free Draw on the right to keep drawing!",
+                "Hey friend! Tap Coloring on the left to keep going with that picture, or Free Draw on the right for your drawing!",
+                "Welcome back! Continue your coloring on the left, or your free drawing on the right—whichever you feel like!",
+            ]
+        } else {
+            lines = [
+                "Hi! You can keep coloring at the top, or tap Free Draw below to keep drawing!",
+                "Hey friend! Tap Coloring on top to keep going with that picture, or Free Draw on the bottom for your drawing!",
+                "Welcome back! Continue your coloring up top, or your free drawing down below—whichever you feel like!",
+            ]
+        }
+        return lines.randomElement() ?? lines[0]
+    }
+
+    private static func homeModePickerWelcomeColoringOnly(
+        pageTitle: String,
+        packTitle: String?,
+        isPhone: Bool
+    ) -> String {
+        let subject = spokenPictureLabel(pageTitle: pageTitle, packTitle: packTitle)
+        let whereCard = isPhone ? "the Coloring card on the left" : "the Coloring card on top"
+        let lines = [
+            "Hey! Tap \(whereCard) to jump back into \(subject) and keep adding colors!",
+            "Your \(subject) is waiting on \(whereCard)—tap it when you want to keep painting!",
+            "Ready for more? Open Coloring to finish \(subject)—you were doing great!",
+        ]
+        return lines.randomElement() ?? lines[0]
+    }
+
+    private static func homeModePickerWelcomeFreeDrawOnly(drawingTitle: String, isPhone: Bool) -> String {
+        let label = kidFriendlyDrawingLabel(drawingTitle)
+        let whereCard = isPhone ? "Free Draw on the right" : "Free Draw below"
+        let lines = [
+            "Hey! Tap \(whereCard) to open \(label) again—or start a fresh page whenever you like!",
+            "Your free drawing is on the green card—tap \(whereCard) to keep building \(label)!",
+            "Welcome back! Tap \(whereCard)—\(label) is ready for you!",
+        ]
+        return lines.randomElement() ?? lines[0]
+    }
+
+    private static func homeModePickerWelcomeIntro(isPhone: Bool) -> String {
+        let lines: [String]
+        if isPhone {
+            lines = [
+                "Hi! I am Brushi! Tap Coloring on the left to pick a picture and fill it with crayons, or Free Draw on the right for blank paper—draw anything you imagine!",
+                "Hello! Coloring on the left lets you paint fun pictures line by line. Free Draw on the right is empty paper for your own ideas!",
+                "Hey there! Choose Coloring on the left for ready-made pictures to color, or Free Draw on the right to make your own art!",
+            ]
+        } else {
+            lines = [
+                "Hi! I am Brushi! Tap Coloring to pick a picture and fill it with crayons, or tap Free Draw for blank paper—draw anything you imagine!",
+                "Hello! Coloring lets you paint fun pictures line by line. Free Draw is empty paper for your own ideas—tap either card to start!",
+                "Hey there! Choose Coloring for ready-made pictures to color, or Free Draw to make your own art from scratch!",
+            ]
+        }
+        return lines.randomElement() ?? lines[0]
+    }
+
+    private static func spokenPictureLabel(pageTitle: String, packTitle: String?) -> String {
+        let page = pageTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        if page.isEmpty { return "your picture" }
+        if let pack = packTitle?.trimmingCharacters(in: .whitespacesAndNewlines), !pack.isEmpty,
+           !page.localizedCaseInsensitiveContains(pack) {
+            return "your \(page) from \(pack)"
+        }
+        return "your \(page)"
+    }
+
+    private static func kidFriendlyDrawingLabel(_ title: String) -> String {
+        let t = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        if t.isEmpty || t.localizedCaseInsensitiveCompare("Blank paper") == .orderedSame {
+            return "your drawing"
+        }
+        return "your \(t)"
     }
 
     /// Spoken when free draw opens on **fully blank** paper only (no saved art, no strokes; no VLM).
@@ -240,10 +351,13 @@ Your job: exactly **one or two** very short sentences total. **Lead with the dra
     private static func pageLoadWelcomeColoring(pageTitle: String?, hasPriorPaint: Bool) -> String {
         let opener = sheetOpener(pageTitle: pageTitle)
         let lang = languageInstruction(for: MagicBrushyLanguage.stored())
-        let progressNote = """
-              Welcome them to today’s sheet and invite them to pick colors and start filling it in.
+        let progressNote = hasPriorPaint
+            ? """
+              They already have some paint on the page. You may welcome them back and notice one simple thing you clearly see. You may invite them to keep filling the picture in.
             """
-        _ = hasPriorPaint
+            : """
+              You may welcome them to today’s sheet and invite them to pick colors and start filling it in.
+            """
 
         return """
 \(opener)
@@ -252,9 +366,11 @@ The child just opened this page. Look at the line art and the paint.
 
 \(progressNote)
 
-Your job: **two or three** short spoken sentences (about **25–45 words** total)—warm, simple kid words, not a lecture. Cover these beats **talking TO the child** (use the examples’ tone):
-1) Name today’s picture.
-2) Invite the child to keep going.
+\(vlmFlexibilityRule)
+
+You may say **two or three** short spoken sentences (about **25–45 words** total)—warm, simple kid words, not a lecture. You may **talk TO the child** and, if it fits what you see:
+1) You may name today’s picture.
+2) You may invite them to keep going.
 
 \(spokenToChildRule)
 \(neverThirdPersonSpokenRule)
@@ -270,10 +386,10 @@ Your job: **two or three** short spoken sentences (about **25–45 words** total
         let lang = languageInstruction(for: MagicBrushyLanguage.stored())
         let progressNote = hasPriorPaint
             ? """
-              They already have marks on the page. Welcome them back; notice one simple thing about what is already there (a shape, path, or idea—only if you clearly see it). Invite them to keep building the picture.
+              They already have marks on the page. You may welcome them back and notice one simple thing about what is already there (a shape, path, or idea—only if you clearly see it). You may invite them to keep building the picture.
             """
             : """
-              The page should be empty. Give warm encouragement to pick a color and make the first line, shape, or doodle. Sound excited that they can create anything—do not describe things that are not on the page.
+              The page should be empty. You may give warm encouragement to pick a color and make the first line, shape, or doodle. You may sound excited that they can create anything—do not describe things that are not on the page.
             """
 
         return """
@@ -283,7 +399,9 @@ The child just opened this free-draw page. Look at the blank paper and any marks
 
 \(progressNote)
 
-Your job: **two or three** short spoken sentences (about **20–40 words** total)—warm, simple kid words. Focus on **drawing and creativity**, not color lectures. \(noMapDirectionsRule) \(neverYouHaveOpenersRule)
+\(vlmFlexibilityRule)
+
+You may say **two or three** short spoken sentences (about **20–40 words** total)—warm, simple kid words. You may focus on **drawing and creativity**, not color lectures. \(noMapDirectionsRule) \(neverYouHaveOpenersRule)
 
 \(spokenToChildRule)
 \(neverThirdPersonSpokenRule)
@@ -313,7 +431,9 @@ Your job: **two or three** short spoken sentences (about **20–40 words** total
 
 The child just tapped their mascot buddy asking for a big cheer for their **entire drawing so far**—not only the newest dab of paint. Look at the full picture: how colors spread across the scene, how the page feels as one piece, and the subject of the line art if you can tell.
 
-Your job: one warm, very short message in simple kid words about **the whole picture**—what you like about how they filled the page overall. If you may, mention **two** small things you like (for example a color choice **and** the character or scene), but keep it to one or two tiny sentences. Vary how you start (\(neverYouHaveOpenersRule)). \(noMapDirectionsRule)
+\(vlmFlexibilityRule)
+
+You may give one warm, very short message in simple kid words about **the whole picture**—what you like about how they filled the page overall. You may mention **two** small things you like (for example a color choice **and** the character or scene), but you may keep it to one or two tiny sentences. Vary how you start (\(neverYouHaveOpenersRule)). \(noMapDirectionsRule)
 
 \(spokenToChildRule)
 \(neverThirdPersonSpokenRule)
@@ -332,7 +452,9 @@ Your job: one warm, very short message in simple kid words about **the whole pic
 
 The child tapped their mascot for a big cheer about **everything they drew so far**. Look at the full page: shapes, paths, characters, patterns, and how the picture fits together as one idea.
 
-Your job: one or two very short sentences in simple kid words. **First** You may praise  what the drawing might be or what story the shapes tell. **Then** you may add one tiny cheer about a color or a part you like—but do not make the reply only about colors. Vary how you start (\(neverYouHaveOpenersRule)). \(noMapDirectionsRule)
+\(vlmFlexibilityRule)
+
+You may say one or two very short sentences in simple kid words. You may praise what the drawing might be or what story the shapes tell. You may add one tiny cheer about a color or a part you like—but do not make the reply only about colors. Vary how you start (\(neverYouHaveOpenersRule)). \(noMapDirectionsRule)
 
 \(spokenToChildRule)
 \(neverThirdPersonSpokenRule)
@@ -419,6 +541,11 @@ If unsure, use neutral.
         }
         return "No new stroke tracked; peek at the picture and cheer gently."
     }
+
+    /// Shared coach/VLM hint: permission to adapt beats and length to what is on the image.
+    private static let vlmFlexibilityRule = """
+You may adapt, skip, or shorten anything below—only say what honestly fits what you see. Keep wording fresh; you do not need to follow every beat.
+"""
 
     private static let noMapDirectionsRule =
         "Do not use map directions (no left, right, top, bottom, or “in the corner”)."

@@ -33,6 +33,10 @@ final class HomeModePickerViewController: UIViewController {
     private let modeCardsStack = UIStackView()
     private let homeTitleBadge = HomeBrushiTitleBadgeView()
     private let mascotView = UIImageView()
+    private let mascotLipSync = MascotLipSyncDriver()
+    private var homeWelcomeGeneration = 0
+    private var homeWelcomeWork: DispatchWorkItem?
+    private var coachAutoFeedbackObserver: NSObjectProtocol?
     private let unlockButton = UIButton(type: .custom)
     private var unlockMinHeightConstraint: NSLayoutConstraint!
     private lazy var settingsButton: MagicBrushySettingsGearButton = makeMagicBrushySettingsGearButton()
@@ -74,10 +78,22 @@ final class HomeModePickerViewController: UIViewController {
         mascotColumn.translatesAutoresizingMaskIntoConstraints = false
         mascotColumn.clipsToBounds = false
 
-        mascotView.image = UIImage(named: "BrushMascot")
+        let mascotHello = MascotReactionState.hello.loadImage()
+            ?? MascotReactionState.neutral.loadImage()
+            ?? UIImage(named: "BrushMascot")
+        mascotView.image = mascotHello
         mascotView.contentMode = .scaleAspectFit
         mascotView.translatesAutoresizingMaskIntoConstraints = false
         mascotView.isUserInteractionEnabled = false
+        mascotLipSync.attach(
+            imageView: mascotView,
+            closed: UIImage(named: "MascotTalkingMouthClosed")
+                ?? MascotReactionState.talking.loadImage(),
+            open: UIImage(named: "MascotTalkingMouthOpen")
+                ?? MascotReactionState.happy.loadImage(),
+            oMouth: UIImage(named: "MascotTalkingMouthO")
+                ?? MascotReactionState.oMouth.loadImage()
+        )
 
         homeTitleBadge.translatesAutoresizingMaskIntoConstraints = false
         homeTitleBadge.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
@@ -228,6 +244,16 @@ final class HomeModePickerViewController: UIViewController {
         ) { [weak self] _ in
             self?.applySubscribeButtonEnabledState()
         }
+        coachAutoFeedbackObserver = NotificationCenter.default.addObserver(
+            forName: MagicBrushyCoachAutoFeedback.didChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            if !MagicBrushyCoachAutoFeedback.isEnabled {
+                self.cancelHomeWelcomeSpeech()
+            }
+        }
         SubscriptionManager.shared.start()
         applySubscribeButtonEnabledState()
         Task { await SubscriptionManager.shared.refreshEntitlements() }
@@ -324,6 +350,9 @@ final class HomeModePickerViewController: UIViewController {
         if let subscriptionAccessObserver {
             NotificationCenter.default.removeObserver(subscriptionAccessObserver)
         }
+        if let coachAutoFeedbackObserver {
+            NotificationCenter.default.removeObserver(coachAutoFeedbackObserver)
+        }
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -331,6 +360,18 @@ final class HomeModePickerViewController: UIViewController {
         refreshModeCardPreviews()
         Task { await SubscriptionManager.shared.refreshEntitlements() }
         applySubscribeButtonEnabledState()
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        FeedbackAlbaSpeech.mascotLipSync = mascotLipSync
+        scheduleHomeWelcomeSpeech()
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        cancelHomeWelcomeSpeech()
+        FeedbackAlbaSpeech.mascotLipSync = nil
     }
 
     private func refreshModeCardPreviews() {
@@ -347,6 +388,45 @@ final class HomeModePickerViewController: UIViewController {
             freeCard.setPreviewImage(freeDrawPlaceholderPreview, contentMode: .scaleAspectFit)
             freeCard.setShowsPlusBadge(true)
         }
+    }
+
+    private func scheduleHomeWelcomeSpeech() {
+        guard MagicBrushyCoachAutoFeedback.isEnabled else { return }
+        homeWelcomeWork?.cancel()
+        homeWelcomeGeneration += 1
+        let generation = homeWelcomeGeneration
+        let work = DispatchWorkItem { [weak self] in
+            self?.runHomeWelcomeSpeech(generation: generation)
+        }
+        homeWelcomeWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.55, execute: work)
+    }
+
+    private func runHomeWelcomeSpeech(generation: Int) {
+        guard generation == homeWelcomeGeneration else { return }
+        guard MagicBrushyCoachAutoFeedback.isEnabled else { return }
+        guard view.window != nil else { return }
+
+        let recents = RecentDrawingActivity.homeRecents()
+        let isPhone = MagicBrushyChromeMetrics.isPhone(traitCollection)
+        let spoken = Prompt.homeModePickerWelcome(recents: recents, isPhone: isPhone)
+        guard !spoken.isEmpty else { return }
+
+        if let hello = MascotReactionState.hello.loadImage() {
+            mascotView.image = hello
+        }
+
+        Task { @MainActor [weak self] in
+            guard let self, generation == self.homeWelcomeGeneration else { return }
+            await FeedbackAlbaSpeech.speakFeedback(spoken)
+        }
+    }
+
+    private func cancelHomeWelcomeSpeech() {
+        homeWelcomeWork?.cancel()
+        homeWelcomeWork = nil
+        homeWelcomeGeneration += 1
+        FeedbackAlbaSpeech.stopSpeaking()
     }
 
     override func viewDidLayoutSubviews() {
@@ -386,6 +466,7 @@ final class HomeModePickerViewController: UIViewController {
     }
 
     @objc private func modeCardTapped(_ sender: UIControl) {
+        cancelHomeWelcomeSpeech()
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
         guard let mode = Mode(rawValue: sender.tag) else { return }
         switch mode {

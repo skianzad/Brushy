@@ -1,7 +1,25 @@
 import UIKit
 
-/// Thumbnails for the home mode picker — last free drawing and last template coloring, kept separate.
+/// Thumbnails and labels for the home mode picker — last free drawing and last template coloring, kept separate.
 enum RecentDrawingActivity {
+
+    struct HomeRecentsSummary: Equatable {
+        let lastColoringPageTitle: String?
+        let lastColoringPackTitle: String?
+        let lastFreeDrawTitle: String?
+
+        var hasLastColoring: Bool { lastColoringPageTitle != nil }
+        var hasLastFreeDraw: Bool { lastFreeDrawTitle != nil }
+        var bothEmpty: Bool { !hasLastColoring && !hasLastFreeDraw }
+    }
+
+    static func homeRecents() -> HomeRecentsSummary {
+        HomeRecentsSummary(
+            lastColoringPageTitle: lastColoringPageTitle(),
+            lastColoringPackTitle: lastColoringPackTitle(),
+            lastFreeDrawTitle: lastFreeDrawTitle()
+        )
+    }
 
     /// Most recent saved free-drawing gallery thumbnail, if any.
     static func latestFreeDrawingThumbnail() -> UIImage? {
@@ -25,5 +43,25 @@ enum RecentDrawingActivity {
             savedUnderlay: underlay,
             maxPixelSide: maxPixelSide
         )
+    }
+
+    private static func lastColoringPageTitle() -> String? {
+        guard let ref = TemplateProgressStore.newestProgress(),
+              let pack = BuiltInColoringPages.library.first(where: { $0.id == ref.packId }),
+              pack.pages.indices.contains(ref.pageIndex)
+        else { return nil }
+        return pack.pages[ref.pageIndex].title
+    }
+
+    private static func lastColoringPackTitle() -> String? {
+        guard let ref = TemplateProgressStore.newestProgress(),
+              let pack = BuiltInColoringPages.library.first(where: { $0.id == ref.packId })
+        else { return nil }
+        return pack.title
+    }
+
+    private static func lastFreeDrawTitle() -> String? {
+        guard let rec = LastDrawingStore.allSavedGalleryRecordsNewestFirst().first else { return nil }
+        return rec.pageTitle
     }
 }
