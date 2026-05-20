@@ -351,13 +351,10 @@ You may offer exactly **one or two** very short sentences total. You may **lead 
     private static func pageLoadWelcomeColoring(pageTitle: String?, hasPriorPaint: Bool) -> String {
         let opener = sheetOpener(pageTitle: pageTitle)
         let lang = languageInstruction(for: MagicBrushyLanguage.stored())
-        let progressNote = hasPriorPaint
-            ? """
-              They already have some paint on the page. You may welcome them back and notice one simple thing you clearly see. You may invite them to keep filling the picture in.
+        let progressNote = """
+              Welcome them to today’s sheet and invite them to pick colors and start filling it in.
             """
-            : """
-              You may welcome them to today’s sheet and invite them to pick colors and start filling it in.
-            """
+        _ = hasPriorPaint
 
         return """
 \(opener)
@@ -366,11 +363,9 @@ The child just opened this page. Look at the line art and the paint.
 
 \(progressNote)
 
-\(vlmFlexibilityRule)
-
-You may say **two or three** short spoken sentences (about **25–45 words** total)—warm, simple kid words, not a lecture. You may **talk TO the child** and, if it fits what you see:
-1) You may name today’s picture.
-2) You may invite them to keep going.
+Your job: **two or three** short spoken sentences (about **25–45 words** total)—warm, simple kid words, not a lecture. Cover these beats **talking TO the child** (use the examples’ tone):
+1) Name today’s picture.
+2) Invite the child to keep going.
 
 \(spokenToChildRule)
 \(neverThirdPersonSpokenRule)
@@ -386,10 +381,10 @@ You may say **two or three** short spoken sentences (about **25–45 words** tot
         let lang = languageInstruction(for: MagicBrushyLanguage.stored())
         let progressNote = hasPriorPaint
             ? """
-              They already have marks on the page. You may welcome them back and notice one simple thing about what is already there (a shape, path, or idea—only if you clearly see it). You may invite them to keep building the picture.
+              They already have marks on the page. Welcome them back; notice one simple thing about what is already there (a shape, path, or idea—only if you clearly see it). Invite them to keep building the picture.
             """
             : """
-              The page should be empty. You may give warm encouragement to pick a color and make the first line, shape, or doodle. You may sound excited that they can create anything—do not describe things that are not on the page.
+              The page should be empty. Give warm encouragement to pick a color and make the first line, shape, or doodle. Sound excited that they can create anything—do not describe things that are not on the page.
             """
 
         return """
@@ -399,9 +394,7 @@ The child just opened this free-draw page. Look at the blank paper and any marks
 
 \(progressNote)
 
-\(vlmFlexibilityRule)
-
-You may say **two or three** short spoken sentences (about **20–40 words** total)—warm, simple kid words. You may focus on **drawing and creativity**, not color lectures. \(noMapDirectionsRule) \(neverYouHaveOpenersRule)
+Your job: **two or three** short spoken sentences (about **20–40 words** total)—warm, simple kid words. Focus on **drawing and creativity**, not color lectures. \(noMapDirectionsRule) \(neverYouHaveOpenersRule)
 
 \(spokenToChildRule)
 \(neverThirdPersonSpokenRule)

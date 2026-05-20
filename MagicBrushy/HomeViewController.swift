@@ -109,6 +109,10 @@ final class HomeViewController: UIViewController {
     private var mascotFillTrailingConstraint: NSLayoutConstraint!
     private var mascotColumnWidthFractionConstraint: NSLayoutConstraint!
     private var mascotColumnFixedWidthConstraint: NSLayoutConstraint!
+    private var homeTitleBadgeHeightCapPad: NSLayoutConstraint!
+    private var homeTitleBadgeHeightCapPhone: NSLayoutConstraint!
+    private var homeMainLeadingConstraint: NSLayoutConstraint!
+    private var homeMainTrailingConstraint: NSLayoutConstraint!
 
     private let homeMainStack = UIStackView()
 
@@ -122,6 +126,10 @@ final class HomeViewController: UIViewController {
         /// Gap between settings/unlock row and the category panel.
         static let headerToBodyGapRegular: CGFloat = 20
         static let headerToBodyGapCompact: CGFloat = 12
+        /// iPhone — extra space below settings so the category panel sits lower.
+        static let headerToBodyGapPhone: CGFloat = 34
+        static let categoryGridVisibleRowsPhone: CGFloat = 2.55
+        static let titleBadgeMaxHeightFractionPhone: CGFloat = 0.30
         static let rowSpacing: CGFloat = 8
         static let columnSpacing: CGFloat = 8
         static let bodyStackSpacing: CGFloat = 12
@@ -289,22 +297,26 @@ final class HomeViewController: UIViewController {
             homeTitleBadge.centerXAnchor.constraint(equalTo: mascotColumn.centerXAnchor),
             homeTitleBadge.leadingAnchor.constraint(equalTo: mascotColumn.leadingAnchor),
             homeTitleBadge.trailingAnchor.constraint(equalTo: mascotColumn.trailingAnchor),
-            homeTitleBadge.heightAnchor.constraint(
-                equalTo: homeTitleBadge.widthAnchor,
-                multiplier: HomeBrushiTitleBadgeView.Metrics.heightPerWidth
-            ),
-            homeTitleBadge.heightAnchor.constraint(
-                lessThanOrEqualTo: mascotColumn.heightAnchor,
-                multiplier: HomeCategoryTileMetrics.titleBadgeMaxHeightFraction
-            ),
-
             mascotView.topAnchor.constraint(greaterThanOrEqualTo: homeTitleBadge.bottomAnchor, constant: 8),
             mascotView.bottomAnchor.constraint(equalTo: mascotColumn.bottomAnchor),
 
             bodyTopToHeaderConstraint,
             bodyBottomConstraint,
-            homeMainStack.leadingAnchor.constraint(equalTo: g.leadingAnchor, constant: 16),
-            homeMainStack.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -16),
+        ])
+        homeMainLeadingConstraint = homeMainStack.leadingAnchor.constraint(equalTo: g.leadingAnchor, constant: 16)
+        homeMainTrailingConstraint = homeMainStack.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -16)
+        homeTitleBadgeHeightCapPad = homeTitleBadge.heightAnchor.constraint(
+            lessThanOrEqualTo: mascotColumn.heightAnchor,
+            multiplier: HomeCategoryTileMetrics.titleBadgeMaxHeightFraction
+        )
+        homeTitleBadgeHeightCapPhone = homeTitleBadge.heightAnchor.constraint(
+            lessThanOrEqualTo: mascotColumn.heightAnchor,
+            multiplier: HomeCategoryTileMetrics.titleBadgeMaxHeightFractionPhone
+        )
+        homeTitleBadgeHeightCapPad.isActive = true
+        NSLayoutConstraint.activate([
+            homeMainLeadingConstraint,
+            homeMainTrailingConstraint,
 
             categoryGridPanel.topAnchor.constraint(equalTo: categoryGridPanelWrapper.topAnchor),
             categoryGridPanel.leadingAnchor.constraint(equalTo: categoryGridPanelWrapper.leadingAnchor),
@@ -455,6 +467,8 @@ final class HomeViewController: UIViewController {
 
         applyTopChromeLayout(for: traitCollection)
         applyMascotLayout(for: traitCollection)
+        homeTitleBadge.applyStyle(for: traitCollection)
+        applyLayoutMetricsForCurrentTraits()
     }
 
     private func applyMascotLayout(for traitCollection: UITraitCollection) {
@@ -470,7 +484,7 @@ final class HomeViewController: UIViewController {
             mascotFillTrailingConstraint.isActive = false
             mascotColumnWidthFractionConstraint.isActive = false
             mascotColumnFixedWidthConstraint.isActive = true
-            mascotColumnFixedWidthConstraint.constant = mascotSize.width + 8
+            mascotColumnFixedWidthConstraint.constant = mascotSize.width + 12
         } else {
             mascotWidthConstraint.isActive = false
             mascotHeightConstraint.isActive = false
@@ -596,9 +610,15 @@ final class HomeViewController: UIViewController {
         let aspect = HomeCategoryTileMetrics.cardAspectHeightPerWidth
         let tileWidth = (w - 2 * col) / 3
         let rowHeight = tileWidth * aspect
-        let visibleRows = isCompactHeight
-            ? HomeCategoryTileMetrics.categoryGridVisibleRowsCompact
-            : HomeCategoryTileMetrics.categoryGridVisibleRowsRegular
+        let phone = MagicBrushyChromeMetrics.isPhone(traitCollection)
+        let visibleRows: CGFloat
+        if phone {
+            visibleRows = HomeCategoryTileMetrics.categoryGridVisibleRowsPhone
+        } else if isCompactHeight {
+            visibleRows = HomeCategoryTileMetrics.categoryGridVisibleRowsCompact
+        } else {
+            visibleRows = HomeCategoryTileMetrics.categoryGridVisibleRowsRegular
+        }
         let rowGaps = max(0, visibleRows - 1) * HomeCategoryTileMetrics.rowSpacing
         let viewportHeight = visibleRows * rowHeight + rowGaps
         guard abs(categoryGridViewportHeightConstraint.constant - viewportHeight) > 0.5 else { return }
@@ -633,13 +653,31 @@ final class HomeViewController: UIViewController {
     }
 
     private func applyLayoutMetricsForCurrentTraits() {
+        let phone = MagicBrushyChromeMetrics.isPhone(traitCollection)
         let compact = isCompactHeight
-        bodyTopToHeaderConstraint?.constant = compact
-            ? HomeCategoryTileMetrics.headerToBodyGapCompact
-            : HomeCategoryTileMetrics.headerToBodyGapRegular
-        bodyBottomConstraint?.constant = compact ? -10 : -22
-        homeMainStack.spacing = compact ? 10 : 16
-        bodyStack.spacing = compact ? 8 : HomeCategoryTileMetrics.bodyStackSpacing
+        if phone {
+            bodyTopToHeaderConstraint?.constant = HomeCategoryTileMetrics.headerToBodyGapPhone
+            bodyBottomConstraint?.constant = -6
+            homeMainStack.spacing = 8
+            bodyStack.spacing = 8
+            bodyStack.alignment = .bottom
+            homeMainLeadingConstraint?.constant = 10
+            homeMainTrailingConstraint?.constant = -10
+            homeTitleBadgeHeightCapPad.isActive = false
+            homeTitleBadgeHeightCapPhone.isActive = true
+        } else {
+            bodyTopToHeaderConstraint?.constant = compact
+                ? HomeCategoryTileMetrics.headerToBodyGapCompact
+                : HomeCategoryTileMetrics.headerToBodyGapRegular
+            bodyBottomConstraint?.constant = compact ? -10 : -22
+            homeMainStack.spacing = compact ? 10 : 16
+            bodyStack.spacing = compact ? 8 : HomeCategoryTileMetrics.bodyStackSpacing
+            bodyStack.alignment = .top
+            homeMainLeadingConstraint?.constant = 16
+            homeMainTrailingConstraint?.constant = -16
+            homeTitleBadgeHeightCapPhone.isActive = false
+            homeTitleBadgeHeightCapPad.isActive = true
+        }
         updateCategoryGridViewportHeightIfNeeded()
     }
 
@@ -653,6 +691,8 @@ final class HomeViewController: UIViewController {
         if idiomChanged {
             applyTopChromeLayout(for: traitCollection)
             applyMascotLayout(for: traitCollection)
+            homeTitleBadge.applyStyle(for: traitCollection)
+            applyLayoutMetricsForCurrentTraits()
         }
     }
 

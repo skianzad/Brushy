@@ -190,6 +190,8 @@ enum MagicBrushyChromeMetrics {
 enum BrushiMascotLayout {
 
     static let mascotScale: CGFloat = 1.25
+    /// iPhone home / mode-picker — larger than the legacy compact rail size.
+    static let homePhoneMascotMultiplier: CGFloat = 1.58
     /// iPad home / mode-picker: fill the mascot column (≈2× the fixed rail width).
     static let homePadMascotMultiplier: CGFloat = 2.0
     /// Extra scale for Brushi above the crayon rail on the coloring screen.
@@ -213,9 +215,11 @@ enum BrushiMascotLayout {
         maxHeightBase * mascotScale
     }
 
-    /// iPhone home screens: compact fixed size. iPad: use column fill in layout (see `homePadMascotMultiplier`).
+    /// iPhone home screens: enlarged fixed size. iPad: use column fill in layout (see `homePadMascotMultiplier`).
     static func homeDisplaySize(for traitCollection: UITraitCollection, image: UIImage?) -> CGSize {
-        let mult = MagicBrushyChromeMetrics.isPhone(traitCollection) ? 1.0 : homePadMascotMultiplier
+        let mult = MagicBrushyChromeMetrics.isPhone(traitCollection)
+            ? homePhoneMascotMultiplier
+            : homePadMascotMultiplier
         let w = layoutWidth(for: traitCollection) * mult
         let aspect = (image?.size.height ?? 1) / max(image?.size.width ?? 1, 1)
         let h = min(w * aspect, maxLayoutHeight(for: traitCollection) * mult)

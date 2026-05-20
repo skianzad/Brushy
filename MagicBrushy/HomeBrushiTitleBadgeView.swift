@@ -1,16 +1,29 @@
 import UIKit
 
-/// Transparent “Color with Brushi” lockup from Figma `122:1000` / `122:1001`.
+/// “Color with Brushi” lockup — iPad uses Figma `122:1001`; iPhone uses `167:474`.
 final class HomeBrushiTitleBadgeView: UIView {
 
     enum Metrics {
-        /// Exported PNG (`402×328`, RGBA).
-        static let designWidth: CGFloat = 402
-        static let designHeight: CGFloat = 328
-        static var heightPerWidth: CGFloat { designHeight / designWidth }
+        /// iPad / regular width (`122:1001` export).
+        static let regularDesignWidth: CGFloat = 402
+        static let regularDesignHeight: CGFloat = 328
+        /// iPhone (`167:474` export).
+        static let phoneDesignWidth: CGFloat = 1163
+        static let phoneDesignHeight: CGFloat = 443
+
+        static func heightPerWidth(isPhone: Bool) -> CGFloat {
+            isPhone
+                ? phoneDesignHeight / phoneDesignWidth
+                : regularDesignHeight / regularDesignWidth
+        }
+
+        static func assetName(isPhone: Bool) -> String {
+            isPhone ? "HomeColorWithBrushiPhone" : "HomeColorWithBrushi"
+        }
     }
 
     private let artImageView = UIImageView()
+    private var aspectRatioConstraint: NSLayoutConstraint?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -31,7 +44,6 @@ final class HomeBrushiTitleBadgeView: UIView {
         artImageView.translatesAutoresizingMaskIntoConstraints = false
         artImageView.contentMode = .scaleAspectFit
         artImageView.backgroundColor = .clear
-        artImageView.image = UIImage(named: "HomeColorWithBrushi")
 
         addSubview(artImageView)
 
@@ -41,5 +53,24 @@ final class HomeBrushiTitleBadgeView: UIView {
             artImageView.topAnchor.constraint(equalTo: topAnchor),
             artImageView.bottomAnchor.constraint(equalTo: bottomAnchor),
         ])
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        guard previousTraitCollection?.userInterfaceIdiom != traitCollection.userInterfaceIdiom else { return }
+        applyStyle(for: traitCollection)
+    }
+
+    /// Updates artwork and aspect ratio for the current idiom (call after adding constraints).
+    func applyStyle(for traitCollection: UITraitCollection) {
+        let phone = MagicBrushyChromeMetrics.isPhone(traitCollection)
+        artImageView.image = UIImage(named: Metrics.assetName(isPhone: phone))
+        aspectRatioConstraint?.isActive = false
+        aspectRatioConstraint = heightAnchor.constraint(
+            equalTo: widthAnchor,
+            multiplier: Metrics.heightPerWidth(isPhone: phone)
+        )
+        aspectRatioConstraint?.priority = .required
+        aspectRatioConstraint?.isActive = true
     }
 }

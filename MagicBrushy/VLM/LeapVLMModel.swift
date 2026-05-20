@@ -59,6 +59,9 @@ final class LeapVLMModel {
     private static let simulatorMessage =
         "The Leap VLM only runs reliably on device (Simulator GPU builds may abort). Use a physical iPad or iPhone to get AI coloring feedback."
 
+    /// Matches device coach image cap (stub never encodes, but keeps the API identical).
+    static let coachMaxImageEdge: CGFloat = 384
+
     public init() {}
 
     private func notifyLoadPanelStateChanged() {

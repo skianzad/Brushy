@@ -37,8 +37,8 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     private let mascotLipSync = MascotLipSyncDriver()
     /// Wraps mascot art and the tap-for-cheer gesture.
     private let mascotContainer = UIView()
-    /// Segments filled in `viewDidLoad`; avoids building outline bitmaps during storyboard instantiation.
-    private let pageControl = UISegmentedControl()
+    private let paintRow = UIStackView()
+    private let rightPanelStack = UIStackView()
     private let feedbackButton = UIButton(type: .system)
     private let clearButton = UIButton(type: .system)
     private let undoButton = UIButton(type: .system)
@@ -96,8 +96,6 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     private let drawingBackgroundView = UIImageView()
     private let homeButton = UIButton(type: .custom)
     private let toolRow = UIStackView()
-    private let prevPageButton = UIButton(type: .system)
-    private let nextPageButton = UIButton(type: .system)
     private let doneButton = UIButton(type: .system)
     private let toolPairStack = UIStackView()
     /// Holds `crayonScrollView` so Auto Layout gives the scroll view a **bounded** height (required for vertical scrolling).
@@ -187,6 +185,10 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     private var canvasPanGesture: UIPanGestureRecognizer!
     private var mascotImageWidthConstraint: NSLayoutConstraint!
     private var mascotImageHeightConstraint: NSLayoutConstraint!
+    private var mascotImageCenterXConstraint: NSLayoutConstraint!
+    private var mascotImageLeadingConstraint: NSLayoutConstraint!
+    private var mascotRailWidthConstraint: NSLayoutConstraint!
+    private var mascotIsOnLeadingRail = false
 
     /// App-wide singleton model; loaded once at app startup from SceneDelegate.
     private let vlm = LeapVLMModel.shared
@@ -249,14 +251,6 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         templateView.backgroundColor = FigmaTheme.canvasFill
         templateView.layer.cornerRadius = 24
         templateView.layer.borderWidth = 0
-
-        for page in coloringBookPages {
-            pageControl.insertSegment(withTitle: page.title, at: pageControl.numberOfSegments, animated: false)
-        }
-        pageControl.selectedSegmentIndex = min(max(0, pinnedPageIndex ?? 0), max(0, coloringBookPages.count - 1))
-        pageControl.addTarget(self, action: #selector(pageChanged), for: .valueChanged)
-        pageControl.isHidden = coloringBookPages.count <= 1
-        styleSkySegmentedPagePicker(pageControl)
 
         feedbackButton.setTitle("Feedback", for: .normal)
         feedbackButton.titleLabel?.font = FigmaTheme.bodyFont(size: 17, weight: .semibold)
@@ -410,8 +404,18 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
 
         mascotImageWidthConstraint = mascotImageView.widthAnchor.constraint(equalToConstant: mascotDisplay.width)
         mascotImageHeightConstraint = mascotImageView.heightAnchor.constraint(equalToConstant: mascotDisplay.height)
+        mascotImageCenterXConstraint = mascotImageView.centerXAnchor.constraint(
+            equalTo: mascotContainer.centerXAnchor
+        )
+        mascotImageLeadingConstraint = mascotImageView.leadingAnchor.constraint(
+            equalTo: mascotContainer.leadingAnchor,
+            constant: -14
+        )
+        mascotRailWidthConstraint = mascotContainer.widthAnchor.constraint(
+            equalToConstant: BrushiMascotLayout.rightRailWidth(for: traitCollection)
+        )
         NSLayoutConstraint.activate([
-            mascotImageView.centerXAnchor.constraint(equalTo: mascotContainer.centerXAnchor),
+            mascotImageCenterXConstraint,
             mascotImageView.topAnchor.constraint(equalTo: mascotContainer.topAnchor),
             mascotImageView.bottomAnchor.constraint(equalTo: mascotContainer.bottomAnchor),
             mascotImageWidthConstraint,
@@ -419,7 +423,9 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         ])
 
         // ── Right panel ───────────────────────────────────────────────────────
-        let rightPanelStack = UIStackView(arrangedSubviews: [mascotContainer, toolPairStack, crayonScrollContainer])
+        rightPanelStack.addArrangedSubview(mascotContainer)
+        rightPanelStack.addArrangedSubview(toolPairStack)
+        rightPanelStack.addArrangedSubview(crayonScrollContainer)
         rightPanelStack.axis = .vertical
         rightPanelStack.spacing = ColoringCrayonPaletteLayout.rightPanelStackSpacing
         rightPanelStack.distribution = .fill
@@ -568,7 +574,6 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         canvasContainer.addSubview(strokeView)
         canvasContainer.addSubview(templateLineOverlayView)
 
-        let paintRow = UIStackView()
         paintRow.axis = .horizontal
         paintRow.alignment = .fill
         paintRow.spacing = 10
@@ -578,7 +583,6 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         paintRow.addArrangedSubview(canvasContainer)
         paintRow.addArrangedSubview(rightPanelStack)
 
-        pageControl.translatesAutoresizingMaskIntoConstraints = false
         bar.translatesAutoresizingMaskIntoConstraints = false
         paintRow.translatesAutoresizingMaskIntoConstraints = false
 
@@ -588,10 +592,6 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         headerStack.translatesAutoresizingMaskIntoConstraints = false
         headerStack.isLayoutMarginsRelativeArrangement = false
         headerStack.insetsLayoutMarginsFromSafeArea = false
-        if !pageControl.isHidden {
-            headerStack.insertArrangedSubview(pageControl, at: 0)
-        }
-
         view.addSubview(drawingBackgroundView)
         view.addSubview(headerStack)
         view.addSubview(paintRow)
@@ -690,6 +690,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         refreshStrokeSizeAppearance()
 
         installPhoneCanvasZoomGestures()
+        applyLayoutForTraitCollection(traitCollection)
         applyCanvasVisualTransform()
 
         let start = pinnedPageIndex ?? 0
@@ -706,40 +707,6 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         refreshCrayonSelection(animated: false)
 
         view.bringSubviewToFront(loadOverlay)
-    }
-
-    /// Removes the default gray “track” / hairline on `UISegmentedControl` so it blends with the sky background.
-    private func styleSkySegmentedPagePicker(_ sc: UISegmentedControl) {
-        let sky = FigmaTheme.skyBlue
-        sc.backgroundColor = sky
-        sc.clipsToBounds = false
-        sc.layer.borderWidth = 0
-        sc.layer.cornerRadius = 0
-        sc.apportionsSegmentWidthsByContent = true
-
-        let normalAttrs: [NSAttributedString.Key: Any] = [
-            .foregroundColor: FigmaTheme.coastTitle,
-            .font: FigmaTheme.bodyFont(size: 13, weight: .semibold),
-        ]
-        let selectedAttrs: [NSAttributedString.Key: Any] = [
-            .foregroundColor: UIColor.white,
-            .font: FigmaTheme.bodyFont(size: 13, weight: .semibold),
-        ]
-        sc.setTitleTextAttributes(normalAttrs, for: .normal)
-        sc.setTitleTextAttributes(selectedAttrs, for: .selected)
-
-        let empty = UIImage()
-        sc.setBackgroundImage(empty, for: .normal, barMetrics: .default)
-        sc.setBackgroundImage(empty, for: .selected, barMetrics: .default)
-        sc.setBackgroundImage(empty, for: .highlighted, barMetrics: .default)
-        sc.setBackgroundImage(empty, for: .disabled, barMetrics: .default)
-        sc.setDividerImage(empty, forLeftSegmentState: .normal, rightSegmentState: .normal, barMetrics: .default)
-        sc.setDividerImage(empty, forLeftSegmentState: .selected, rightSegmentState: .normal, barMetrics: .default)
-        sc.setDividerImage(empty, forLeftSegmentState: .normal, rightSegmentState: .selected, barMetrics: .default)
-
-        if #available(iOS 13.0, *) {
-            sc.selectedSegmentTintColor = FigmaTheme.actionBlue
-        }
     }
 
     private func styleChromeButton(_ button: UIButton, fill: UIColor, border: UIColor, cornerRadius: CGFloat = 12) {
@@ -1051,12 +1018,49 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         crayonScrollViewportHeightConstraint?.constant = ColoringCrayonPaletteLayout.scrollViewportHeight(for: tc)
 
         updateMascotDisplaySize(for: tc)
+        applyMascotRailPlacement(for: tc)
         updatePhoneCanvasZoomGesturesEnabled(for: tc)
         if !phone {
             phoneCanvasUserZoom = 1
             phoneCanvasPanOffset = .zero
             applyCanvasVisualTransform()
         }
+    }
+
+    /// iPhone: mascot in a left rail beside the canvas; iPad: mascot atop the right crayon column.
+    private func applyMascotRailPlacement(for tc: UITraitCollection) {
+        let phone = MagicBrushyChromeMetrics.isPhone(tc)
+        let railWidth = BrushiMascotLayout.rightRailWidth(for: tc)
+        guard phone != mascotIsOnLeadingRail else {
+            if phone { mascotRailWidthConstraint.constant = railWidth }
+            return
+        }
+
+        if phone {
+            rightPanelStack.removeArrangedSubview(mascotContainer)
+            mascotContainer.removeFromSuperview()
+            paintRow.insertArrangedSubview(mascotContainer, at: 0)
+            mascotContainer.setContentHuggingPriority(.required, for: .horizontal)
+            mascotContainer.setContentCompressionResistancePriority(.required, for: .horizontal)
+            mascotRailWidthConstraint.constant = railWidth
+            mascotRailWidthConstraint.isActive = true
+            mascotImageCenterXConstraint.isActive = false
+            mascotImageLeadingConstraint.isActive = true
+        } else {
+            paintRow.removeArrangedSubview(mascotContainer)
+            mascotContainer.removeFromSuperview()
+            rightPanelStack.insertArrangedSubview(mascotContainer, at: 0)
+            rightPanelStack.setCustomSpacing(
+                ColoringCrayonPaletteLayout.mascotToToolsSpacing,
+                after: mascotContainer
+            )
+            mascotContainer.setContentHuggingPriority(.required, for: .vertical)
+            mascotContainer.setContentCompressionResistancePriority(.required, for: .vertical)
+            mascotRailWidthConstraint.isActive = false
+            mascotImageLeadingConstraint.isActive = false
+            mascotImageCenterXConstraint.isActive = true
+        }
+        mascotIsOnLeadingRail = phone
     }
 
     private static let phoneCanvasMinZoom: CGFloat = 1
@@ -1156,21 +1160,8 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        hideFullWidthHairlineUnderStatusBarIfNeeded()
         applyPendingResumeCompositeIfNeeded()
         updateCrayonScrollViewportHeightIfNeeded()
-    }
-
-    /// Some `UISegmentedControl` builds add a ~1pt tall full-width separator along the **top** edge; hide it after layout.
-    private func hideFullWidthHairlineUnderStatusBarIfNeeded() {
-        guard !pageControl.isHidden, pageControl.bounds.width > 10 else { return }
-        for sub in pageControl.subviews {
-            let w = sub.bounds.width
-            let h = sub.bounds.height
-            let top = sub.frame.minY
-            guard h > 0, h <= 2.5, w >= pageControl.bounds.width * 0.88, top < 4 else { continue }
-            sub.isHidden = true
-        }
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -1440,14 +1431,6 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         loadOverlay.isUserInteractionEnabled = false
     }
 
-    @objc private func pageChanged() {
-        let newIndex = pageControl.selectedSegmentIndex
-        guard newIndex != pageIndex else { return }
-        // Save the current page's progress before switching away.
-        saveCurrentTemplateProgressIfNeeded()
-        pageIndex = newIndex
-    }
-
     /// Saves strokes for the current template page (non-free-drawing) so they survive a page switch or home tap.
     private func saveCurrentTemplateProgressIfNeeded() {
         guard let packId = sessionPackId,
@@ -1492,9 +1475,6 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     private func applyCurrentPage() {
         guard pageIndex >= 0, pageIndex < coloringBookPages.count else { return }
         clearResumeSnapshot()
-        if !pageControl.isHidden {
-            pageControl.selectedSegmentIndex = pageIndex
-        }
         FeedbackAlbaSpeech.stopSpeaking()
         invalidateFeedbackSession()
         let page = coloringBookPages[pageIndex]

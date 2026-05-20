@@ -14,6 +14,23 @@ private enum HomeModePickerLayout {
     static let previewCornerRadius: CGFloat = 15
     static let previewBorderWidth: CGFloat = 6.9
     static let titleBadgeMaxHeightFraction: CGFloat = 0.40
+
+    /// iPhone landscape — fill more of the safe area with mascot + mode cards.
+    static let phoneMainHorizontalInset: CGFloat = 10
+    static let phoneBodyTopGap: CGFloat = 2
+    static let phoneBodyBottomGap: CGFloat = -6
+    static let phoneBodyStackSpacing: CGFloat = 8
+    static let phoneCardStackSpacing: CGFloat = 8
+    static let phoneMascotWidthFraction: CGFloat = 0.34
+    static let phoneMascotMaxWidth: CGFloat = 178
+    static let phoneCardHeightFill: CGFloat = 0.98
+    static let phoneTitleBarHeight: CGFloat = 42
+    static let phoneTitleFontSize: CGFloat = 18
+    static let phoneCardCornerRadius: CGFloat = 12.5
+    static let phoneCardBorderWidth: CGFloat = 6.2
+    static let phonePreviewCornerRadius: CGFloat = 16
+    static let phonePreviewBorderWidth: CGFloat = 7.2
+    static let phoneTitleBadgeMaxHeightFraction: CGFloat = 0.32
 }
 
 /// Root hub (Figma `122:632`) — choose Free Draw vs Coloring before the category grid.
@@ -202,10 +219,6 @@ final class HomeModePickerViewController: UIViewController {
             homeTitleBadge.leadingAnchor.constraint(equalTo: mascotColumn.leadingAnchor),
             homeTitleBadge.trailingAnchor.constraint(equalTo: mascotColumn.trailingAnchor),
             homeTitleBadge.heightAnchor.constraint(
-                equalTo: homeTitleBadge.widthAnchor,
-                multiplier: HomeBrushiTitleBadgeView.Metrics.heightPerWidth
-            ),
-            homeTitleBadge.heightAnchor.constraint(
                 lessThanOrEqualTo: mascotColumn.heightAnchor,
                 multiplier: HomeModePickerLayout.titleBadgeMaxHeightFraction
             ),
@@ -236,6 +249,7 @@ final class HomeModePickerViewController: UIViewController {
         mascotHeightConstraint = mascotView.heightAnchor.constraint(equalToConstant: mascotSize.height)
 
         applyBodyLayout(for: traitCollection)
+        homeTitleBadge.applyStyle(for: traitCollection)
 
         subscriptionAccessObserver = NotificationCenter.default.addObserver(
             forName: .magicBrushySubscriptionAccessDidChange,
@@ -267,30 +281,34 @@ final class HomeModePickerViewController: UIViewController {
         applySubscribeButtonEnabledState()
     }
 
-    /// iPhone: compact row of square tiles + hugging mascot; iPad: original stacked layout.
+    /// iPhone: enlarged mascot + side-by-side mode cards; iPad: stacked layout in the right column.
     private func applyBodyLayout(for traitCollection: UITraitCollection) {
         let phone = MagicBrushyChromeMetrics.isPhone(traitCollection)
         if phone {
-            homeMainStack.alignment = .center
-            bodyStack.alignment = .center
+            homeMainStack.alignment = .fill
+            bodyStack.alignment = .bottom
             bodyStack.distribution = .fill
-            bodyStack.spacing = 10
+            bodyStack.spacing = HomeModePickerLayout.phoneBodyStackSpacing
             mascotWidthFractionConstraint.isActive = false
             mascotFixedWidthConstraint.isActive = true
             modeCardsStack.axis = .horizontal
             modeCardsStack.alignment = .fill
-            modeCardsStack.distribution = .fill
-            modeCardsStack.spacing = 10
+            modeCardsStack.distribution = .fillEqually
+            modeCardsStack.spacing = HomeModePickerLayout.phoneCardStackSpacing
             cardWidthToStackConstraint.isActive = false
             coloringCardWidthConstraint.isActive = true
             coloringCardHeightConstraint.isActive = true
             freeCardHeightConstraint.isActive = true
-            modeCardsStack.setContentHuggingPriority(.required, for: .horizontal)
-            modeCardsStack.setContentHuggingPriority(.required, for: .vertical)
-            bodyStack.setContentHuggingPriority(.required, for: .horizontal)
-            bodyStack.setContentCompressionResistancePriority(.required, for: .horizontal)
+            modeCardsStack.setContentHuggingPriority(.defaultLow, for: .horizontal)
+            modeCardsStack.setContentHuggingPriority(.defaultLow, for: .vertical)
+            bodyStack.setContentHuggingPriority(.defaultLow, for: .horizontal)
+            bodyStack.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
             topChromeTrailingToSafeConstraint.isActive = false
             topChromeTrailingToBodyConstraint.isActive = true
+            homeMainLeadingConstraint.constant = HomeModePickerLayout.phoneMainHorizontalInset
+            homeMainTrailingConstraint.constant = -HomeModePickerLayout.phoneMainHorizontalInset
+            coloringCard.applyPhoneChrome(true)
+            freeCard.applyPhoneChrome(true)
         } else {
             homeMainStack.alignment = .fill
             bodyStack.alignment = .fill
@@ -312,7 +330,12 @@ final class HomeModePickerViewController: UIViewController {
             bodyStack.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
             topChromeTrailingToBodyConstraint.isActive = false
             topChromeTrailingToSafeConstraint.isActive = true
+            homeMainLeadingConstraint.constant = 16
+            homeMainTrailingConstraint.constant = -16
+            coloringCard.applyPhoneChrome(false)
+            freeCard.applyPhoneChrome(false)
         }
+        homeTitleBadge.applyStyle(for: traitCollection)
         view.setNeedsLayout()
     }
 
@@ -433,10 +456,14 @@ final class HomeModePickerViewController: UIViewController {
         super.viewDidLayoutSubviews()
         let phone = MagicBrushyChromeMetrics.isPhone(traitCollection)
         let compact = traitCollection.verticalSizeClass == .compact
-        bodyTopToHeaderConstraint?.constant = compact ? 4 : 8
-        bodyBottomConstraint?.constant = compact ? -10 : -22
-        homeMainStack.spacing = compact ? 10 : 16
-        if !phone {
+        if phone {
+            bodyTopToHeaderConstraint?.constant = HomeModePickerLayout.phoneBodyTopGap
+            bodyBottomConstraint?.constant = HomeModePickerLayout.phoneBodyBottomGap
+            homeMainStack.spacing = 8
+        } else {
+            bodyTopToHeaderConstraint?.constant = compact ? 4 : 8
+            bodyBottomConstraint?.constant = compact ? -10 : -22
+            homeMainStack.spacing = compact ? 10 : 16
             bodyStack.spacing = compact ? 8 : HomeModePickerLayout.bodyStackSpacing
             modeCardsStack.spacing = compact ? 10 : HomeModePickerLayout.cardStackSpacing
         }
@@ -446,18 +473,24 @@ final class HomeModePickerViewController: UIViewController {
         applyMascotLayout(for: traitCollection)
     }
 
-    /// Sizes mascot + square cards from available space so the row stays centered without a wide empty gutter.
+    /// Sizes mascot + mode cards to fill iPhone landscape body height.
     private func layoutPhoneBody() {
         let mainW = homeMainStack.bounds.width
         let bodyH = bodyStack.bounds.height
         guard mainW > 80, bodyH > 60 else { return }
 
-        let mascotW = max(min(132, mainW * 0.26), min(mainW * 0.37, BrushiMascotLayout.homeDisplaySize(for: traitCollection, image: mascotView.image).width + 8))
+        let mascotBase = BrushiMascotLayout.homeDisplaySize(for: traitCollection, image: mascotView.image).width
+        let mascotW = min(
+            HomeModePickerLayout.phoneMascotMaxWidth,
+            max(mascotBase + 10, mainW * HomeModePickerLayout.phoneMascotWidthFraction)
+        )
         mascotFixedWidthConstraint.constant = mascotW
 
         let cardRowW = mainW - mascotW - bodyStack.spacing
-        let side = floor(min(bodyH, (cardRowW - modeCardsStack.spacing) / 2))
-        guard side > 40 else { return }
+        let cardH = floor(bodyH * HomeModePickerLayout.phoneCardHeightFill)
+        let cardW = floor((cardRowW - modeCardsStack.spacing) / 2)
+        let side = min(cardH, cardW)
+        guard side > 48 else { return }
 
         if coloringCardWidthConstraint.constant != side {
             coloringCardWidthConstraint.constant = side
@@ -582,15 +615,24 @@ private final class HomeModeCardView: UIButton {
     }
 
     private let previewImageView: UIImageView
+    private let cardTitleLabel: UILabel
+    private let titleBar: UIView
+    private let previewFrame: UIView
+    private var titleBarHeightConstraint: NSLayoutConstraint!
     private var plusBadge: UIView?
 
     init(title: String, style: Style, previewImage: UIImage?, showsPlusBadge: Bool) {
         previewImageView = UIImageView(image: previewImage)
+        titleBar = UIView()
+        cardTitleLabel = UILabel()
+        previewFrame = UIView()
+
+        super.init(frame: .zero)
+
         previewImageView.translatesAutoresizingMaskIntoConstraints = false
         previewImageView.contentMode = .scaleAspectFit
         previewImageView.isUserInteractionEnabled = false
 
-        super.init(frame: .zero)
         translatesAutoresizingMaskIntoConstraints = false
         clipsToBounds = true
         isUserInteractionEnabled = true
@@ -629,22 +671,19 @@ private final class HomeModeCardView: UIButton {
         wood.clipsToBounds = true
         wood.isUserInteractionEnabled = false
 
-        let titleBar = UIView()
         titleBar.translatesAutoresizingMaskIntoConstraints = false
         titleBar.backgroundColor = borderColor.withAlphaComponent(0.35)
         titleBar.isUserInteractionEnabled = false
 
-        let titleLabel = UILabel()
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        titleLabel.text = title
-        titleLabel.textColor = FigmaTheme.creamText
-        titleLabel.font = FigmaTheme.bodyFont(size: HomeModePickerLayout.titleFontSize, weight: .semibold)
-        titleLabel.textAlignment = .center
-        titleLabel.adjustsFontSizeToFitWidth = true
-        titleLabel.minimumScaleFactor = 0.7
-        titleLabel.isUserInteractionEnabled = false
+        cardTitleLabel.translatesAutoresizingMaskIntoConstraints = false
+        cardTitleLabel.text = title
+        cardTitleLabel.textColor = FigmaTheme.creamText
+        cardTitleLabel.font = FigmaTheme.bodyFont(size: HomeModePickerLayout.titleFontSize, weight: .semibold)
+        cardTitleLabel.textAlignment = .center
+        cardTitleLabel.adjustsFontSizeToFitWidth = true
+        cardTitleLabel.minimumScaleFactor = 0.7
+        cardTitleLabel.isUserInteractionEnabled = false
 
-        let previewFrame = UIView()
         previewFrame.translatesAutoresizingMaskIntoConstraints = false
         previewFrame.backgroundColor = .white
         previewFrame.layer.cornerRadius = HomeModePickerLayout.previewCornerRadius
@@ -659,7 +698,7 @@ private final class HomeModeCardView: UIButton {
         addSubview(fill)
         addSubview(wood)
         addSubview(titleBar)
-        titleBar.addSubview(titleLabel)
+        titleBar.addSubview(cardTitleLabel)
         addSubview(previewFrame)
         previewFrame.addSubview(previewImageView)
 
@@ -710,11 +749,13 @@ private final class HomeModeCardView: UIButton {
             titleBar.topAnchor.constraint(equalTo: topAnchor),
             titleBar.leadingAnchor.constraint(equalTo: leadingAnchor),
             titleBar.trailingAnchor.constraint(equalTo: trailingAnchor),
-            titleBar.heightAnchor.constraint(equalToConstant: HomeModePickerLayout.titleBarHeight),
+            { titleBarHeightConstraint = titleBar.heightAnchor.constraint(
+                equalToConstant: HomeModePickerLayout.titleBarHeight
+            ); return titleBarHeightConstraint }(),
 
-            titleLabel.leadingAnchor.constraint(equalTo: titleBar.leadingAnchor, constant: 8),
-            titleLabel.trailingAnchor.constraint(equalTo: titleBar.trailingAnchor, constant: -8),
-            titleLabel.centerYAnchor.constraint(equalTo: titleBar.centerYAnchor),
+            cardTitleLabel.leadingAnchor.constraint(equalTo: titleBar.leadingAnchor, constant: 8),
+            cardTitleLabel.trailingAnchor.constraint(equalTo: titleBar.trailingAnchor, constant: -8),
+            cardTitleLabel.centerYAnchor.constraint(equalTo: titleBar.centerYAnchor),
 
             previewFrame.leadingAnchor.constraint(equalTo: leadingAnchor, constant: HomeModePickerLayout.previewInset),
             previewFrame.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -HomeModePickerLayout.previewInset),
@@ -726,6 +767,28 @@ private final class HomeModeCardView: UIButton {
             previewImageView.topAnchor.constraint(equalTo: previewFrame.topAnchor, constant: 8),
             previewImageView.bottomAnchor.constraint(equalTo: previewFrame.bottomAnchor, constant: -8),
         ])
+    }
+
+    func applyPhoneChrome(_ phone: Bool) {
+        layer.cornerRadius = phone
+            ? HomeModePickerLayout.phoneCardCornerRadius
+            : HomeModePickerLayout.cardCornerRadius
+        layer.borderWidth = phone
+            ? HomeModePickerLayout.phoneCardBorderWidth
+            : HomeModePickerLayout.cardBorderWidth
+        titleBarHeightConstraint.constant = phone
+            ? HomeModePickerLayout.phoneTitleBarHeight
+            : HomeModePickerLayout.titleBarHeight
+        cardTitleLabel.font = FigmaTheme.bodyFont(
+            size: phone ? HomeModePickerLayout.phoneTitleFontSize : HomeModePickerLayout.titleFontSize,
+            weight: .semibold
+        )
+        previewFrame.layer.cornerRadius = phone
+            ? HomeModePickerLayout.phonePreviewCornerRadius
+            : HomeModePickerLayout.previewCornerRadius
+        previewFrame.layer.borderWidth = phone
+            ? HomeModePickerLayout.phonePreviewBorderWidth
+            : HomeModePickerLayout.previewBorderWidth
     }
 
     func setPreviewImage(_ image: UIImage?, contentMode: UIView.ContentMode) {
