@@ -39,6 +39,10 @@ final class HomeModePickerViewController: UIViewController {
 
     private var freeCard: HomeModeCardView!
     private var coloringCard: HomeModeCardView!
+    private let coloringPlaceholderPreview = BuiltInColoringPages.previewImage(packId: "animals")
+    private let freeDrawPlaceholderPreview = BuiltInColoringPages.previewImage(
+        packId: BuiltInColoringPages.savedDrawingsPackId
+    )
 
     private var bodyTopToHeaderConstraint: NSLayoutConstraint!
     private var bodyBottomConstraint: NSLayoutConstraint!
@@ -83,7 +87,7 @@ final class HomeModePickerViewController: UIViewController {
         coloringCard = HomeModeCardView(
             title: "Coloring",
             style: .coloring,
-            previewImage: BuiltInColoringPages.previewImage(packId: "animals"),
+            previewImage: coloringPlaceholderPreview,
             showsPlusBadge: false
         )
         coloringCard.tag = Mode.coloring.rawValue
@@ -92,7 +96,7 @@ final class HomeModePickerViewController: UIViewController {
         freeCard = HomeModeCardView(
             title: "Free Draw",
             style: .freeDraw,
-            previewImage: BuiltInColoringPages.previewImage(packId: BuiltInColoringPages.savedDrawingsPackId),
+            previewImage: freeDrawPlaceholderPreview,
             showsPlusBadge: true
         )
         freeCard.tag = Mode.freeDraw.rawValue
@@ -324,8 +328,25 @@ final class HomeModePickerViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        refreshModeCardPreviews()
         Task { await SubscriptionManager.shared.refreshEntitlements() }
         applySubscribeButtonEnabledState()
+    }
+
+    private func refreshModeCardPreviews() {
+        if let thumb = RecentDrawingActivity.latestColoringThumbnail() {
+            coloringCard.setPreviewImage(thumb, contentMode: .scaleAspectFit)
+        } else {
+            coloringCard.setPreviewImage(coloringPlaceholderPreview, contentMode: .scaleAspectFit)
+        }
+
+        if let thumb = RecentDrawingActivity.latestFreeDrawingThumbnail() {
+            freeCard.setPreviewImage(thumb, contentMode: .scaleAspectFit)
+            freeCard.setShowsPlusBadge(false)
+        } else {
+            freeCard.setPreviewImage(freeDrawPlaceholderPreview, contentMode: .scaleAspectFit)
+            freeCard.setShowsPlusBadge(true)
+        }
     }
 
     override func viewDidLayoutSubviews() {
@@ -479,7 +500,15 @@ private final class HomeModeCardView: UIButton {
         case coloring
     }
 
+    private let previewImageView: UIImageView
+    private var plusBadge: UIView?
+
     init(title: String, style: Style, previewImage: UIImage?, showsPlusBadge: Bool) {
+        previewImageView = UIImageView(image: previewImage)
+        previewImageView.translatesAutoresizingMaskIntoConstraints = false
+        previewImageView.contentMode = .scaleAspectFit
+        previewImageView.isUserInteractionEnabled = false
+
         super.init(frame: .zero)
         translatesAutoresizingMaskIntoConstraints = false
         clipsToBounds = true
@@ -546,27 +575,22 @@ private final class HomeModeCardView: UIButton {
             previewFrame.layer.cornerCurve = .continuous
         }
 
-        let preview = UIImageView(image: previewImage)
-        preview.translatesAutoresizingMaskIntoConstraints = false
-        preview.contentMode = .scaleAspectFit
-        preview.isUserInteractionEnabled = false
-
         addSubview(fill)
         addSubview(wood)
         addSubview(titleBar)
         titleBar.addSubview(titleLabel)
         addSubview(previewFrame)
-        previewFrame.addSubview(preview)
+        previewFrame.addSubview(previewImageView)
 
         if showsPlusBadge {
-            let plusBadge = UIView()
-            plusBadge.translatesAutoresizingMaskIntoConstraints = false
-            plusBadge.backgroundColor = FigmaTheme.primaryOrange
-            plusBadge.layer.cornerRadius = 22
-            plusBadge.layer.borderWidth = 3
-            plusBadge.layer.borderColor = FigmaTheme.primaryOrangeBorder.cgColor
-            plusBadge.isUserInteractionEnabled = false
-            FigmaTheme.applyCardShadow(to: plusBadge.layer)
+            let badge = UIView()
+            badge.translatesAutoresizingMaskIntoConstraints = false
+            badge.backgroundColor = FigmaTheme.primaryOrange
+            badge.layer.cornerRadius = 22
+            badge.layer.borderWidth = 3
+            badge.layer.borderColor = FigmaTheme.primaryOrangeBorder.cgColor
+            badge.isUserInteractionEnabled = false
+            FigmaTheme.applyCardShadow(to: badge.layer)
 
             let plusIcon = UIImageView(
                 image: UIImage(
@@ -577,16 +601,17 @@ private final class HomeModeCardView: UIButton {
             plusIcon.translatesAutoresizingMaskIntoConstraints = false
             plusIcon.tintColor = .white
             plusIcon.contentMode = .scaleAspectFit
-            plusBadge.addSubview(plusIcon)
-            previewFrame.addSubview(plusBadge)
+            badge.addSubview(plusIcon)
+            previewFrame.addSubview(badge)
+            plusBadge = badge
 
             NSLayoutConstraint.activate([
-                plusBadge.centerXAnchor.constraint(equalTo: preview.centerXAnchor),
-                plusBadge.centerYAnchor.constraint(equalTo: preview.centerYAnchor),
-                plusBadge.widthAnchor.constraint(equalToConstant: 44),
-                plusBadge.heightAnchor.constraint(equalToConstant: 44),
-                plusIcon.centerXAnchor.constraint(equalTo: plusBadge.centerXAnchor),
-                plusIcon.centerYAnchor.constraint(equalTo: plusBadge.centerYAnchor),
+                badge.centerXAnchor.constraint(equalTo: previewImageView.centerXAnchor),
+                badge.centerYAnchor.constraint(equalTo: previewImageView.centerYAnchor),
+                badge.widthAnchor.constraint(equalToConstant: 44),
+                badge.heightAnchor.constraint(equalToConstant: 44),
+                plusIcon.centerXAnchor.constraint(equalTo: badge.centerXAnchor),
+                plusIcon.centerYAnchor.constraint(equalTo: badge.centerYAnchor),
             ])
         }
 
@@ -615,11 +640,20 @@ private final class HomeModeCardView: UIButton {
             previewFrame.topAnchor.constraint(equalTo: titleBar.bottomAnchor, constant: HomeModePickerLayout.previewInset),
             previewFrame.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -HomeModePickerLayout.previewInset),
 
-            preview.leadingAnchor.constraint(equalTo: previewFrame.leadingAnchor, constant: 8),
-            preview.trailingAnchor.constraint(equalTo: previewFrame.trailingAnchor, constant: -8),
-            preview.topAnchor.constraint(equalTo: previewFrame.topAnchor, constant: 8),
-            preview.bottomAnchor.constraint(equalTo: previewFrame.bottomAnchor, constant: -8),
+            previewImageView.leadingAnchor.constraint(equalTo: previewFrame.leadingAnchor, constant: 8),
+            previewImageView.trailingAnchor.constraint(equalTo: previewFrame.trailingAnchor, constant: -8),
+            previewImageView.topAnchor.constraint(equalTo: previewFrame.topAnchor, constant: 8),
+            previewImageView.bottomAnchor.constraint(equalTo: previewFrame.bottomAnchor, constant: -8),
         ])
+    }
+
+    func setPreviewImage(_ image: UIImage?, contentMode: UIView.ContentMode) {
+        previewImageView.image = image
+        previewImageView.contentMode = contentMode
+    }
+
+    func setShowsPlusBadge(_ shows: Bool) {
+        plusBadge?.isHidden = !shows
     }
 
     @available(*, unavailable)

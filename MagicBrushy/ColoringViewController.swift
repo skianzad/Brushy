@@ -1654,7 +1654,6 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         #if targetEnvironment(simulator)
         return
         #endif
-        guard !isFreeDrawingSession else { return }
         cancelPendingPageWelcomeWork()
         guard coloringBookPages.indices.contains(pageIndex) else { return }
         guard welcomedPageIndices.contains(pageIndex) == false else { return }
@@ -1672,7 +1671,6 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         #if targetEnvironment(simulator)
         return
         #endif
-        guard !isFreeDrawingSession else { return }
         guard pageAtSchedule == pageIndex else { return }
         guard coloringBookPages.indices.contains(pageIndex) else { return }
         guard !welcomedPageIndices.contains(pageIndex) else { return }
@@ -1697,6 +1695,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             guard !self.welcomedPageIndices.contains(pageAtSchedule) else { return }
 
             self.view.layoutIfNeeded()
+            self.applyPendingResumeCompositeIfNeeded()
             let bounds = self.strokeView.bounds
             guard bounds.width >= 16, bounds.height >= 16 else {
                 self.schedulePageLoadWelcome()
@@ -1704,6 +1703,17 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             }
 
             self.welcomedPageIndices.insert(pageAtSchedule)
+
+            if self.isFreeDrawingSession, self.freeDrawPageIsVisuallyBlankForWelcome() {
+                let spoken = Prompt.freeDrawEmptyPageEncouragement()
+                #if DEBUG
+                print("[Brushi][VLM][PageLoad][FreeDraw] blank page — local welcome: \(spoken)")
+                #endif
+                guard !spoken.isEmpty else { return }
+                await FeedbackAlbaSpeech.speakFeedback(spoken)
+                return
+            }
+
             let img = self.captureCanvasForVLMFullPage()
             let prompt = self.makePageLoadWelcomePrompt()
 
@@ -2118,26 +2128,84 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         return Prompt.strokeFeedback(
             pageTitle: currentPageTitle(),
             lastStrokePointCount: strokeView.lastFinishedStrokePointCount,
-            lastPaintColorName: paintName
+            lastPaintColorName: paintName,
+            isFreeDrawing: isFreeDrawingSession
         )
     }
 
     private func makeWholeDrawingCheerPrompt() -> String {
-        Prompt.wholeDrawingCheer(pageTitle: currentPageTitle())
-    }
-
-    private func makePageLoadWelcomePrompt() -> String {
-        Prompt.pageLoadWelcome(
+        Prompt.wholeDrawingCheer(
             pageTitle: currentPageTitle(),
-            hasPriorPaint: canvasHasPriorPaintForPageWelcome()
+            isFreeDrawing: isFreeDrawingSession
         )
     }
 
-    /// Saved underlay or live strokes visible when the page opens (not a blank sheet).
+    private func makePageLoadWelcomePrompt() -> String {
+        let hasPriorPaint = canvasHasPriorPaintForPageWelcome()
+        return Prompt.pageLoadWelcome(
+            pageTitle: currentPageTitle(),
+            hasPriorPaint: hasPriorPaint,
+            isFreeDrawing: isFreeDrawingSession
+        )
+    }
+
+    /// Saved underlay, pending resume, or live strokes when the page opens (not a blank sheet).
     private func canvasHasPriorPaintForPageWelcome() -> Bool {
         if strokeView.hasUserPaint { return true }
+        if pendingResumeComposite != nil { return true }
         if !resumeSnapshotView.isHidden, resumeSnapshotView.image != nil { return true }
         return false
+    }
+
+    /// Free draw only: local empty-page line when the canvas is still fully blank (not when resuming art).
+    private func freeDrawPageIsVisuallyBlankForWelcome() -> Bool {
+        applyPendingResumeCompositeIfNeeded()
+        if canvasHasPriorPaintForPageWelcome() { return false }
+        return !freeDrawCapturedCanvasHasVisibleMarks()
+    }
+
+    /// Samples the composed canvas (paper + resume + strokes) for any non-white marks.
+    private func freeDrawCapturedCanvasHasVisibleMarks() -> Bool {
+        let img = captureCanvasBitmap(includeLineOverlay: false, displayScale: 1)
+        guard let raw = renderSmallRGBAThumbnail(from: img, side: 48) else { return false }
+        let side = 48
+        var markPixels = 0
+        let minMarks = 10
+        for row in 0..<side {
+            for col in 0..<side {
+                let base = (row * side + col) * 4
+                let a = raw[base + 3]
+                guard a > 12 else { continue }
+                let r = Int(raw[base])
+                let g = Int(raw[base + 1])
+                let b = Int(raw[base + 2])
+                if r < 248 || g < 248 || b < 248 {
+                    markPixels += 1
+                    if markPixels >= minMarks { return true }
+                }
+            }
+        }
+        return false
+    }
+
+    private func renderSmallRGBAThumbnail(from image: UIImage, side: Int) -> [UInt8]? {
+        guard let cgImage = image.cgImage, side > 0 else { return nil }
+        var raw = [UInt8](repeating: 0, count: side * side * 4)
+        let ok: Bool = raw.withUnsafeMutableBytes { buf in
+            guard let ctx = CGContext(
+                data: buf.baseAddress,
+                width: side,
+                height: side,
+                bitsPerComponent: 8,
+                bytesPerRow: side * 4,
+                space: CGColorSpaceCreateDeviceRGB(),
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            ) else { return false }
+            ctx.interpolationQuality = .medium
+            ctx.draw(cgImage, in: CGRect(x: 0, y: 0, width: side, height: side))
+            return true
+        }
+        return ok ? raw : nil
     }
 
     /// Nearest app palette swatch name so "history" stays consistent with the picker.

@@ -61,15 +61,36 @@ enum Prompt {
         "That patch looks proud and happy!",
         "What a magic bit of color!",
         "You are so creative",
-        
+
     ]
 
     private static func randomStrokePraiseOpener() -> String {
         strokePraiseOpeners.randomElement() ?? "Wow, nice color!"
     }
 
-    /// After the child pauses painting: praise the latest stroke / color.
+    /// After the child pauses painting: praise the latest stroke / color (coloring pages) or shapes (free draw).
     static func strokeFeedback(
+        pageTitle: String?,
+        lastStrokePointCount: Int,
+        lastPaintColorName: String?,
+        isFreeDrawing: Bool = false
+    ) -> String {
+        if isFreeDrawing {
+            return strokeFeedbackFreeDrawing(
+                pageTitle: pageTitle,
+                lastStrokePointCount: lastStrokePointCount,
+                lastPaintColorName: lastPaintColorName
+            )
+        }
+        return strokeFeedbackColoring(
+            pageTitle: pageTitle,
+            lastStrokePointCount: lastStrokePointCount,
+            lastPaintColorName: lastPaintColorName
+        )
+    }
+
+    /// Coloring-book idle feedback — unchanged color-first coach copy.
+    private static func strokeFeedbackColoring(
         pageTitle: String?,
         lastStrokePointCount: Int,
         lastPaintColorName: String?
@@ -102,15 +123,127 @@ Your job: exactly **one or two** very short sentences total (nothing longer). Na
 """
     }
 
+    private static let freeDrawStrokePraiseOpeners: [String] = [
+        "Ooh, a new piece of your picture!",
+        "That line adds something fun!",
+        "I wonder what that shape is!",
+        "Look what you drew just now!",
+        "That mark makes your drawing grow!",
+        "What a neat new bit!",
+        "Your picture is coming alive!",
+        "That stroke tells a little story!",
+        "I see something forming there!",
+        "What a creative dab!",
+        "That squiggle looks like an idea!",
+        "You just grew your drawing!",
+        "What is that turning into?",
+        "A fresh mark—nice!",
+        "That adds a whole new part!",
+        "Your page has a new surprise!",
+        "I like that new line you made!",
+        "That blob could be anything fun!",
+        "You’re building something cool!",
+        "What a bold new stroke!",
+        "That curve makes me curious!",
+        "Your drawing just got bigger!",
+        "That looks like the start of something!",
+        "Ooh, what are you making there?",
+        "That new bit changes the whole picture!",
+        "You drew that so confidently!",
+        "That shape has personality!",
+        "What a playful new mark!",
+        "Your picture has more story now!",
+        "That line connects the dots!",
+        "I see a new friend in your drawing!",
+        "That stroke feels full of imagination!",
+        "You added a secret little detail!",
+        "What a twist in your picture!",
+        "That mark looks like it belongs!",
+        "Your drawing is finding its shape!",
+        "That’s a clever new addition!",
+        "You just opened a new chapter!",
+        "What a spark of an idea!",
+        "That new part makes me smile!",
+    ]
+
+    private static func randomFreeDrawStrokePraiseOpener() -> String {
+        freeDrawStrokePraiseOpeners.randomElement() ?? "Ooh, a new piece of your picture!"
+    }
+
+    private static func strokeFeedbackFreeDrawing(
+        pageTitle: String?,
+        lastStrokePointCount: Int,
+        lastPaintColorName: String?
+    ) -> String {
+        let opener = sheetOpenerFreeDraw(pageTitle: pageTitle)
+        let drawingHint = freeDrawDrawingHintBlock(
+            lastStrokePointCount: lastStrokePointCount,
+            lastPaintColorName: lastPaintColorName
+        )
+        let praiseStarter = randomFreeDrawStrokePraiseOpener()
+        let lang = languageInstruction(for: MagicBrushyLanguage.stored())
+        let language = MagicBrushyLanguage.stored()
+        let openerLanguageNote = language == .english
+            ? ""
+            : " Say the opening in \(language.rawValue), keeping the same cheerful tone."
+
+        return """
+\(opener) Look at their free drawing on the blank page.
+
+\(drawingHint)
+
+Your job: exactly **one or two** very short sentences total. **Lead with the drawing**, praise the art and gently guess what shape or thing the marks might be (sun, house, animal, face, path, flower—only if the picture really suggests it). Or point to **what looks newly added** in this moment—the fresh line, blob, or shape compared with the rest of the page. You may **briefly** name a color only if it helps; do not make the whole reply about palette colors. \(noMapDirectionsRule)
+
+**Start** your spoken reply with a phrase in the spirit of: “\(praiseStarter)” — adapt it to their shapes and new marks.\(openerLanguageNote)
+
+\(spokenToChildRule)
+
+\(spokenReplyOnlyFooter)\(lang)
+
+"""
+    }
+
     // MARK: - Coach (page load)
 
-    /// When a coloring page first appears: name the scene, note any color already on the page, invite finishing the rest.
-    static func pageLoadWelcome(pageTitle: String?, hasPriorPaint: Bool) -> String {
+    /// When a page first appears: coloring template welcome, or free-draw welcome.
+    static func pageLoadWelcome(
+        pageTitle: String?,
+        hasPriorPaint: Bool,
+        isFreeDrawing: Bool = false
+    ) -> String {
+        if isFreeDrawing {
+            return pageLoadWelcomeFreeDrawing(pageTitle: pageTitle, hasPriorPaint: hasPriorPaint)
+        }
+        return pageLoadWelcomeColoring(pageTitle: pageTitle, hasPriorPaint: hasPriorPaint)
+    }
+
+    /// Spoken when free draw opens on **fully blank** paper only (no saved art, no strokes; no VLM).
+    static func freeDrawEmptyPageEncouragement() -> String {
+        freeDrawEmptyPageEncouragements.randomElement()
+            ?? "This paper is all yours—pick a color and draw anything you dream up!"
+    }
+
+    private static let freeDrawEmptyPageEncouragements: [String] = [
+        "This paper is all yours—pick a color and draw anything you dream up!",
+        "A blank page is like magic—what will you make first?",
+        "You can draw anything here—start with one fun line!",
+        "Empty paper, big ideas—grab a crayon and go!",
+        "Your imagination gets to run the show—make the first mark!",
+        "Nothing on the page yet—that means endless possibilities!",
+        "Ready to create? Pick a color and draw something only you can think of!",
+        "Fresh paper! What shape or doodle will you try first?",
+        "This is your studio—start drawing whenever you feel ready!",
+        "Blank paper is waiting for your first brilliant stroke!",
+    ]
+
+    /// Coloring-book page open — unchanged copy.
+    private static func pageLoadWelcomeColoring(pageTitle: String?, hasPriorPaint: Bool) -> String {
         let opener = sheetOpener(pageTitle: pageTitle)
         let lang = languageInstruction(for: MagicBrushyLanguage.stored())
         let progressNote = """
               Welcome them to today’s sheet and invite them to pick colors and start filling it in.
             """
+        _ = hasPriorPaint
 
         return """
 \(opener)
@@ -132,10 +265,46 @@ Your job: **two or three** short spoken sentences (about **25–45 words** total
 """
     }
 
+    private static func pageLoadWelcomeFreeDrawing(pageTitle: String?, hasPriorPaint: Bool) -> String {
+        let opener = sheetOpenerFreeDraw(pageTitle: pageTitle)
+        let lang = languageInstruction(for: MagicBrushyLanguage.stored())
+        let progressNote = hasPriorPaint
+            ? """
+              They already have marks on the page. Welcome them back; notice one simple thing about what is already there (a shape, path, or idea—only if you clearly see it). Invite them to keep building the picture.
+            """
+            : """
+              The page should be empty. Give warm encouragement to pick a color and make the first line, shape, or doodle. Sound excited that they can create anything—do not describe things that are not on the page.
+            """
+
+        return """
+\(opener)
+
+The child just opened this free-draw page. Look at the blank paper and any marks.
+
+\(progressNote)
+
+Your job: **two or three** short spoken sentences (about **20–40 words** total)—warm, simple kid words. Focus on **drawing and creativity**, not color lectures. \(noMapDirectionsRule) \(neverYouHaveOpenersRule)
+
+\(spokenToChildRule)
+\(neverThirdPersonSpokenRule)
+
+\(spokenReplyOnlyFooter)\(lang)
+
+"""
+    }
+
     // MARK: - Coach (mascot tap — whole page)
 
     /// When the child taps the mascot: cheer for the entire drawing.
-    static func wholeDrawingCheer(pageTitle: String?) -> String {
+    static func wholeDrawingCheer(pageTitle: String?, isFreeDrawing: Bool = false) -> String {
+        if isFreeDrawing {
+            return wholeDrawingCheerFreeDrawing(pageTitle: pageTitle)
+        }
+        return wholeDrawingCheerColoring(pageTitle: pageTitle)
+    }
+
+    /// Coloring-book mascot tap — unchanged color/scene-first coach copy.
+    private static func wholeDrawingCheerColoring(pageTitle: String?) -> String {
         let opener = sheetOpener(pageTitle: pageTitle)
         let lang = languageInstruction(for: MagicBrushyLanguage.stored())
 
@@ -145,6 +314,25 @@ Your job: **two or three** short spoken sentences (about **25–45 words** total
 The child just tapped their mascot buddy asking for a big cheer for their **entire drawing so far**—not only the newest dab of paint. Look at the full picture: how colors spread across the scene, how the page feels as one piece, and the subject of the line art if you can tell.
 
 Your job: one warm, very short message in simple kid words about **the whole picture**—what you like about how they filled the page overall. If you may, mention **two** small things you like (for example a color choice **and** the character or scene), but keep it to one or two tiny sentences. Vary how you start (\(neverYouHaveOpenersRule)). \(noMapDirectionsRule)
+
+\(spokenToChildRule)
+\(neverThirdPersonSpokenRule)
+
+\(spokenReplyOnlyFooter)\(lang)
+
+"""
+    }
+
+    private static func wholeDrawingCheerFreeDrawing(pageTitle: String?) -> String {
+        let opener = sheetOpenerFreeDraw(pageTitle: pageTitle)
+        let lang = languageInstruction(for: MagicBrushyLanguage.stored())
+
+        return """
+\(opener) The photo shows their **whole free drawing** on blank paper (no template outlines).
+
+The child tapped their mascot for a big cheer about **everything they drew so far**. Look at the full page: shapes, paths, characters, patterns, and how the picture fits together as one idea.
+
+Your job: one or two very short sentences in simple kid words. **First** You may praise  what the drawing might be or what story the shapes tell. **Then** you may add one tiny cheer about a color or a part you like—but do not make the reply only about colors. Vary how you start (\(neverYouHaveOpenersRule)). \(noMapDirectionsRule)
 
 \(spokenToChildRule)
 \(neverThirdPersonSpokenRule)
@@ -177,11 +365,43 @@ If unsure, use neutral.
 
     // MARK: - Shared fragments
 
+    /// Coloring pages only (template outlines + paint).
     private static func sheetOpener(pageTitle: String?) -> String {
         if let title = pageTitle, !title.isEmpty {
             return "A child colored this sheet (outlines + paint). Page: \(title)."
         }
         return "A child colored this sheet (outlines + paint)."
+    }
+
+    private static func sheetOpenerFreeDraw(pageTitle: String?) -> String {
+        if let title = pageTitle, !title.isEmpty {
+            return "A child is freely drawing on blank paper (no template outlines). Session: \(title)."
+        }
+        return "A child is freely drawing on blank paper (no template outlines)."
+    }
+
+    private static func freeDrawDrawingHintBlock(
+        lastStrokePointCount: Int,
+        lastPaintColorName: String?
+    ) -> String {
+        var lines: [String] = []
+        if lastStrokePointCount > 30 {
+            lines.append(
+                "They just made a **bigger new mark**—look for what changed or grew compared with the rest of the drawing."
+            )
+        } else if lastStrokePointCount > 0 {
+            lines.append(
+                "They just added a **fresh small mark**—notice what looks new on the page right now."
+            )
+        } else {
+            lines.append("Peek at the whole free drawing and cheer what they are creating.")
+        }
+        if let paintWord = lastPaintColorName {
+            lines.append(
+                "Latest stroke used palette color “\(paintWord)”—mention it only briefly; **shapes and what the drawing might be matter more**."
+            )
+        }
+        return lines.joined(separator: " ")
     }
 
     private static func paletteHintBlock(

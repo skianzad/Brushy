@@ -30,6 +30,41 @@ enum TemplateProgressStore {
         return UIImage(contentsOfFile: url.path)
     }
 
+    struct ProgressRef: Equatable {
+        let packId: String
+        let pageIndex: Int
+        let updatedAt: Date
+    }
+
+    /// Most recently saved template coloring (by file modification time).
+    static func newestProgress() -> ProgressRef? {
+        let dir = directoryURL
+        guard let names = try? FileManager.default.contentsOfDirectory(atPath: dir.path) else { return nil }
+        var best: ProgressRef?
+        for name in names {
+            guard let parsed = parseProgressFileName(name) else { continue }
+            let url = dir.appendingPathComponent(name)
+            let mod = (try? FileManager.default.attributesOfItem(atPath: url.path)[.modificationDate] as? Date)
+                ?? .distantPast
+            let ref = ProgressRef(packId: parsed.packId, pageIndex: parsed.pageIndex, updatedAt: mod)
+            if best == nil || ref.updatedAt > best!.updatedAt {
+                best = ref
+            }
+        }
+        return best
+    }
+
+    private static func parseProgressFileName(_ name: String) -> (packId: String, pageIndex: Int)? {
+        guard name.hasPrefix("tpl_"), name.hasSuffix(".jpg") else { return nil }
+        let stem = String(name.dropFirst(4).dropLast(4))
+        guard let sep = stem.lastIndex(of: "_") else { return nil }
+        let pageStr = stem[stem.index(after: sep)...]
+        guard let pageIndex = Int(pageStr) else { return nil }
+        let packId = String(stem[..<sep])
+        guard !packId.isEmpty else { return nil }
+        return (packId, pageIndex)
+    }
+
     static func delete(packId: String, pageIndex: Int) {
         try? FileManager.default.removeItem(at: fileURL(packId: packId, pageIndex: pageIndex))
     }

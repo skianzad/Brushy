@@ -48,6 +48,7 @@
 		D1MAC000000000000000001 /* MascotReactionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1MAC000000000000000101 /* MascotReactionState.swift */; };
 		L1AST000000000000000001 /* LastDrawingStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = L1AST000000000000000101 /* LastDrawingStore.swift */; };
 		L1TPL000000000000000001 /* TemplateProgressStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = L1TPL000000000000000101 /* TemplateProgressStore.swift */; };
+		L1REC000000000000000001 /* RecentDrawingActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = L1REC000000000000000101 /* RecentDrawingActivity.swift */; };
 		M1LIP000000000000000001 /* MascotLipSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = M1LIP000000000000000101 /* MascotLipSync.swift */; };
 		R1ACT000000000000000001 /* Reaction.swift in Sources */ = {isa = PBXBuildFile; fileRef = R1ACT000000000000000101 /* Reaction.swift */; };
 		S1SUB000000000000000001 /* SubscriptionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = S1SUB000000000000000101 /* SubscriptionManager.swift */; };
@@ -109,6 +110,7 @@
 		D1MAC000000000000000101 /* MascotReactionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MascotReactionState.swift; sourceTree = "<group>"; };
 		L1AST000000000000000101 /* LastDrawingStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LastDrawingStore.swift; sourceTree = "<group>"; };
 		L1TPL000000000000000101 /* TemplateProgressStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemplateProgressStore.swift; sourceTree = "<group>"; };
+		L1REC000000000000000101 /* RecentDrawingActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentDrawingActivity.swift; sourceTree = "<group>"; };
 		M1LIP000000000000000101 /* MascotLipSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MascotLipSync.swift; sourceTree = "<group>"; };
 		R1ACT000000000000000101 /* Reaction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Reaction.swift; sourceTree = "<group>"; };
 		S1SUB000000000000000101 /* SubscriptionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionManager.swift; sourceTree = "<group>"; };
@@ -147,6 +149,7 @@
 				A1B200000000000000005 /* BuiltInColoringPages.swift */,
 				L1AST000000000000000101 /* LastDrawingStore.swift */,
 				L1TPL000000000000000101 /* TemplateProgressStore.swift */,
+				L1REC000000000000000101 /* RecentDrawingActivity.swift */,
 				D1MAC000000000000000101 /* MascotReactionState.swift */,
 				R1ACT000000000000000101 /* Reaction.swift */,
 				M1LIP000000000000000101 /* MascotLipSync.swift */,
@@ -343,6 +346,7 @@
 				A1B200000000000000000005 /* BuiltInColoringPages.swift in Sources */,
 				L1AST000000000000000001 /* LastDrawingStore.swift in Sources */,
 				L1TPL000000000000000001 /* TemplateProgressStore.swift in Sources */,
+				L1REC000000000000000001 /* RecentDrawingActivity.swift in Sources */,
 				D1MAC000000000000000001 /* MascotReactionState.swift in Sources */,
 				R1ACT000000000000000001 /* Reaction.swift in Sources */,
 				M1LIP000000000000000001 /* MascotLipSync.swift in Sources */,
