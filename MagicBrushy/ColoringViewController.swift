@@ -2497,10 +2497,11 @@ private final class CrayonPaletteScrollView: UIScrollView {
 
 private final class MagicCrayonControl: UIControl {
 
+    private let glassRingView = UIView()
     private let swatchView = UIImageView()
     private let shineOverlay = CAGradientLayer()
+    private let glassRingShine = CAGradientLayer()
 
-    private static let selectedBorderWidth: CGFloat = 3.5
     private static let selectedScale = CGAffineTransform(scaleX: 1.02, y: 1.04)
 
     override var isHighlighted: Bool {
@@ -2519,19 +2520,43 @@ private final class MagicCrayonControl: UIControl {
 
     private func commonInit() {
         backgroundColor = .clear
+        clipsToBounds = false
         isExclusiveTouch = false
+
+        glassRingView.isUserInteractionEnabled = false
+        glassRingView.isHidden = true
+        glassRingView.backgroundColor = .clear
+        glassRingView.layer.cornerRadius = 8
+        glassRingView.layer.borderWidth = 2
+        glassRingView.layer.borderColor = UIColor.white.withAlphaComponent(0.88).cgColor
+        glassRingView.layer.shadowColor = UIColor.white.cgColor
+        glassRingView.layer.shadowOpacity = 0.7
+        glassRingView.layer.shadowRadius = 8
+        glassRingView.layer.shadowOffset = .zero
+        if #available(iOS 13.0, *) {
+            glassRingView.layer.cornerCurve = .continuous
+        }
+        glassRingShine.colors = [
+            UIColor.white.withAlphaComponent(0.55).cgColor,
+            UIColor.white.withAlphaComponent(0.12).cgColor,
+            UIColor.clear.cgColor,
+        ]
+        glassRingShine.locations = [0, 0.42, 1]
+        glassRingShine.startPoint = CGPoint(x: 0.1, y: 0.08)
+        glassRingShine.endPoint = CGPoint(x: 0.9, y: 0.92)
+        glassRingView.layer.addSublayer(glassRingShine)
+        glassRingView.translatesAutoresizingMaskIntoConstraints = false
+
         swatchView.isUserInteractionEnabled = false
         swatchView.contentMode = .scaleAspectFill
         swatchView.clipsToBounds = true
         swatchView.layer.cornerRadius = 8
-        swatchView.layer.borderWidth = 0
-        swatchView.layer.borderColor = UIColor.black.cgColor
         swatchView.backgroundColor = .clear
         swatchView.translatesAutoresizingMaskIntoConstraints = false
 
         shineOverlay.colors = [
-            UIColor.white.withAlphaComponent(0.72).cgColor,
-            UIColor.white.withAlphaComponent(0.28).cgColor,
+            UIColor.white.withAlphaComponent(0.5).cgColor,
+            UIColor.white.withAlphaComponent(0.18).cgColor,
             UIColor.clear.cgColor,
         ]
         shineOverlay.locations = [0, 0.38, 1]
@@ -2541,11 +2566,16 @@ private final class MagicCrayonControl: UIControl {
         swatchView.layer.addSublayer(shineOverlay)
 
         addSubview(swatchView)
+        addSubview(glassRingView)
         NSLayoutConstraint.activate([
             swatchView.leadingAnchor.constraint(equalTo: leadingAnchor),
             swatchView.trailingAnchor.constraint(equalTo: trailingAnchor),
             swatchView.topAnchor.constraint(equalTo: topAnchor),
             swatchView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            glassRingView.leadingAnchor.constraint(equalTo: swatchView.leadingAnchor),
+            glassRingView.trailingAnchor.constraint(equalTo: swatchView.trailingAnchor),
+            glassRingView.topAnchor.constraint(equalTo: swatchView.topAnchor),
+            glassRingView.bottomAnchor.constraint(equalTo: swatchView.bottomAnchor),
         ])
     }
 
@@ -2553,6 +2583,8 @@ private final class MagicCrayonControl: UIControl {
         super.layoutSubviews()
         CATransaction.begin()
         CATransaction.setDisableActions(true)
+        glassRingShine.frame = glassRingView.bounds
+        glassRingShine.cornerRadius = glassRingView.layer.cornerRadius
         shineOverlay.frame = swatchView.bounds
         shineOverlay.cornerRadius = swatchView.layer.cornerRadius
         CATransaction.commit()
@@ -2565,22 +2597,13 @@ private final class MagicCrayonControl: UIControl {
     func setSelected(_ selected: Bool, animated: Bool) {
         let apply = {
             if selected {
-                self.swatchView.layer.borderWidth = Self.selectedBorderWidth
+                self.glassRingView.isHidden = false
+                self.glassRingView.alpha = 1
                 self.shineOverlay.isHidden = false
-                self.swatchView.layer.shadowColor = UIColor.white.cgColor
-                self.swatchView.layer.shadowOpacity = 0.9
-                self.swatchView.layer.shadowRadius = 5
-                self.swatchView.layer.shadowOffset = CGSize(width: 0, height: -1)
-                self.layer.shadowColor = UIColor.white.cgColor
-                self.layer.shadowOpacity = 0.55
-                self.layer.shadowRadius = 10
-                self.layer.shadowOffset = .zero
                 self.transform = Self.selectedScale
             } else {
-                self.swatchView.layer.borderWidth = 0
+                self.glassRingView.isHidden = true
                 self.shineOverlay.isHidden = true
-                self.swatchView.layer.shadowOpacity = 0
-                self.layer.shadowOpacity = 0
                 self.transform = .identity
             }
         }
