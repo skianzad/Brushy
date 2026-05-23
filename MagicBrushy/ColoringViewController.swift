@@ -289,7 +289,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         // ── Crayons (custom horizontal wax crayons, scrollable) ─────────────
         crayonScrollContainer.translatesAutoresizingMaskIntoConstraints = false
         crayonScrollContainer.backgroundColor = .clear
-        crayonScrollContainer.clipsToBounds = false
+        crayonScrollContainer.clipsToBounds = true
         crayonScrollContainer.setContentHuggingPriority(.required, for: .vertical)
         crayonScrollContainer.setContentCompressionResistancePriority(.required, for: .vertical)
         crayonScrollViewportHeightConstraint = crayonScrollContainer.heightAnchor.constraint(
@@ -309,7 +309,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         // Let the pan gesture cancel touches in crayons once the user moves (see CrayonPaletteScrollView).
         crayonScrollView.canCancelContentTouches = true
         crayonScrollView.delaysContentTouches = true
-        crayonScrollView.clipsToBounds = false
+        crayonScrollView.clipsToBounds = true
         crayonScrollView.backgroundColor = .clear
         crayonScrollView.keyboardDismissMode = .onDrag
         crayonScrollView.panGestureRecognizer.cancelsTouchesInView = true

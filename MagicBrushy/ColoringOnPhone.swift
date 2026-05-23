@@ -18,9 +18,9 @@ final class ColoringPhonePassThroughStackView: UIStackView {
            let hit = forwardHit(to: leftRail, point: point, event: event) {
             return hit
         }
-        if let rightRail,
-           let hit = forwardHit(to: rightRail, point: point, event: event) {
-            return hit
+        if let rightRail {
+            let local = convert(point, to: rightRail)
+            if let hit = rightRail.hitTest(local, with: event) { return hit }
         }
         for subview in interactive where subview !== leftRail && subview !== rightRail {
             if let hit = forwardHit(to: subview, point: point, event: event) { return hit }
@@ -33,27 +33,23 @@ final class ColoringPhonePassThroughStackView: UIStackView {
     }
 }
 
-/// Trailing rail: receives touches on chrome that overflows left (expanded brush-size bar).
+/// Trailing rail: in-bounds hits use normal layout; overflow catches the expanded brush bar over the canvas.
 final class ColoringPhoneSideRailStackView: UIStackView {
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
         guard !isHidden, isUserInteractionEnabled, alpha >= 0.01 else { return nil }
-        // Prefer normal in-bounds targets (pen, eraser, crayons, undo) before overflow search.
-        if let hit = super.hitTest(point, with: event), hit !== self {
+        if bounds.contains(point), let hit = super.hitTest(point, with: event), hit !== self {
             return hit
         }
-        return findOverflowInteractiveDescendant(at: point, event: event, in: self)
+        return findOverflowDescendant(at: point, event: event, in: self)
     }
 
-    /// Finds controls drawn outside this stack’s bounds (expanded brush-size bar).
-    private func findOverflowInteractiveDescendant(at point: CGPoint, event: UIEvent?, in view: UIView) -> UIView? {
+    private func findOverflowDescendant(at point: CGPoint, event: UIEvent?, in view: UIView) -> UIView? {
+        guard view.isUserInteractionEnabled, !view.isHidden, view.alpha >= 0.01 else { return nil }
         for subview in view.subviews.reversed() {
-            guard subview.isUserInteractionEnabled, !subview.isHidden, subview.alpha >= 0.01 else { continue }
-            if let hit = findOverflowInteractiveDescendant(at: point, event: event, in: subview) { return hit }
             let local = view.convert(point, to: subview)
+            if let hit = findOverflowDescendant(at: local, event: event, in: subview) { return hit }
             guard !subview.bounds.contains(local) else { continue }
-            if let hit = subview.hitTest(local, with: event), hit !== subview || subview is UIControl {
-                return hit
-            }
+            if let hit = subview.hitTest(local, with: event) { return hit }
         }
         return nil
     }
@@ -411,6 +407,25 @@ final class ColoringOnPhone: NSObject, UIGestureRecognizerDelegate {
         host.rightPanelStack.addArrangedSubview(rightPanelChromeRow)
         host.rightPanelStack.addArrangedSubview(host.toolPairStack)
         host.rightPanelStack.addArrangedSubview(host.crayonScrollContainer)
+        applyPhoneChromeZOrdering()
+    }
+
+    private func applyPhoneChromeZOrdering() {
+        leftPanelChromeRow.layer.zPosition = 30
+        leftPanelMascotSpacer.layer.zPosition = 0
+        host.mascotContainer.layer.zPosition = 0
+        rightPanelChromeRow.layer.zPosition = 30
+        host.toolPairStack.layer.zPosition = 20
+        host.crayonScrollContainer.layer.zPosition = 0
+    }
+
+    private func clearPhoneChromeZOrdering() {
+        leftPanelChromeRow.layer.zPosition = 0
+        leftPanelMascotSpacer.layer.zPosition = 0
+        host.mascotContainer.layer.zPosition = 0
+        rightPanelChromeRow.layer.zPosition = 0
+        host.toolPairStack.layer.zPosition = 0
+        host.crayonScrollContainer.layer.zPosition = 0
     }
 
     private func restorePadChromeLayout() {
@@ -446,6 +461,7 @@ final class ColoringOnPhone: NSObject, UIGestureRecognizerDelegate {
         host.rightPanelStack.setCustomSpacing(2, after: host.mascotContainer)
 
         leftPanelWidthConstraint?.isActive = false
+        clearPhoneChromeZOrdering()
     }
 
     private func setCanvasOverlayLayoutEnabled(_ enabled: Bool) {

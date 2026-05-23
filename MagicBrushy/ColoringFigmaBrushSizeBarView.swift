@@ -462,6 +462,16 @@ final class ColoringCollapsibleBrushSizeChrome: UIView {
         if !animated { layoutIfNeeded() }
     }
 
+    /// Expanded bar extends left over the canvas; UIKit skips subviews when the touch is outside `bounds`.
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        guard !isHidden, isUserInteractionEnabled, alpha >= 0.01 else { return nil }
+        if phoneCollapsibleEnabled, isExpanded, !bar.isHidden, bar.isUserInteractionEnabled {
+            let local = convert(point, to: bar)
+            if let hit = bar.hitTest(local, with: event) { return hit }
+        }
+        return super.hitTest(point, with: event)
+    }
+
     @objc private func toggleTapped() {
         guard phoneCollapsibleEnabled else { return }
         setExpanded(!isExpanded, animated: true)
