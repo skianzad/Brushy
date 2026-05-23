@@ -108,10 +108,25 @@ final class ColoringFigmaBrushSizeBarView: UIView {
         let h = bounds.height
         guard w > 1, h > 1, dotCount > 0 else { return }
 
-        // Equal-width columns — each dot gets a non-overlapping tap zone.
-        let segmentW = w / CGFloat(dotCount)
-        for (i, b) in hitButtons.enumerated() {
-            b.frame = CGRect(x: CGFloat(i) * segmentW, y: 0, width: segmentW, height: h)
+        // Edge-to-edge tap bands between dot centers so the smallest size is easy to hit.
+        for i in 0..<dotCount {
+            let center = dotCenter(in: bounds, index: i, count: dotCount).x
+            let left: CGFloat
+            let right: CGFloat
+            if dotCount == 1 {
+                left = bounds.minX
+                right = bounds.maxX
+            } else if i == 0 {
+                left = bounds.minX
+                right = (center + dotCenter(in: bounds, index: i + 1, count: dotCount).x) * 0.5
+            } else if i == dotCount - 1 {
+                left = (dotCenter(in: bounds, index: i - 1, count: dotCount).x + center) * 0.5
+                right = bounds.maxX
+            } else {
+                left = (dotCenter(in: bounds, index: i - 1, count: dotCount).x + center) * 0.5
+                right = (center + dotCenter(in: bounds, index: i + 1, count: dotCount).x) * 0.5
+            }
+            hitButtons[i].frame = CGRect(x: left, y: 0, width: max(1, right - left), height: h)
         }
         updateSelectionHighlight()
     }
@@ -424,6 +439,9 @@ final class ColoringCollapsibleBrushSizeChrome: UIView {
         guard phoneCollapsibleEnabled || expanded else { return }
         isExpanded = expanded
         toggleButton.accessibilityValue = expanded ? "Expanded" : "Collapsed, tap to expand"
+        if phoneCollapsibleEnabled {
+            layer.zPosition = expanded ? 150 : 0
+        }
         let apply = {
             self.updateChromeWidth(animated: false)
         }

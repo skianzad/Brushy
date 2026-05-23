@@ -6,10 +6,54 @@ import UIKit
 final class ColoringPhonePassThroughStackView: UIStackView {
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
         guard !isHidden, isUserInteractionEnabled, alpha >= 0.01, bounds.contains(point) else { return nil }
-        for subview in arrangedSubviews.reversed() {
+
+        let interactive = arrangedSubviews.filter {
+            $0.isUserInteractionEnabled && !$0.isHidden && $0.alpha >= 0.01
+        }
+        let leftRail = interactive.min { $0.frame.minX < $1.frame.minX }
+        let rightRail = interactive.max { $0.frame.maxX < $1.frame.maxX }
+
+        // Leading rail first; trailing rail uses overflow hit testing for the brush bar.
+        if let leftRail, leftRail !== rightRail,
+           let hit = forwardHit(to: leftRail, point: point, event: event) {
+            return hit
+        }
+        if let rightRail,
+           let hit = forwardHit(to: rightRail, point: point, event: event) {
+            return hit
+        }
+        for subview in interactive where subview !== leftRail && subview !== rightRail {
+            if let hit = forwardHit(to: subview, point: point, event: event) { return hit }
+        }
+        return nil
+    }
+
+    private func forwardHit(to subview: UIView, point: CGPoint, event: UIEvent?) -> UIView? {
+        subview.hitTest(convert(point, to: subview), with: event)
+    }
+}
+
+/// Trailing rail: receives touches on chrome that overflows left (expanded brush-size bar).
+final class ColoringPhoneSideRailStackView: UIStackView {
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        guard !isHidden, isUserInteractionEnabled, alpha >= 0.01 else { return nil }
+        // Prefer normal in-bounds targets (pen, eraser, crayons, undo) before overflow search.
+        if let hit = super.hitTest(point, with: event), hit !== self {
+            return hit
+        }
+        return findOverflowInteractiveDescendant(at: point, event: event, in: self)
+    }
+
+    /// Finds controls drawn outside this stack’s bounds (expanded brush-size bar).
+    private func findOverflowInteractiveDescendant(at point: CGPoint, event: UIEvent?, in view: UIView) -> UIView? {
+        for subview in view.subviews.reversed() {
             guard subview.isUserInteractionEnabled, !subview.isHidden, subview.alpha >= 0.01 else { continue }
-            let local = convert(point, to: subview)
-            if let hit = subview.hitTest(local, with: event) { return hit }
+            if let hit = findOverflowInteractiveDescendant(at: point, event: event, in: subview) { return hit }
+            let local = view.convert(point, to: subview)
+            guard !subview.bounds.contains(local) else { continue }
+            if let hit = subview.hitTest(local, with: event), hit !== subview || subview is UIControl {
+                return hit
+            }
         }
         return nil
     }
@@ -31,13 +75,14 @@ enum ColoringOnPhoneMetrics {
 
     private static let swatchContentHeightPerWidth: CGFloat = 71.0 / 206.0
     private static let crayonRailMinimum: CGFloat = 76
+    static let crayonHeightMultiplier: CGFloat = 1.10
 
     static var toolPairSpacing: CGFloat {
         max(3, (4 * UIScreen.main.nativeScale / UIScreen.main.scale).rounded(.toNearestOrAwayFromZero))
     }
 
     static func crayonRowHeight(phonePanelWidth: CGFloat) -> CGFloat {
-        ceil((phonePanelWidth - 4) * swatchContentHeightPerWidth)
+        ceil((phonePanelWidth - 4) * swatchContentHeightPerWidth * crayonHeightMultiplier)
     }
 
     private static func leftPanelMinWidth(for traitCollection: UITraitCollection) -> CGFloat {
@@ -155,6 +200,7 @@ final class ColoringOnPhone: NSObject, UIGestureRecognizerDelegate {
         rightPanelChromeRow.spacing = 6
         rightPanelChromeRow.distribution = .fill
         rightPanelChromeRow.translatesAutoresizingMaskIntoConstraints = false
+        rightPanelChromeRow.clipsToBounds = false
         rightPanelChromeRowHeightConstraint = rightPanelChromeRow.heightAnchor.constraint(equalToConstant: navSide)
         rightPanelChromeRowHeightConstraint.isActive = true
 

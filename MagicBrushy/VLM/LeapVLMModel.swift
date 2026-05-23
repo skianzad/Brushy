@@ -61,6 +61,7 @@ final class LeapVLMModel {
 
     /// Matches device coach image cap (stub never encodes, but keeps the API identical).
     static let coachMaxImageEdge: CGFloat = 384
+    static let coachPageLoadMaxImageEdge: CGFloat = 288
 
     public init() {}
 

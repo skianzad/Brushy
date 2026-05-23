@@ -41,7 +41,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     private let mascotContainer = UIView()
     private let paintRow = ColoringPhonePassThroughStackView()
     private let headerChromeStack = UIStackView()
-    private let rightPanelStack = UIStackView()
+    private let rightPanelStack = ColoringPhoneSideRailStackView()
     private let feedbackButton = UIButton(type: .system)
     private let clearButton = UIButton(type: .system)
     private let undoButton = UIButton(type: .system)
@@ -289,7 +289,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         // ── Crayons (custom horizontal wax crayons, scrollable) ─────────────
         crayonScrollContainer.translatesAutoresizingMaskIntoConstraints = false
         crayonScrollContainer.backgroundColor = .clear
-        crayonScrollContainer.clipsToBounds = true
+        crayonScrollContainer.clipsToBounds = false
         crayonScrollContainer.setContentHuggingPriority(.required, for: .vertical)
         crayonScrollContainer.setContentCompressionResistancePriority(.required, for: .vertical)
         crayonScrollViewportHeightConstraint = crayonScrollContainer.heightAnchor.constraint(
@@ -309,7 +309,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         // Let the pan gesture cancel touches in crayons once the user moves (see CrayonPaletteScrollView).
         crayonScrollView.canCancelContentTouches = true
         crayonScrollView.delaysContentTouches = true
-        crayonScrollView.clipsToBounds = true
+        crayonScrollView.clipsToBounds = false
         crayonScrollView.backgroundColor = .clear
         crayonScrollView.keyboardDismissMode = .onDrag
         crayonScrollView.panGestureRecognizer.cancelsTouchesInView = true
@@ -2465,7 +2465,7 @@ private enum MagicBrushyCrayonResources {
 
     /// Wax tip sits on the **left** of each swatch; sample a few pixels right of the outer edge.
     private static let tipColStartFraction: CGFloat = 0.10
-    private static let tipColEndFraction: CGFloat = 0.28
+    static let tipColEndFraction: CGFloat = 0.28
 
     private static func strokeColorFromSwatchTip(_ image: UIImage) -> UIColor {
         let side = 40
@@ -2516,11 +2516,11 @@ private enum ColoringCrayonPaletteLayout {
     static let mascotToToolsSpacing: CGFloat = 2
     /// Trimmed `colors 2` wax body is ~206×71; row height follows rail width so crayons fill the column.
     private static let swatchContentHeightPerWidth: CGFloat = 71.0 / 206.0
-    static let shapeHeightMultiplier: CGFloat = 1.0
+    static let shapeHeightMultiplier: CGFloat = ColoringOnPhoneMetrics.crayonHeightMultiplier
 
     static func crayonRowHeight(for traitCollection: UITraitCollection) -> CGFloat {
         let railW = BrushiMascotLayout.rightRailWidth(for: traitCollection) - 4
-        return ceil(railW * swatchContentHeightPerWidth)
+        return ceil(railW * swatchContentHeightPerWidth * shapeHeightMultiplier)
     }
 
     static func crayonStackSpacing(for traitCollection: UITraitCollection) -> CGFloat {
@@ -2590,6 +2590,9 @@ private final class MagicCrayonControl: UIControl {
     private let shineOverlay = CAGradientLayer()
     private let glassRingShine = CAGradientLayer()
 
+    /// Trimmed swatch PNG aspect (width / height).
+    private static let swatchAspectWidthOverHeight: CGFloat = 206.0 / 71.0
+    private static let bodyLeadingFraction: CGFloat = MagicBrushyCrayonResources.tipColEndFraction
     private static let selectedScale = CGAffineTransform(scaleX: 1.02, y: 1.04)
 
     override var isHighlighted: Bool {
@@ -2614,40 +2617,34 @@ private final class MagicCrayonControl: UIControl {
         glassRingView.isUserInteractionEnabled = false
         glassRingView.isHidden = true
         glassRingView.backgroundColor = .clear
-        glassRingView.layer.cornerRadius = 8
-        glassRingView.layer.borderWidth = 2
-        glassRingView.layer.borderColor = UIColor.white.withAlphaComponent(0.88).cgColor
-        glassRingView.layer.shadowColor = UIColor.white.cgColor
-        glassRingView.layer.shadowOpacity = 0.7
-        glassRingView.layer.shadowRadius = 8
-        glassRingView.layer.shadowOffset = .zero
+        glassRingView.clipsToBounds = true
+        glassRingView.layer.cornerRadius = 6
         if #available(iOS 13.0, *) {
             glassRingView.layer.cornerCurve = .continuous
         }
         glassRingShine.colors = [
-            UIColor.white.withAlphaComponent(0.55).cgColor,
+            UIColor.white.withAlphaComponent(0.42).cgColor,
+            UIColor.white.withAlphaComponent(0.10).cgColor,
+            UIColor.clear.cgColor,
+        ]
+        glassRingShine.locations = [0, 0.40, 1]
+        glassRingShine.startPoint = CGPoint(x: 0.08, y: 0.06)
+        glassRingShine.endPoint = CGPoint(x: 0.92, y: 0.94)
+        glassRingView.layer.addSublayer(glassRingShine)
+        glassRingView.translatesAutoresizingMaskIntoConstraints = true
+
+        swatchView.isUserInteractionEnabled = false
+        swatchView.contentMode = .scaleAspectFit
+        swatchView.clipsToBounds = false
+        swatchView.backgroundColor = .clear
+        swatchView.translatesAutoresizingMaskIntoConstraints = true
+
+        shineOverlay.colors = [
+            UIColor.white.withAlphaComponent(0.36).cgColor,
             UIColor.white.withAlphaComponent(0.12).cgColor,
             UIColor.clear.cgColor,
         ]
-        glassRingShine.locations = [0, 0.42, 1]
-        glassRingShine.startPoint = CGPoint(x: 0.1, y: 0.08)
-        glassRingShine.endPoint = CGPoint(x: 0.9, y: 0.92)
-        glassRingView.layer.addSublayer(glassRingShine)
-        glassRingView.translatesAutoresizingMaskIntoConstraints = false
-
-        swatchView.isUserInteractionEnabled = false
-        swatchView.contentMode = .scaleAspectFill
-        swatchView.clipsToBounds = true
-        swatchView.layer.cornerRadius = 8
-        swatchView.backgroundColor = .clear
-        swatchView.translatesAutoresizingMaskIntoConstraints = false
-
-        shineOverlay.colors = [
-            UIColor.white.withAlphaComponent(0.5).cgColor,
-            UIColor.white.withAlphaComponent(0.18).cgColor,
-            UIColor.clear.cgColor,
-        ]
-        shineOverlay.locations = [0, 0.38, 1]
+        shineOverlay.locations = [0, 0.36, 1]
         shineOverlay.startPoint = CGPoint(x: 0.08, y: 0.05)
         shineOverlay.endPoint = CGPoint(x: 0.92, y: 0.95)
         shineOverlay.isHidden = true
@@ -2655,26 +2652,64 @@ private final class MagicCrayonControl: UIControl {
 
         addSubview(swatchView)
         addSubview(glassRingView)
-        NSLayoutConstraint.activate([
-            swatchView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            swatchView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            swatchView.topAnchor.constraint(equalTo: topAnchor),
-            swatchView.bottomAnchor.constraint(equalTo: bottomAnchor),
-            glassRingView.leadingAnchor.constraint(equalTo: swatchView.leadingAnchor),
-            glassRingView.trailingAnchor.constraint(equalTo: swatchView.trailingAnchor),
-            glassRingView.topAnchor.constraint(equalTo: swatchView.topAnchor),
-            glassRingView.bottomAnchor.constraint(equalTo: swatchView.bottomAnchor),
-        ])
+    }
+
+    private var swatchFrame = CGRect.zero
+
+    private func layoutSwatchFrame() {
+        let box = bounds
+        guard box.width > 1, box.height > 1 else {
+            swatchFrame = .zero
+            swatchView.frame = .zero
+            return
+        }
+        let aspect = Self.swatchAspectWidthOverHeight
+        var height = box.height
+        var width = height * aspect
+        if width > box.width {
+            width = box.width
+            height = width / aspect
+        }
+        swatchFrame = CGRect(
+            x: 0,
+            y: (box.height - height) * 0.5,
+            width: width,
+            height: height
+        )
+        swatchView.frame = swatchFrame
+    }
+
+    private func layoutGlassOnBody() {
+        guard swatchFrame.width > 1 else {
+            glassRingView.frame = .zero
+            return
+        }
+        let bodyX = swatchFrame.minX + swatchFrame.width * Self.bodyLeadingFraction
+        let bodyW = swatchFrame.width * (1 - Self.bodyLeadingFraction)
+        glassRingView.frame = CGRect(
+            x: bodyX,
+            y: swatchFrame.minY,
+            width: bodyW,
+            height: swatchFrame.height
+        )
     }
 
     override func layoutSubviews() {
         super.layoutSubviews()
+        layoutSwatchFrame()
+        layoutGlassOnBody()
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         glassRingShine.frame = glassRingView.bounds
         glassRingShine.cornerRadius = glassRingView.layer.cornerRadius
-        shineOverlay.frame = swatchView.bounds
-        shineOverlay.cornerRadius = swatchView.layer.cornerRadius
+        let bodyWidth = swatchView.bounds.width * (1 - Self.bodyLeadingFraction)
+        shineOverlay.frame = CGRect(
+            x: swatchView.bounds.width * Self.bodyLeadingFraction,
+            y: 0,
+            width: bodyWidth,
+            height: swatchView.bounds.height
+        )
+        shineOverlay.cornerRadius = glassRingView.layer.cornerRadius
         CATransaction.commit()
     }
 

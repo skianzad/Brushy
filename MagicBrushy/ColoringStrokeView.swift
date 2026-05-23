@@ -73,7 +73,14 @@ final class ColoringStrokeView: UIView {
     }
 
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
-        finalizeCurrentStroke(with: touches.first)
+        current = nil
+        setNeedsDisplay()
+    }
+
+    /// Drops the live stroke without committing (e.g. when a pinch takes over the first finger).
+    func cancelInProgressStroke() {
+        current = nil
+        setNeedsDisplay()
     }
 
     private func finalizeCurrentStroke(with touch: UITouch?) {
