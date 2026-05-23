@@ -107,6 +107,63 @@ enum MagicBrushyChromeMetrics {
 
     static let navChromeContentInsets = UIEdgeInsets(top: 6, left: 6, bottom: 6, right: 6)
 
+    static func chromeNavHomeImage() -> UIImage? {
+        UIImage(named: "ChromeNavHome")?.withRenderingMode(.alwaysOriginal)
+    }
+
+    static func chromeNavSettingsImage() -> UIImage? {
+        UIImage(named: "ChromeNavSettings")?.withRenderingMode(.alwaysOriginal)
+    }
+
+    /// Orange chrome for home / settings; icon scaled to sit inside the square like camera / undo.
+    static func applyHomeNavChrome(
+        to button: UIButton,
+        image: UIImage?,
+        traitCollection: UITraitCollection
+    ) {
+        let corner = chromeCornerRadius(traitCollection)
+        let borderW = chromeBorderWidth(traitCollection)
+        let pad = navChromeContentInsets
+
+        button.backgroundColor = .clear
+        button.layer.cornerRadius = corner
+        button.layer.borderWidth = 0
+        button.clipsToBounds = false
+        button.layer.shadowColor = UIColor.black.cgColor
+        button.layer.shadowOpacity = 0.18
+        button.layer.shadowRadius = 4
+        button.layer.shadowOffset = CGSize(width: 0, height: 2)
+        if #available(iOS 13.0, *) {
+            button.layer.cornerCurve = .continuous
+        }
+
+        var cfg = button.configuration ?? .plain()
+        cfg.image = scaledNavChromeImage(image, traitCollection: traitCollection)
+        cfg.baseForegroundColor = .white
+        cfg.background.backgroundColor = FigmaTheme.primaryOrange
+        cfg.background.strokeColor = FigmaTheme.primaryOrangeBorder
+        cfg.background.strokeWidth = borderW
+        cfg.background.cornerRadius = corner
+        cfg.cornerStyle = .fixed
+        cfg.contentInsets = NSDirectionalEdgeInsets(
+            top: pad.top,
+            leading: pad.left,
+            bottom: pad.bottom,
+            trailing: pad.right
+        )
+        button.configuration = cfg
+        button.setImage(nil, for: .normal)
+        button.contentEdgeInsets = .zero
+    }
+
+    private static func scaledNavChromeImage(_ image: UIImage?, traitCollection: UITraitCollection) -> UIImage? {
+        guard let image else { return nil }
+        let side = chromeButtonSide(traitCollection)
+        let pad = navChromeContentInsets
+        let innerSide = max(14, side - pad.top - pad.bottom)
+        return image.scaledNavChromeIcon(to: innerSide)?.withRenderingMode(.alwaysOriginal)
+    }
+
     /// Rounded-square chrome shared by settings, camera, home, undo, and tool toggles.
     static func applySquareChrome(
         to button: UIButton,
@@ -115,6 +172,8 @@ enum MagicBrushyChromeMetrics {
         traitCollection: UITraitCollection,
         contentInsets: UIEdgeInsets = navChromeContentInsets
     ) {
+        button.viewWithTag(910_190)?.removeFromSuperview()
+
         let corner = chromeCornerRadius(traitCollection)
         let borderW = chromeBorderWidth(traitCollection)
 
@@ -198,8 +257,10 @@ enum BrushiMascotLayout {
     static let coloringRailMascotMultiplier: CGFloat = 1.5
     /// Applied on the coloring screen so the crayon rail can show a partial 5th swatch.
     static let coloringMascotViewportScale: CGFloat = 0.95
-    /// `MascotStateSleepy` artwork fills more of its square — scale the image, not the layout slot (keeps crayons/tools from jumping).
-    static let coloringSleepyVisualScale: CGFloat = 609.0 / 742.0
+    /// Coloring-screen mascot display scale (95% of the rail-fit size).
+    static let coloringMascotSizeScale: CGFloat = 0.95
+    // `MascotStateSleepy` artwork used to need a smaller visual scale (609/742) when the PNG filled more of its square.
+    // static let coloringSleepyVisualScale: CGFloat = 609.0 / 742.0
     private static let maxHeightBase: CGFloat = 300
 
     /// Coloring right-rail width (also drives mascot size on home screens).
@@ -234,12 +295,30 @@ enum BrushiMascotLayout {
         return CGSize(width: w, height: h)
     }
 
-    /// Mascot atop the crayon palette on `ColoringViewController` (1.5× base, then `coloringMascotViewportScale`).
+    /// Mascot atop the crayon palette on `ColoringViewController` (1.5× base, viewport + size scales).
     static func coloringRailDisplaySize(for traitCollection: UITraitCollection, image: UIImage?) -> CGSize {
         let base = displaySize(for: traitCollection, image: image)
-        let scale = coloringRailMascotMultiplier * coloringMascotViewportScale
+        let scale = coloringRailMascotMultiplier * coloringMascotViewportScale * coloringMascotSizeScale
         let w = base.width * scale
         let h = min(base.height * scale, maxLayoutHeight(for: traitCollection) * scale)
         return CGSize(width: w, height: h)
+    }
+}
+
+private extension UIImage {
+    /// Scale so the larger dimension fits `maxSide` (points); keeps icons inside nav chrome squares.
+    func scaledNavChromeIcon(to maxSide: CGFloat) -> UIImage? {
+        let maxDim = max(size.width, size.height)
+        guard maxDim > 0.5, maxSide > 0.5 else { return self }
+        guard maxDim > maxSide else { return self }
+        let scale = maxSide / maxDim
+        let newSize = CGSize(width: size.width * scale, height: size.height * scale)
+        guard newSize.width > 1, newSize.height > 1 else { return self }
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = UIScreen.main.scale
+        format.opaque = false
+        return UIGraphicsImageRenderer(size: newSize, format: format).image { _ in
+            draw(in: CGRect(origin: .zero, size: newSize))
+        }
     }
 }

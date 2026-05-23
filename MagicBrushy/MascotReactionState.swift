@@ -72,27 +72,6 @@ enum MascotReactionState: String, CaseIterable, Codable {
         }
     }
 
-    /*
-     Source artwork (May 9, 2026 exports in `Winter_Sports/`) mapped to catalog names.
-     Spare exports not used here: `12_14_05 AM (1).png`, `12_14_06 AM (2–5).png` — swap in Images.xcassets if a pose needs replacing.
-
-     | # | State          | Source file                                      |
-     |---|----------------|--------------------------------------------------|
-     | 1 | Neutral        | ChatGPT Image May 9, 2026, 12_10_22 AM (1).png   |
-     | 2 | Hello          | ChatGPT Image May 9, 2026, 12_10_22 AM (2).png   |
-     | 3 | Talking        | ChatGPT Image May 9, 2026, 12_10_22 AM (3).png   |
-     | 4 | O Mouth        | ChatGPT Image May 9, 2026, 12_10_22 AM (4).png   |
-     | 5 | Happy          | ChatGPT Image May 9, 2026, 12_10_22 AM (5).png   |
-     | 6 | Excited        | ChatGPT Image May 9, 2026, 12_10_23 AM (6).png   |
-     | 7 | Surprised      | ChatGPT Image May 9, 2026, 12_10_23 AM (7).png   |
-     | 8 | Curious        | ChatGPT Image May 9, 2026, 12_10_23 AM (8).png   |
-     | 9 | Thinking       | ChatGPT Image May 9, 2026, 12_10_29 AM.png       |
-     |10 | Supportive     | ChatGPT Image May 9, 2026, 12_13_57 AM (1).png   |
-     |11 | Caring Heart   | ChatGPT Image May 9, 2026, 12_13_57 AM (2).png   |
-     |12 | Thumbs Up      | ChatGPT Image May 9, 2026, 12_13_57 AM (3).png   |
-     |13 | Celebrating    | ChatGPT Image May 9, 2026, 12_13_57 AM (4).png   |
-     |14 | Listening      | ChatGPT Image May 9, 2026, 12_13_58 AM (5).png   |
-     |15 | Tap Reaction   | ChatGPT Image May 9, 2026, 12_13_58 AM (6).png   |
-     |16 | Sleepy         | ChatGPT Image May 19, 2026, 09_57_27 PM.png      |
-     */
+    // Source artwork: character/*.png → Assets.xcassets (MascotState… + MascotTalkingMouth…).
+    // See character/ folder for neutral, hello, open, oshaped, happy, etc.
 }

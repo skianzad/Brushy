@@ -175,8 +175,9 @@ final class LeapVLMModel {
         UserDefaults.standard.set(true, forKey: modelBundleOnDiskKey)
     }
 
-    /// True when the GGUF bundle is already present (persisted flag or on-disk scan for upgrades).
+    /// True when the GGUF bundle is already present (ODR copy, Leap cache, or persisted flag).
     private static func modelBundleIsAvailableLocally() -> Bool {
+        if VLMCoachOnDemandResources.resolvedWeightsOnDisk() != nil { return true }
         if hasModelBundleOnDisk { return true }
         let fm = FileManager.default
         let roots = [
@@ -351,28 +352,7 @@ final class LeapVLMModel {
         let task = Task<Void, Never> { @MainActor [weak self] in
             guard let self else { return }
             do {
-                let runner = try await Leap.shared.load(
-                    model: Self.modelName,
-                    quantization: Self.quantization,
-                    progress: { [weak self] progress, _ in
-                        Task { @MainActor in
-                            guard let self else { return }
-                            let fraction = Double(progress)
-                            if self.modelLoadPhase == .loadingIntoMemory {
-                                return
-                            }
-                            if fraction >= 1.0 || fraction >= Self.downloadFinishedProgressThreshold {
-                                self.publishDownloadProgress(1.0)
-                                self.publishLoadingIntoMemory()
-                            } else if Self.modelBundleIsAvailableLocally() {
-                                // Cached bundle: low progress values are load-into-memory, not download.
-                                self.publishLoadingIntoMemory()
-                            } else {
-                                self.publishDownloadProgress(fraction)
-                            }
-                        }
-                    }
-                )
+                let runner = try await self.loadModelRunner()
                 self.modelRunner = runner
                 self.hideLoadPanelLoaded()
             } catch {
@@ -405,6 +385,68 @@ final class LeapVLMModel {
                 status: "Couldn’t load model: \(error.localizedDescription)",
                 failed: true)
         }
+    }
+
+    /// ODR pack (App Store) when configured; otherwise Liquid registry download (development).
+    private func loadModelRunner() async throws -> any ModelRunner {
+        if let weights = VLMCoachOnDemandResources.resolvedWeightsOnDisk() {
+            publishDownloadProgress(0.08)
+            publishLoadingIntoMemory()
+            return try await loadRunner(fromSideloaded: weights, reportRegistryDownloadProgress: false)
+        }
+
+        if VLMCoachOnDemandResources.isPackConfiguredInApp {
+            do {
+                let weights = try await VLMCoachOnDemandResources.ensureMaterialized { [weak self] fraction in
+                    Task { @MainActor in
+                        self?.publishDownloadProgress(fraction)
+                    }
+                }
+                publishLoadingIntoMemory()
+                return try await loadRunner(fromSideloaded: weights, reportRegistryDownloadProgress: false)
+            } catch let odrError as VLMCoachOnDemandResources.VLMCoachODRError where odrError == .missingGGUF {
+                // ODR tag exists but GGUFs not staged in Xcode yet — fall through to registry.
+            }
+        }
+
+        return try await loadRunnerFromLeapRegistry()
+    }
+
+    private func loadRunner(
+        fromSideloaded weights: VLMCoachOnDemandResources.ResolvedWeights,
+        reportRegistryDownloadProgress: Bool
+    ) async throws -> any ModelRunner {
+        _ = reportRegistryDownloadProgress
+        return try await Leap.shared.load(
+            url: weights.gguf,
+            options: nil,
+            generationTimeParameters: nil,
+            autoDetectCompanionFiles: true
+        )
+    }
+
+    private func loadRunnerFromLeapRegistry() async throws -> any ModelRunner {
+        try await Leap.shared.load(
+            model: Self.modelName,
+            quantization: Self.quantization,
+            progress: { [weak self] progress, _ in
+                Task { @MainActor in
+                    guard let self else { return }
+                    let fraction = Double(progress)
+                    if self.modelLoadPhase == .loadingIntoMemory {
+                        return
+                    }
+                    if fraction >= 1.0 || fraction >= Self.downloadFinishedProgressThreshold {
+                        self.publishDownloadProgress(1.0)
+                        self.publishLoadingIntoMemory()
+                    } else if Self.modelBundleIsAvailableLocally() {
+                        self.publishLoadingIntoMemory()
+                    } else {
+                        self.publishDownloadProgress(fraction)
+                    }
+                }
+            }
+        )
     }
 
     private func finishInferenceSession() async {
@@ -618,6 +660,11 @@ enum MagicBrushyVLMOutputCleanup {
             "only name something if",
             "important: reply with only",
             "output rule:",
+            "bigger new mark", "fresh small mark", "look for what changed",
+            "look for what grew", "compared with the rest", "mention it only briefly",
+            "latest stroke used palette", "shapes and what the drawing might be matter",
+            "you may offer exactly", "you may lead with", "you may point to",
+            "they just made a", "they just added a",
         ]
 
         let lines = s.split { $0.isNewline }.map(String.init).map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
@@ -642,10 +689,43 @@ enum MagicBrushyVLMOutputCleanup {
 
         while s.contains("  ") { s = s.replacingOccurrences(of: "  ", with: " ") }
 
+        s = stripMarkdownAsterisks(s)
+        s = truncateAtPromptEcho(s)
         s = stripStaleYouHaveOpeners(s)
         s = rewriteThirdPersonCoachLines(s)
 
         return s.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private static func stripMarkdownAsterisks(_ raw: String) -> String {
+        var s = raw
+        while s.contains("**") {
+            s = s.replacingOccurrences(of: "**", with: "")
+        }
+        return s.replacingOccurrences(of: "*", with: "")
+    }
+
+    /// Small models often paste coach hints after the real sentence—drop from the first echo marker.
+    private static func truncateAtPromptEcho(_ raw: String) -> String {
+        let markers = [
+            "—look for what",
+            "—notice what looks",
+            "; shapes and what",
+            "mention it only briefly",
+            "Latest stroke used palette",
+            "You just made a ",
+            "They just made a ",
+            "They just added a ",
+            "you’ve got a big new mark",
+        ]
+        var s = raw
+        for marker in markers {
+            if let r = s.range(of: marker, options: .caseInsensitive) {
+                s = String(s[..<r.lowerBound])
+            }
+        }
+        return s.trimmingCharacters(in: .whitespacesAndNewlines)
+            .trimmingCharacters(in: CharacterSet(charactersIn: "—-–,;:"))
     }
 
     /// Models often echo prompt wording (“They are coloring…”) despite instructions—rewrite for TTS.

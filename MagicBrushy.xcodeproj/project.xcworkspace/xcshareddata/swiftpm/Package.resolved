@@ -1,4 +1,5 @@
 {
+  "originHash" : "f8d488c6abf22bf6f9e05d56b7d3a277fff3797c1fd29a9f0ff8fc79746e05c1",
   "pins" : [
     {
       "identity" : "leap-sdk",

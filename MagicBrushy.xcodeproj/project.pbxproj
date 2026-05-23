@@ -21,8 +21,8 @@
 		B1BGM000000000000000002 /* MagicBrushyBackgroundTrack.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = B1BGM000000000000000102 /* MagicBrushyBackgroundTrack.mp3 */; };
 		B1BST000000000000000001 /* BrushiBootstrapViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1BST000000000000000101 /* BrushiBootstrapViewController.swift */; };
 		B1BST000000000000000002 /* BrushiFigmaDownloadProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1BST000000000000000102 /* BrushiFigmaDownloadProgressView.swift */; };
-		B1CLR000000000000000002 /* ColoringFigmaBrushSizeBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CLR000000000000000102 /* ColoringFigmaBrushSizeBarView.swift */; };
 		B1CAF000000000000000001 /* MagicBrushyCoachAutoFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CAF000000000000000101 /* MagicBrushyCoachAutoFeedback.swift */; };
+		B1CLR000000000000000002 /* ColoringFigmaBrushSizeBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CLR000000000000000102 /* ColoringFigmaBrushSizeBarView.swift */; };
 		B1COA000000000000000001 /* MagicBrushyCoachVoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1COA000000000000000101 /* MagicBrushyCoachVoice.swift */; };
 		B1DBK000000000000000001 /* MagicBrushyDiamondBackButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1DBK000000000000000101 /* MagicBrushyDiamondBackButton.swift */; };
 		B1EAD0000311 /* onnxruntime.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = B1EAD0000301 /* onnxruntime.xcframework */; };
@@ -47,11 +47,15 @@
 		C1F700000000000000000106 /* LandscapeLetterboxHostViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F700000000000000000107 /* LandscapeLetterboxHostViewController.swift */; };
 		D1MAC000000000000000001 /* MascotReactionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1MAC000000000000000101 /* MascotReactionState.swift */; };
 		L1AST000000000000000001 /* LastDrawingStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = L1AST000000000000000101 /* LastDrawingStore.swift */; };
-		L1TPL000000000000000001 /* TemplateProgressStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = L1TPL000000000000000101 /* TemplateProgressStore.swift */; };
 		L1REC000000000000000001 /* RecentDrawingActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = L1REC000000000000000101 /* RecentDrawingActivity.swift */; };
+		L1TPL000000000000000001 /* TemplateProgressStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = L1TPL000000000000000101 /* TemplateProgressStore.swift */; };
 		M1LIP000000000000000001 /* MascotLipSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = M1LIP000000000000000101 /* MascotLipSync.swift */; };
 		R1ACT000000000000000001 /* Reaction.swift in Sources */ = {isa = PBXBuildFile; fileRef = R1ACT000000000000000101 /* Reaction.swift */; };
 		S1SUB000000000000000001 /* SubscriptionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = S1SUB000000000000000101 /* SubscriptionManager.swift */; };
+		B1ODR000000000000000001 /* VLMCoachOnDemandResources.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1ODR000000000000000101 /* VLMCoachOnDemandResources.swift */; };
+		B1ODR000000000000000002 /* vlm-coach-model-version.json in Resources */ = {isa = PBXBuildFile; fileRef = B1ODR000000000000000102 /* vlm-coach-model-version.json */; settings = {ASSET_TAGS = ("vlm-coach-model", ); }; };
+		B1ODR000000000000000005 /* LFM2.5-VL-1.6B-Q4_0.gguf in Resources */ = {isa = PBXBuildFile; fileRef = B1ODR000000000000000201 /* LFM2.5-VL-1.6B-Q4_0.gguf */; settings = {ASSET_TAGS = ("vlm-coach-model", ); }; };
+		B1ODR000000000000000006 /* mmproj-LFM2.5-VL-1.6b-Q8_0.gguf in Resources */ = {isa = PBXBuildFile; fileRef = B1ODR000000000000000202 /* mmproj-LFM2.5-VL-1.6b-Q8_0.gguf */; settings = {ASSET_TAGS = ("vlm-coach-model", ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -83,8 +87,8 @@
 		B1BGM000000000000000102 /* MagicBrushyBackgroundTrack.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = MagicBrushyBackgroundTrack.mp3; sourceTree = "<group>"; };
 		B1BST000000000000000101 /* BrushiBootstrapViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrushiBootstrapViewController.swift; sourceTree = "<group>"; };
 		B1BST000000000000000102 /* BrushiFigmaDownloadProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrushiFigmaDownloadProgressView.swift; sourceTree = "<group>"; };
-		B1CLR000000000000000102 /* ColoringFigmaBrushSizeBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColoringFigmaBrushSizeBarView.swift; sourceTree = "<group>"; };
 		B1CAF000000000000000101 /* MagicBrushyCoachAutoFeedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagicBrushyCoachAutoFeedback.swift; sourceTree = "<group>"; };
+		B1CLR000000000000000102 /* ColoringFigmaBrushSizeBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColoringFigmaBrushSizeBarView.swift; sourceTree = "<group>"; };
 		B1COA000000000000000101 /* MagicBrushyCoachVoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagicBrushyCoachVoice.swift; sourceTree = "<group>"; };
 		B1DBK000000000000000101 /* MagicBrushyDiamondBackButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagicBrushyDiamondBackButton.swift; sourceTree = "<group>"; };
 		B1EAD0000301 /* onnxruntime.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = onnxruntime.xcframework; path = "../ASU/SmartDraw/ThirdParty/sherpa-onnx-ios/build-ios/ios-onnxruntime/1.17.1/onnxruntime.xcframework"; sourceTree = SOURCE_ROOT; };
@@ -109,11 +113,15 @@
 		C1F700000000000000000107 /* LandscapeLetterboxHostViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LandscapeLetterboxHostViewController.swift; sourceTree = "<group>"; };
 		D1MAC000000000000000101 /* MascotReactionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MascotReactionState.swift; sourceTree = "<group>"; };
 		L1AST000000000000000101 /* LastDrawingStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LastDrawingStore.swift; sourceTree = "<group>"; };
-		L1TPL000000000000000101 /* TemplateProgressStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemplateProgressStore.swift; sourceTree = "<group>"; };
 		L1REC000000000000000101 /* RecentDrawingActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentDrawingActivity.swift; sourceTree = "<group>"; };
+		L1TPL000000000000000101 /* TemplateProgressStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemplateProgressStore.swift; sourceTree = "<group>"; };
 		M1LIP000000000000000101 /* MascotLipSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MascotLipSync.swift; sourceTree = "<group>"; };
 		R1ACT000000000000000101 /* Reaction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Reaction.swift; sourceTree = "<group>"; };
 		S1SUB000000000000000101 /* SubscriptionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionManager.swift; sourceTree = "<group>"; };
+		B1ODR000000000000000101 /* VLMCoachOnDemandResources.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VLMCoachOnDemandResources.swift; sourceTree = "<group>"; };
+		B1ODR000000000000000102 /* vlm-coach-model-version.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "vlm-coach-model-version.json"; sourceTree = "<group>"; };
+		B1ODR000000000000000201 /* LFM2.5-VL-1.6B-Q4_0.gguf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "LFM2.5-VL-1.6B-Q4_0.gguf"; sourceTree = "<group>"; };
+		B1ODR000000000000000202 /* mmproj-LFM2.5-VL-1.6b-Q8_0.gguf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "mmproj-LFM2.5-VL-1.6b-Q8_0.gguf"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -174,6 +182,7 @@
 				B1PRM000000000000000101 /* Prompt.swift */,
 				B1BGM000000000000000102 /* MagicBrushyBackgroundTrack.mp3 */,
 				A1B100000000000000000103 /* VLM */,
+				B1ODR000000000000000600 /* OnDemandResources */,
 				A1B200000000000000009 /* Main.storyboard */,
 				A1B200000000000000011 /* Assets.xcassets */,
 				C1CLR000000000000000101 /* Colors */,
@@ -195,8 +204,27 @@
 			isa = PBXGroup;
 			children = (
 				A1B200000000000000007 /* LeapVLMModel.swift */,
+				B1ODR000000000000000101 /* VLMCoachOnDemandResources.swift */,
 			);
 			path = VLM;
+			sourceTree = "<group>";
+		};
+		B1ODR000000000000000600 /* OnDemandResources */ = {
+			isa = PBXGroup;
+			children = (
+				B1ODR000000000000000602 /* VLMCoachModel */,
+			);
+			path = OnDemandResources;
+			sourceTree = "<group>";
+		};
+		B1ODR000000000000000602 /* VLMCoachModel */ = {
+			isa = PBXGroup;
+			children = (
+				B1ODR000000000000000102 /* vlm-coach-model-version.json */,
+				B1ODR000000000000000201 /* LFM2.5-VL-1.6B-Q4_0.gguf */,
+				B1ODR000000000000000202 /* mmproj-LFM2.5-VL-1.6b-Q8_0.gguf */,
+			);
+			path = VLMCoachModel;
 			sourceTree = "<group>";
 		};
 		B1EAD0000701 /* AlbaTTS_via_SmartDraw */ = {
@@ -247,6 +275,9 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
+				KnownAssetTags = (
+					"vlm-coach-model",
+				);
 				LastSwiftUpdateCheck = 1500;
 				LastUpgradeCheck = 1500;
 				TargetAttributes = {
@@ -288,6 +319,9 @@
 				B1KOK000000000000000611 /* KokoroEnV019 in Resources */,
 				B1BGM000000000000000002 /* MagicBrushyBackgroundTrack.mp3 in Resources */,
 				C1CLR000000000000000001 /* Colors in Resources */,
+				B1ODR000000000000000002 /* vlm-coach-model-version.json in Resources */,
+				B1ODR000000000000000005 /* LFM2.5-VL-1.6B-Q4_0.gguf in Resources */,
+				B1ODR000000000000000006 /* mmproj-LFM2.5-VL-1.6b-Q8_0.gguf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -357,6 +391,7 @@
 				C1F700000000000000000106 /* LandscapeLetterboxHostViewController.swift in Sources */,
 				S1SUB000000000000000001 /* SubscriptionManager.swift in Sources */,
 				A1B200000000000000000006 /* LeapVLMModel.swift in Sources */,
+				B1ODR000000000000000001 /* VLMCoachOnDemandResources.swift in Sources */,
 				B1EAD0000511 /* FeedbackAlbaSpeech.swift in Sources */,
 				B1BGM000000000000000001 /* MagicBrushyBackgroundMusic.swift in Sources */,
 				B1SET000000000000000001 /* MagicBrushySettingsViewController.swift in Sources */,
@@ -530,8 +565,9 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = RDP29X8YF2;
+				ENABLE_ON_DEMAND_RESOURCES = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -553,7 +589,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/Frameworks/LeapSDK.framework/Frameworks",
 				);
-				MARKETING_VERSION = 0.1.2;
+				MARKETING_VERSION = 0.1.3;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-lc++",
@@ -579,8 +615,9 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = RDP29X8YF2;
+				ENABLE_ON_DEMAND_RESOURCES = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -601,7 +638,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.1.2;
+				MARKETING_VERSION = 0.1.3;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-lc++",

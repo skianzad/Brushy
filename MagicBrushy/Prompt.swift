@@ -114,9 +114,9 @@ enum Prompt {
 
 \(vlmFlexibilityRule)
 
-You may offer exactly **one or two** very short sentences total (nothing longer). You may name the color they used if you can see it. You may add one tiny idea about how that color feels with what they painted—only if it is obvious; do not guess random objects. \(noMapDirectionsRule)
+You may offer exactly (one or two) very short sentences total (nothing longer). You may name the color they used if you can see it. You may add one tiny idea about how that color feels with what they painted—only if it is obvious; do not guess random objects. \(noMapDirectionsRule)
 
-**Start** your spoken reply with a phrase in the spirit of: “\(praiseStarter)” — adapt the words to fit their color and picture; do not copy “Great job using the … color” or long lectures.\(openerLanguageNote)
+Start your spoken reply with a phrase in the spirit of: “\(praiseStarter)” — adapt the words to fit their color and picture; do not copy “Great job using the … color” or long lectures.\(openerLanguageNote)
 
 \(spokenToChildRule)
 
@@ -190,15 +190,15 @@ You may offer exactly **one or two** very short sentences total (nothing longer)
             : " Say the opening in \(language.rawValue), keeping the same cheerful tone."
 
         return """
-\(opener) Look at their free drawing on the blank page.
+\(opener) Look at their free drawing on blank paper.
 
 \(drawingHint)
 
 \(vlmFlexibilityRule)
 
-You may offer exactly **one or two** very short sentences total. You may **lead with the drawing**, praise the art and gently guess what shape or thing the marks might be (sun, house, animal, face, path, flower—only if the picture really suggests it). Or you may point to **what looks newly added** in this moment—the fresh line, blob, or shape compared with the rest of the page. You may **briefly** name a color only if it helps; do not make the whole reply about palette colors. \(noMapDirectionsRule)
+Say exactly one or two very short sentences to the child (nothing longer). Cheer shapes or what the drawing might be—only if the picture suggests it (sun, house, animal, face, path, flower). You may name a color only if it helps; do not make the whole reply about colors. \(noMapDirectionsRule)
 
-**Start** your spoken reply with a phrase in the spirit of: “\(praiseStarter)” — adapt it to their shapes and new marks.\(openerLanguageNote)
+Start your spoken reply with a phrase in the spirit of: “\(praiseStarter)” — adapt it to their shapes; do not copy long lectures.\(openerLanguageNote)
 
 \(spokenToChildRule)
 
@@ -394,7 +394,7 @@ The child just opened this free-draw page. Look at the blank paper and any marks
 
 \(progressNote)
 
-Your job: **two or three** short spoken sentences (about **20–40 words** total)—warm, simple kid words. Focus on **drawing and creativity**, not color lectures. \(noMapDirectionsRule) \(neverYouHaveOpenersRule)
+Your job: two or three short spoken sentences (about 20–40 words total)—warm, simple kid words. Focus on drawing and creativity, not color lectures. \(noMapDirectionsRule) \(neverYouHaveOpenersRule)
 
 \(spokenToChildRule)
 \(neverThirdPersonSpokenRule)
@@ -441,13 +441,13 @@ You may give one warm, very short message in simple kid words about **the whole 
         let lang = languageInstruction(for: MagicBrushyLanguage.stored())
 
         return """
-\(opener) The photo shows their **whole free drawing** on blank paper (no template outlines).
+\(opener) The photo shows their whole free drawing on blank paper (no template outlines).
 
-The child tapped their mascot for a big cheer about **everything they drew so far**. Look at the full page: shapes, paths, characters, patterns, and how the picture fits together as one idea.
+The child tapped their mascot for a big cheer about everything they drew so far. Look at the full page: shapes, paths, and how the picture fits together.
 
 \(vlmFlexibilityRule)
 
-You may say one or two very short sentences in simple kid words. You may praise what the drawing might be or what story the shapes tell. You may add one tiny cheer about a color or a part you like—but do not make the reply only about colors. Vary how you start (\(neverYouHaveOpenersRule)). \(noMapDirectionsRule)
+Say one or two very short sentences in simple kid words. Praise what the drawing might be or what story the shapes tell. You may add one tiny cheer about a color or a part you like—but do not make the reply only about colors. Vary how you start (\(neverYouHaveOpenersRule)). \(noMapDirectionsRule)
 
 \(spokenToChildRule)
 \(neverThirdPersonSpokenRule)
@@ -499,24 +499,19 @@ If unsure, use neutral.
         lastStrokePointCount: Int,
         lastPaintColorName: String?
     ) -> String {
-        var lines: [String] = []
+        if lastStrokePointCount > 30, let paintWord = lastPaintColorName {
+            return "the kid’s most recent stroke was large and used palette color “\(paintWord)”— you may cheer shapes or what the drawing might be; color is optional."
+        }
         if lastStrokePointCount > 30 {
-            lines.append(
-                "They just made a **bigger new mark**—look for what changed or grew compared with the rest of the drawing."
-            )
-        } else if lastStrokePointCount > 0 {
-            lines.append(
-                "They just added a **fresh small mark**—notice what looks new on the page right now."
-            )
-        } else {
-            lines.append("Peek at the whole free drawing and cheer what they are creating.")
+            return "the kid just made a large new mark— you may notice what grew on the page."
         }
-        if let paintWord = lastPaintColorName {
-            lines.append(
-                "Latest stroke used palette color “\(paintWord)”—mention it only briefly; **shapes and what the drawing might be matter more**."
-            )
+        if lastStrokePointCount > 0, let paintWord = lastPaintColorName {
+            return "the kid’s most recent brush used palette color “\(paintWord)”— you may mention it briefly if you see it; shapes matter more."
         }
-        return lines.joined(separator: " ")
+        if lastStrokePointCount > 0 {
+            return "the kid added a small fresh mark— you may cheer what looks new."
+        }
+        return "peek at the free drawing and cheer gently."
     }
 
     private static func paletteHintBlock(
@@ -547,13 +542,13 @@ You may adapt, skip, or shorten anything below—only say what honestly fits wha
         "never open with “You have a”, “You have an”, or “You’ve got a”"
 
     private static let neverThirdPersonSpokenRule = """
-In your spoken reply, talk **to** the child (second person). Never say “They are coloring”, “They are”, “The child is”, or “Their”—use “you”, “your”, “you’re” instead.
+In your spoken reply, talk to the child (second person). Never say “They are coloring”, “They are”, “The child is”, or “Their”—use “you”, “your”, “you’re” instead.
 """
 
     private static let spokenToChildRule = """
-Speak **to** the child aloud: easy words, always “you” or “your”, never “they” or “their” about the child. Never start with “You have a”, “You have an”, or “You’ve got a”. No third sentence.
+Speak to the child aloud: easy words, always “you” or “your”, never “they” or “their” about the child. Never start with “You have a”, “You have an”, or “You’ve got a”. No third sentence.
 """
     private static let spokenReplyOnlyFooter = """
-IMPORTANT: Reply with ONLY the words you say aloud—no rules, no quotes about yourself, no repeating this text, no bullets, no markdown, no symbols like <>. Never mention AI, robots, computers, phones, apps, or internet.
+IMPORTANT: Reply with ONLY the words you say aloud to the child—no rules, no quotes about yourself, no repeating any line from this prompt (including hints about marks, palette colors, or “look for what changed”). No bullets, no asterisks, no markdown, no symbols like <>. Never mention AI, robots, computers, phones, apps, or internet.
 """
 }

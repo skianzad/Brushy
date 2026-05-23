@@ -1,6 +1,6 @@
 import UIKit
 
-/// Yellow pill brush-size strip with one tap target per stroke preset (Figma `122:233` style).
+/// Blue pill brush-size strip with one tap target per stroke preset (Figma `122:233`).
 final class ColoringFigmaBrushSizeBarView: UIView {
 
     var dotCount: Int = 5 { 
@@ -35,8 +35,8 @@ final class ColoringFigmaBrushSizeBarView: UIView {
     private var barWidthConstraint: NSLayoutConstraint?
     private var barHeightConstraint: NSLayoutConstraint?
 
-    private static let pillFill = ColoringFigmaToolbarChrome.limeChromeFill
-    private static let pillStroke = ColoringFigmaToolbarChrome.limeChromeBorder
+    private static let pillFill = ColoringFigmaToolbarChrome.brushBarFill
+    private static let pillStroke = ColoringFigmaToolbarChrome.brushBarBorder
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -194,9 +194,14 @@ final class ColoringFigmaBrushSizeBarView: UIView {
 
 enum ColoringFigmaToolbarChrome {
 
-    /// Figma brush-size bar + undo chrome fill (`rgb 0.765, 0.937, 0.235`).
+    /// Figma brush-size bar `122:233` fill (`#3C98EF`).
+    static let brushBarFill = FigmaTheme.actionBlue
+    /// Figma brush-size bar `122:233` border (`#2764DC`).
+    static let brushBarBorder = UIColor(red: 39 / 255, green: 100 / 255, blue: 220 / 255, alpha: 1)
+
+    /// Figma undo chrome fill (`rgb 0.765, 0.937, 0.235`).
     static let limeChromeFill = UIColor(red: 195 / 255, green: 239 / 255, blue: 60 / 255, alpha: 1)
-    /// Figma brush-size bar + undo chrome border (`rgb 0, 0.824, 0.416`).
+    /// Figma undo chrome border (`rgb 0, 0.824, 0.416`).
     static let limeChromeBorder = UIColor(red: 0, green: 210 / 255, blue: 106 / 255, alpha: 1)
     static let undoGreen = limeChromeFill
     static let undoGreenBorder = limeChromeBorder

@@ -11,6 +11,7 @@ final class BrushiBootstrapViewController: UIViewController {
     private var didTransitionToHome = false
     /// UI fill never moves backward during one bootstrap download attempt.
     private var displayedDownloadProgress: CGFloat = 0
+    private var memoryLoadFillTimer: Timer?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -99,6 +100,7 @@ final class BrushiBootstrapViewController: UIViewController {
     }
 
     deinit {
+        memoryLoadFillTimer?.invalidate()
         if let loadPanelObserver {
             NotificationCenter.default.removeObserver(loadPanelObserver)
         }
@@ -127,20 +129,38 @@ final class BrushiBootstrapViewController: UIViewController {
     }
 
     private func startBootstrapLoadIfNeeded() {
+        progressView.setIndeterminateActive(false)
+        displayedDownloadProgress = 0
+        refreshProgressBarFromDisplayedFraction(animated: false)
         Task { @MainActor [weak self] in
             guard let self else { return }
             #if targetEnvironment(simulator)
-            try? await Task.sleep(nanoseconds: 350_000_000)
+            await self.animateSimulatorBootstrapFill()
             self.transitionToHomeIfNeeded()
             #else
             await LeapVLMModel.shared.load()
+            self.stopMemoryLoadFillAnimation()
             self.refreshFromModelState()
             self.transitionToHomeIfNeeded()
             #endif
         }
     }
 
+    #if targetEnvironment(simulator)
+    private func animateSimulatorBootstrapFill() async {
+        progressView.setIndeterminateActive(false)
+        for step in 0...24 {
+            displayedDownloadProgress = CGFloat(step) / 24
+            let pct = Int((displayedDownloadProgress * 100).rounded(.down))
+            setCaptionText("Loading content… \(pct)%")
+            refreshProgressBarFromDisplayedFraction(animated: step > 0)
+            try? await Task.sleep(nanoseconds: 25_000_000)
+        }
+    }
+    #endif
+
     @objc private func retryTapped() {
+        stopMemoryLoadFillAnimation()
         retryButton.isHidden = true
         displayedDownloadProgress = 0
         setCaptionText("Downloading content… 0%")
@@ -157,6 +177,7 @@ final class BrushiBootstrapViewController: UIViewController {
         let vlm = LeapVLMModel.shared
 
         if vlm.modelLoadDidFail {
+            stopMemoryLoadFillAnimation()
             progressView.setIndeterminateActive(false)
             progressView.isHidden = true
             setCaptionText("Couldn't load content")
@@ -169,6 +190,7 @@ final class BrushiBootstrapViewController: UIViewController {
 
         switch vlm.modelBadgeState {
         case .downloading(let p):
+            stopMemoryLoadFillAnimation()
             progressView.setIndeterminateActive(false)
             displayedDownloadProgress = max(displayedDownloadProgress, CGFloat(p))
             let pct = Int((displayedDownloadProgress * 100).rounded(.down))
@@ -176,14 +198,15 @@ final class BrushiBootstrapViewController: UIViewController {
             refreshProgressBarFromDisplayedFraction(animated: true)
             progressView.accessibilityLabel = "Download progress, \(pct) percent"
         case .loadingIntoMemory:
+            progressView.setIndeterminateActive(false)
             setCaptionText("Loading content…")
-            displayedDownloadProgress = 1
-            progressView.setIndeterminateActive(true)
-            progressView.setProgress(1, animated: true)
+            startMemoryLoadFillAnimationIfNeeded()
             progressView.accessibilityLabel = "Loading content into memory"
         case .ready, .simulatorPreview:
+            stopMemoryLoadFillAnimation()
             progressView.setIndeterminateActive(false)
-            progressView.setProgress(1, animated: true)
+            displayedDownloadProgress = 1
+            refreshProgressBarFromDisplayedFraction(animated: true)
             setCaptionText("Loading content...")
             progressView.accessibilityLabel = "Loading content"
         default:
@@ -192,10 +215,10 @@ final class BrushiBootstrapViewController: UIViewController {
                 setCaptionText("Loading content…")
                 progressView.accessibilityLabel = "Loading content"
             } else {
-                setCaptionText("Downloading content… 0%")
-                progressView.accessibilityLabel = "Download starting"
+                setCaptionText("Loading content… 0%")
+                progressView.accessibilityLabel = "Loading starting"
             }
-            refreshProgressBarFromDisplayedFraction(animated: false)
+            refreshProgressBarFromDisplayedFraction(animated: displayedDownloadProgress > 0)
         }
 
         transitionToHomeIfNeeded()
@@ -203,6 +226,42 @@ final class BrushiBootstrapViewController: UIViewController {
 
     private func refreshProgressBarFromDisplayedFraction(animated: Bool = false) {
         progressView.setProgress(displayedDownloadProgress, animated: animated)
+    }
+
+    /// When weights are already on disk, Leap gives no byte progress — ease the yellow bar toward full.
+    private func startMemoryLoadFillAnimationIfNeeded() {
+        memoryLoadFillTimer?.invalidate()
+        let start = displayedDownloadProgress
+        let remaining = max(0, 1 - start)
+        guard remaining > 0.02 else {
+            displayedDownloadProgress = 1
+            refreshProgressBarFromDisplayedFraction(animated: true)
+            return
+        }
+        let steps = 28
+        var tick = 0
+        memoryLoadFillTimer = Timer.scheduledTimer(withTimeInterval: 0.06, repeats: true) { [weak self] timer in
+            guard let self else {
+                timer.invalidate()
+                return
+            }
+            tick += 1
+            let t = min(1, CGFloat(tick) / CGFloat(steps))
+            self.displayedDownloadProgress = start + remaining * t
+            self.refreshProgressBarFromDisplayedFraction(animated: true)
+            if tick >= steps {
+                timer.invalidate()
+                self.memoryLoadFillTimer = nil
+            }
+        }
+        if let memoryLoadFillTimer {
+            RunLoop.main.add(memoryLoadFillTimer, forMode: .common)
+        }
+    }
+
+    private func stopMemoryLoadFillAnimation() {
+        memoryLoadFillTimer?.invalidate()
+        memoryLoadFillTimer = nil
     }
 
     private func transitionToHomeIfNeeded() {

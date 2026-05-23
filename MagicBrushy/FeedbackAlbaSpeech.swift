@@ -6,6 +6,9 @@ enum FeedbackAlbaSpeech {
     /// Optional mascot mouth driver (set from `ColoringViewController`).
     @MainActor static weak var mascotLipSync: MascotLipSyncDriver?
 
+    /// Bumped by `stopSpeaking()` so in-flight `speakFeedback` tasks do not start playback after leave.
+    @MainActor private static var speechGeneration: UInt64 = 0
+
     nonisolated static func stripEmojis(_ s: String) -> String {
         s.unicodeScalars
             .filter { scalar in
@@ -33,8 +36,16 @@ enum FeedbackAlbaSpeech {
         guard !clean.isEmpty else { return }
 
         stopSpeaking()
+        let session = speechGeneration
+
         MagicBrushyBackgroundMusic.duckForMascotSpeech()
-        defer { MagicBrushyBackgroundMusic.restoreVolumeAfterMascotSpeech() }
+        defer {
+            if session == speechGeneration {
+                MagicBrushyBackgroundMusic.restoreVolumeAfterMascotSpeech()
+            }
+        }
+
+        guard session == speechGeneration else { return }
 
         let lang = MagicBrushyLanguage.stored()
 
@@ -43,30 +54,35 @@ enum FeedbackAlbaSpeech {
             if coach.usesSherpaAlba, SherpaPiperAlbaVoice.isBundledVoiceAvailable {
                 do {
                     try await SherpaPiperAlbaVoice.speakAlbaBritishEnglish(clean) { text, duration in
+                        guard session == speechGeneration else { return }
                         Self.mascotLipSync?.startSherpaDrivenLipSync(text: text, duration: duration)
                     }
                 } catch {}
+                guard session == speechGeneration else { return }
                 Self.mascotLipSync?.sessionEnded()
                 return
             }
             if let sid = coach.kokoroSpeakerId, SherpaKokoroVoice.isBundledVoiceAvailable {
                 do {
                     try await SherpaKokoroVoice.speak(clean, speakerId: sid) { text, duration in
+                        guard session == speechGeneration else { return }
                         Self.mascotLipSync?.startSherpaDrivenLipSync(text: text, duration: duration)
                     }
                 } catch {}
+                guard session == speechGeneration else { return }
                 Self.mascotLipSync?.sessionEnded()
                 return
             }
         }
 
+        guard session == speechGeneration else { return }
         // Non-English languages, explicit device voice, or missing Sherpa bundles.
-        // with the matching voice for the selected language.
-        await AppleFeedbackSynth.shared.speak(clean, languageTag: lang.bcp47Tag)
+        await AppleFeedbackSynth.shared.speak(clean, languageTag: lang.bcp47Tag, session: session)
     }
 
     @MainActor
     static func stopSpeaking() {
+        speechGeneration &+= 1
         Self.mascotLipSync?.sessionEnded()
         SherpaVLMPlayback.stopPlayback()
         AppleFeedbackSynth.shared.stop()
@@ -94,13 +110,19 @@ enum FeedbackAlbaSpeech {
             }
         }
 
-        func speak(_ text: String, languageTag: String = "en-GB") async {
+        func speak(_ text: String, languageTag: String = "en-GB", session: UInt64) async {
             guard !text.isEmpty else { return }
+            guard session == FeedbackAlbaSpeech.speechGeneration else { return }
             stop()
+            guard session == FeedbackAlbaSpeech.speechGeneration else { return }
             FeedbackAlbaSpeech.mascotLipSync?.startAppleDrivenLipSync()
             let voice = Self.preferredVoice(for: languageTag)
 
             await withCheckedContinuation { (cont: CheckedContinuation<Void, Never>) in
+                guard session == FeedbackAlbaSpeech.speechGeneration else {
+                    cont.resume()
+                    return
+                }
                 self.speakContinuation = cont
                 let u = AVSpeechUtterance(string: text)
                 u.voice = voice
@@ -112,6 +134,10 @@ enum FeedbackAlbaSpeech {
                 // A touch below full volume keeps the delivery soft and friendly.
                 u.volume = 0.92
                 synth.speak(u)
+            }
+            guard session == FeedbackAlbaSpeech.speechGeneration else {
+                stop()
+                return
             }
         }
 

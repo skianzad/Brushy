@@ -1,0 +1,6 @@
+{
+  "version": 2,
+  "model": "LFM2.5-VL-1.6B",
+  "quantization": "Q4_0",
+  "note": "Bump version when GGUF files in this folder change. Add *.gguf (+ mmproj) here with ODR tag vlm-coach-model."
+}

@@ -48,8 +48,8 @@ final class BrushiFigmaDownloadProgressView: UIView {
         fillView.backgroundColor = .clear
         fillView.layer.zPosition = 1
         fillGradient.colors = [
-            UIColor(red: 1, green: 0.82, blue: 0.12, alpha: 0.72).cgColor,
-            UIColor(red: 1, green: 0.96, blue: 0.72, alpha: 0.55).cgColor,
+            UIColor(red: 1, green: 0.78, blue: 0.05, alpha: 0.95).cgColor,
+            UIColor(red: 1, green: 0.92, blue: 0.35, alpha: 0.9).cgColor,
         ]
         fillGradient.startPoint = CGPoint(x: 0, y: 0.5)
         fillGradient.endPoint = CGPoint(x: 1, y: 0.5)

@@ -169,6 +169,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     // ── Compact-layout adaptive constraints ──────────────────────────────────
     /// Width + height constraints for nav bar buttons (home, undo, redo, save, settings).
     private var navButtonSizeConstraints: [NSLayoutConstraint] = []
+    private var toolRowMinHeightConstraint: NSLayoutConstraint!
     /// Nav chrome buttons whose symbol size / corner radius adapt on iPhone.
     private var chromeNavButtons: [UIButton] = []
     private var settingsGearButton: MagicBrushySettingsGearButton?
@@ -337,7 +338,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         ])
 
         crayonStack.axis = .vertical
-        crayonStack.spacing = ColoringCrayonPaletteLayout.stackSpacing
+        crayonStack.spacing = ColoringCrayonPaletteLayout.crayonStackSpacing(for: traitCollection)
         crayonStack.isLayoutMarginsRelativeArrangement = false
         crayonStack.alignment = .fill
         crayonStack.distribution = .fill
@@ -360,7 +361,9 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             let img = crayonSwatchImages.indices.contains(paletteIndex) ? crayonSwatchImages[paletteIndex] : nil
             c.setSwatch(image: img, wax: wax)
             c.translatesAutoresizingMaskIntoConstraints = false
-            let rowH = c.heightAnchor.constraint(equalToConstant: ColoringCrayonPaletteLayout.crayonRowHeight)
+            let rowH = c.heightAnchor.constraint(
+                equalToConstant: ColoringCrayonPaletteLayout.crayonRowHeight(for: traitCollection)
+            )
             rowH.isActive = true
             crayonRowHeightConstraints.append(rowH)
             c.addTarget(self, action: #selector(crayonTapped(_:)), for: .touchUpInside)
@@ -440,19 +443,15 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         // ── Top nav bar (Figma `3-2098`) ─────────────────────────────────────
         let navSide = MagicBrushyChromeMetrics.chromeButtonSide(traitCollection)
         let navChromeInsets = MagicBrushyChromeMetrics.navChromeContentInsets
-        let homeSymbolSize: CGFloat = MagicBrushyChromeMetrics.isPhone(traitCollection) ? 18 : 22
-        let homeImage = UIImage(
-            systemName: "house.fill",
-            withConfiguration: UIImage.SymbolConfiguration(pointSize: homeSymbolSize, weight: .bold)
-        )
-        homeButton.setImage(homeImage, for: .normal)
-        homeButton.imageView?.contentMode = .scaleAspectFit
-        MagicBrushyChromeMetrics.applySquareChrome(
+        homeButton.configuration = .plain()
+        homeButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+        homeButton.setContentCompressionResistancePriority(.required, for: .vertical)
+        homeButton.setContentHuggingPriority(.required, for: .horizontal)
+        homeButton.setContentHuggingPriority(.required, for: .vertical)
+        MagicBrushyChromeMetrics.applyHomeNavChrome(
             to: homeButton,
-            fill: FigmaTheme.primaryOrange,
-            border: FigmaTheme.primaryOrangeBorder,
-            traitCollection: traitCollection,
-            contentInsets: navChromeInsets
+            image: MagicBrushyChromeMetrics.chromeNavHomeImage(),
+            traitCollection: traitCollection
         )
         homeButton.addTarget(self, action: #selector(homeTapped), for: .touchUpInside)
         homeButton.isHidden = navigationController == nil
@@ -483,6 +482,10 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         )
         cameraChromeButton.setImage(cameraImage, for: .normal)
         cameraChromeButton.imageView?.contentMode = .scaleAspectFit
+        cameraChromeButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+        cameraChromeButton.setContentCompressionResistancePriority(.required, for: .vertical)
+        cameraChromeButton.setContentHuggingPriority(.required, for: .horizontal)
+        cameraChromeButton.setContentHuggingPriority(.required, for: .vertical)
         cameraChromeButton.accessibilityLabel = "Save to Photos"
         cameraChromeButton.addTarget(self, action: #selector(saveColoringTapped), for: .touchUpInside)
 
@@ -495,6 +498,10 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         )
         undoChromeButton.setImage(undoImage, for: .normal)
         undoChromeButton.imageView?.contentMode = .scaleAspectFit
+        undoChromeButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+        undoChromeButton.setContentCompressionResistancePriority(.required, for: .vertical)
+        undoChromeButton.setContentHuggingPriority(.required, for: .horizontal)
+        undoChromeButton.setContentHuggingPriority(.required, for: .vertical)
         undoChromeButton.accessibilityLabel = "Undo"
         undoChromeButton.addTarget(self, action: #selector(undoStroke), for: .touchUpInside)
 
@@ -508,7 +515,9 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
 
         brushSizeBar.translatesAutoresizingMaskIntoConstraints = false
         brushSizeBar.setContentCompressionResistancePriority(.required, for: .horizontal)
+        brushSizeBar.setContentCompressionResistancePriority(.required, for: .vertical)
         brushSizeBar.setContentHuggingPriority(.required, for: .horizontal)
+        brushSizeBar.setContentHuggingPriority(.required, for: .vertical)
         brushSizeBar.dotCount = strokeWidthPresets.count
         brushSizeBar.selectedIndex = selectedStrokeSizeIndex
         brushSizeBar.onSelectionChanged = { [weak self] index in
@@ -538,14 +547,24 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         toolRow.axis = .horizontal
         toolRow.spacing = 8
         toolRow.alignment = .center
+        toolRow.distribution = .fill
         toolRow.addArrangedSubview(topChromeLeftRow)
         toolRow.addArrangedSubview(navSpacer)
         toolRow.addArrangedSubview(topChromeRightRow)
+        toolRow.setContentCompressionResistancePriority(.required, for: .vertical)
+        toolRow.setContentHuggingPriority(.required, for: .vertical)
+        topChromeLeftRow.setContentCompressionResistancePriority(.required, for: .vertical)
+        topChromeRightRow.setContentCompressionResistancePriority(.required, for: .vertical)
         modelStatusStack.isHidden = true
 
         let bar = UIStackView(arrangedSubviews: [toolRow])
         bar.axis = .vertical
         bar.spacing = 10
+        bar.setContentCompressionResistancePriority(.required, for: .vertical)
+        toolRowMinHeightConstraint = toolRow.heightAnchor.constraint(
+            greaterThanOrEqualToConstant: MagicBrushyChromeMetrics.chromeButtonSide(traitCollection)
+        )
+        toolRowMinHeightConstraint.isActive = true
 
         // ── Canvas ────────────────────────────────────────────────────────────
         canvasContainer.translatesAutoresizingMaskIntoConstraints = false
@@ -592,6 +611,8 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         headerStack.translatesAutoresizingMaskIntoConstraints = false
         headerStack.isLayoutMarginsRelativeArrangement = false
         headerStack.insetsLayoutMarginsFromSafeArea = false
+        headerStack.setContentCompressionResistancePriority(.required, for: .vertical)
+        headerStack.setContentHuggingPriority(.required, for: .vertical)
         view.addSubview(drawingBackgroundView)
         view.addSubview(headerStack)
         view.addSubview(paintRow)
@@ -823,6 +844,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     }
 
     @objc private func homeTapped() {
+        interruptCoachAudioAndWork()
         guard let packId = sessionPackId else {
             navigationController?.popToRootViewController(animated: true)
             return
@@ -958,14 +980,13 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     private func applyLayoutForTraitCollection(_ tc: UITraitCollection) {
         let phone = MagicBrushyChromeMetrics.isPhone(tc)
         let compact = tc.verticalSizeClass == .compact
-        let navSize = phone ? MagicBrushyChromeMetrics.chromeButtonSide(tc) : 52
+        let navSize = MagicBrushyChromeMetrics.chromeButtonSide(tc)
         let panelWidth = BrushiMascotLayout.rightRailWidth(for: tc)
         let toolHeight: CGFloat = phone ? 50 : ColoringCrayonPaletteLayout.toolButtonHeight
         let navCorner = MagicBrushyChromeMetrics.chromeCornerRadius(tc)
         let navBorder = MagicBrushyChromeMetrics.chromeBorderWidth(tc)
         let navChromeInsets = MagicBrushyChromeMetrics.navChromeContentInsets
         let navSymbol = phone ? MagicBrushyChromeMetrics.chromeSymbolPointSize(tc) : 20
-        let homeSymbol: CGFloat = phone ? 18 : 22
         let barSize = ColoringFigmaToolbarChrome.brushBarSize(for: tc, dotCount: strokeWidthPresets.count)
 
         for c in navButtonSizeConstraints { c.constant = navSize }
@@ -980,18 +1001,11 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             b.layer.cornerRadius = navCorner
             b.layer.borderWidth = navBorder
             if b === homeButton {
-                MagicBrushyChromeMetrics.applySquareChrome(
+                MagicBrushyChromeMetrics.applyHomeNavChrome(
                     to: b,
-                    fill: FigmaTheme.primaryOrange,
-                    border: FigmaTheme.primaryOrangeBorder,
-                    traitCollection: tc,
-                    contentInsets: navChromeInsets
+                    image: MagicBrushyChromeMetrics.chromeNavHomeImage(),
+                    traitCollection: tc
                 )
-                let homeImg = UIImage(
-                    systemName: "house.fill",
-                    withConfiguration: UIImage.SymbolConfiguration(pointSize: homeSymbol, weight: .bold)
-                )
-                b.setImage(homeImg, for: .normal)
             } else if b === cameraChromeButton {
                 MagicBrushyChromeMetrics.applySquareChrome(
                     to: b,
@@ -1011,6 +1025,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             }
         }
         settingsGearButton?.applyStyle(for: tc)
+        toolRowMinHeightConstraint?.constant = MagicBrushyChromeMetrics.chromeButtonSide(tc)
 
         let crayonRowH = ColoringCrayonPaletteLayout.crayonRowHeight(for: tc)
         for c in crayonRowHeightConstraints { c.constant = crayonRowH }
@@ -1184,10 +1199,8 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         if isMovingFromParent {
             LastDrawingStore.clearContinueDrawingSession()
         }
-        FeedbackAlbaSpeech.stopSpeaking()
+        interruptCoachAudioAndWork()
         FeedbackAlbaSpeech.mascotLipSync = nil
-        // Cancel in-flight coach inference so the next screen / page starts clean (each `generate` uses a new conversation).
-        invalidateFeedbackSession()
         pollTimer?.invalidate()
         pollTimer = nil
     }
@@ -1238,6 +1251,12 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         cancelPendingPageWelcomeWork()
         vlm.cancel()
         hideVLMInputPreviewImmediate()
+    }
+
+    /// Stop mascot speech immediately and cancel pending coach VLM / welcome work (home, page change, leave).
+    private func interruptCoachAudioAndWork() {
+        invalidateFeedbackSession()
+        FeedbackAlbaSpeech.stopSpeaking()
     }
 
     /// New stroke started — stop deferred **speech** and cancel in-flight VLM, but keep the debounced **reaction** work item
@@ -1474,9 +1493,8 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
 
     private func applyCurrentPage() {
         guard pageIndex >= 0, pageIndex < coloringBookPages.count else { return }
+        interruptCoachAudioAndWork()
         clearResumeSnapshot()
-        FeedbackAlbaSpeech.stopSpeaking()
-        invalidateFeedbackSession()
         let page = coloringBookPages[pageIndex]
         templateView.image = page.image
         templateLineOverlayView.image = page.image.magicBrushyLineArtOverlay()
@@ -1496,21 +1514,18 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     }
 
     @objc private func clearStrokes() {
-        invalidateFeedbackSession()
-        FeedbackAlbaSpeech.stopSpeaking()
+        interruptCoachAudioAndWork()
         strokeView.clearStrokes()
     }
 
     @objc private func undoStroke() {
-        invalidateFeedbackSession()
-        FeedbackAlbaSpeech.stopSpeaking()
+        interruptCoachAudioAndWork()
         guard strokeView.undoLastStroke() else { return }
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
     }
 
     @objc private func redoStroke() {
-        invalidateFeedbackSession()
-        FeedbackAlbaSpeech.stopSpeaking()
+        interruptCoachAudioAndWork()
         guard strokeView.redoLastStroke() else { return }
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
     }
@@ -1802,9 +1817,9 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         let mascotSize = BrushiMascotLayout.coloringRailDisplaySize(for: tc, image: mascotImageView.image)
         mascotImageWidthConstraint?.constant = mascotSize.width
         mascotImageHeightConstraint?.constant = mascotSize.height
-        let sleepyVisual = lastMascotReaction == .sleepy
-        let scale = sleepyVisual ? BrushiMascotLayout.coloringSleepyVisualScale : 1
-        mascotImageView.transform = CGAffineTransform(scaleX: scale, y: scale)
+        // let sleepyVisual = lastMascotReaction == .sleepy
+        // let scale = sleepyVisual ? BrushiMascotLayout.coloringSleepyVisualScale : 1
+        mascotImageView.transform = .identity
     }
 
     /// Pixels of `image` laid out like `UIImageView` with **aspect fit** inside `bounds` (matches `templateView` on screen).
@@ -2223,7 +2238,58 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     }
 }
 
-// MARK: - Bundled crayon PNG swatches (`MagicBrushy/Colors`)
+// MARK: - Crayon swatch trim
+
+private extension UIImage {
+    /// Drops transparent margins in `colors 2` PNGs so rows can size to the wax body only.
+    func croppedToOpaqueContent(alphaThreshold: UInt8 = 12) -> UIImage {
+        guard let cg = cgImage,
+              var rect = Self.opaquePixelBounds(in: cg, threshold: alphaThreshold) else {
+            return self
+        }
+        rect = rect.intersection(CGRect(x: 0, y: 0, width: cg.width, height: cg.height))
+        guard let cropped = cg.cropping(to: rect) else { return self }
+        return UIImage(cgImage: cropped, scale: scale, orientation: imageOrientation)
+    }
+
+    static func opaquePixelBounds(in cg: CGImage, threshold: UInt8) -> CGRect? {
+        guard cg.bitsPerPixel == 32, cg.bitsPerComponent == 8 else { return nil }
+        let w = cg.width
+        let h = cg.height
+        guard let data = cg.dataProvider?.data, let bytes = CFDataGetBytePtr(data) else { return nil }
+        let bpr = cg.bytesPerRow
+        let alphaIndex: Int
+        switch cg.alphaInfo {
+        case .first, .premultipliedFirst, .noneSkipFirst:
+            alphaIndex = 0
+        default:
+            alphaIndex = 3
+        }
+
+        var minX = w
+        var minY = h
+        var maxX = 0
+        var maxY = 0
+        var found = false
+        for y in 0..<h {
+            let row = y * bpr
+            for x in 0..<w {
+                let a = bytes[row + x * 4 + alphaIndex]
+                if a > threshold {
+                    found = true
+                    minX = min(minX, x)
+                    minY = min(minY, y)
+                    maxX = max(maxX, x)
+                    maxY = max(maxY, y)
+                }
+            }
+        }
+        guard found else { return nil }
+        return CGRect(x: minX, y: minY, width: maxX - minX + 1, height: maxY - minY + 1)
+    }
+}
+
+// MARK: - Bundled crayon PNG swatches (`MagicBrushy/Colors`, synced from `colors 2/`)
 
 private enum MagicBrushyCrayonResources {
     private static let bundleSubdirectory = "Colors"
@@ -2237,7 +2303,7 @@ private enum MagicBrushyCrayonResources {
             let name = String(format: "%02d-color", i)
             guard let url = Bundle.main.url(forResource: name, withExtension: "png", subdirectory: bundleSubdirectory),
                   let img = UIImage(contentsOfFile: url.path) else { continue }
-            out.append(img)
+            out.append(img.croppedToOpaqueContent())
         }
         return out
     }()
@@ -2317,38 +2383,31 @@ private enum MagicBrushyCrayonResources {
         return ok ? raw : nil
     }
 
-    private static func saturationScore(_ color: UIColor) -> CGFloat {
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        guard color.getRed(&r, green: &g, blue: &b, alpha: &a) else { return 0 }
-        let mx = max(r, g, b)
-        let mn = min(r, g, b)
-        return mx - mn
-    }
+    /// Wax tip sits on the **left** of each swatch; sample a few pixels right of the outer edge.
+    private static let tipColStartFraction: CGFloat = 0.10
+    private static let tipColEndFraction: CGFloat = 0.28
 
-    /// Tip is at one end of the horizontal crayon art; compare left vs right bands, then fall back to center.
     private static func strokeColorFromSwatchTip(_ image: UIImage) -> UIColor {
         let side = 40
         guard let raw = renderThumbnailRGBA(image: image, side: side) else { return .darkGray }
 
-        // Vertical band: ignore top/bottom cap / label noise.
         let rowLo = side * 20 / 100
         let rowHi = side * 80 / 100
+        let tipStart = max(0, Int((CGFloat(side) * tipColStartFraction).rounded(.down)))
+        let tipEnd = min(side, Int((CGFloat(side) * tipColEndFraction).rounded(.up)))
 
-        let rightStart = side * 65 / 100
-        let rightC = averageColor(raw: raw, side: side, colRange: rightStart..<side, rowRange: rowLo..<rowHi)
+        if let tip = averageColor(
+            raw: raw,
+            side: side,
+            colRange: tipStart..<tipEnd,
+            rowRange: rowLo..<rowHi
+        ) {
+            return tip
+        }
 
         let leftEnd = side * 35 / 100
-        let leftC = averageColor(raw: raw, side: side, colRange: 0..<leftEnd, rowRange: rowLo..<rowHi)
-
-        switch (rightC, leftC) {
-        case let (r?, l?):
-            return saturationScore(r) >= saturationScore(l) ? r : l
-        case let (r?, nil):
-            return r
-        case let (nil, l?):
-            return l
-        default:
-            break
+        if let left = averageColor(raw: raw, side: side, colRange: 0..<leftEnd, rowRange: rowLo..<rowHi) {
+            return left
         }
 
         let midLo = side / 4
@@ -2375,19 +2434,18 @@ private enum ColoringCrayonPaletteLayout {
     static let rightPanelStackSpacing: CGFloat = 10
     /// Tight gap under mascot so tools sit closer and the character reads larger.
     static let mascotToToolsSpacing: CGFloat = 2
-    /// Vertical pitch per crayon row (smaller = tighter list in the scroll rail).
-    static let crayonRowHeight: CGFloat = 57
-    static let crayonRowHeightPhone: CGFloat = 40
-    /// Fraction of row height used by the PNG swatch (`MagicCrayonControl`, rest is tap padding).
+    /// Trimmed `colors 2` wax body is ~206×71; row height follows rail width so crayons fill the column.
+    private static let swatchContentHeightPerWidth: CGFloat = 71.0 / 206.0
     static let shapeHeightMultiplier: CGFloat = 1.0
-    static let stackSpacing: CGFloat = 0
 
     static func crayonRowHeight(for traitCollection: UITraitCollection) -> CGFloat {
-        MagicBrushyChromeMetrics.isPhone(traitCollection) ? crayonRowHeightPhone : crayonRowHeight
+        let railW = BrushiMascotLayout.rightRailWidth(for: traitCollection) - 4
+        return ceil(railW * swatchContentHeightPerWidth)
     }
 
     static func crayonStackSpacing(for traitCollection: UITraitCollection) -> CGFloat {
-        MagicBrushyChromeMetrics.isPhone(traitCollection) ? 0 : stackSpacing
+        _ = traitCollection
+        return 1
     }
     static let scrollContainerMinHeight: CGFloat = 180
     /// How many crayon rows are visible in the rail (4.5 = half of the 5th peeks).
@@ -2440,6 +2498,10 @@ private final class CrayonPaletteScrollView: UIScrollView {
 private final class MagicCrayonControl: UIControl {
 
     private let swatchView = UIImageView()
+    private let shineOverlay = CAGradientLayer()
+
+    private static let selectedBorderWidth: CGFloat = 3.5
+    private static let selectedScale = CGAffineTransform(scaleX: 1.02, y: 1.04)
 
     override var isHighlighted: Bool {
         didSet { alpha = isHighlighted ? 0.88 : 1 }
@@ -2461,18 +2523,39 @@ private final class MagicCrayonControl: UIControl {
         swatchView.isUserInteractionEnabled = false
         swatchView.contentMode = .scaleAspectFill
         swatchView.clipsToBounds = true
-        swatchView.layer.cornerRadius = 12
+        swatchView.layer.cornerRadius = 8
         swatchView.layer.borderWidth = 0
-        swatchView.layer.borderColor = nil
+        swatchView.layer.borderColor = UIColor.black.cgColor
         swatchView.backgroundColor = .clear
         swatchView.translatesAutoresizingMaskIntoConstraints = false
+
+        shineOverlay.colors = [
+            UIColor.white.withAlphaComponent(0.72).cgColor,
+            UIColor.white.withAlphaComponent(0.28).cgColor,
+            UIColor.clear.cgColor,
+        ]
+        shineOverlay.locations = [0, 0.38, 1]
+        shineOverlay.startPoint = CGPoint(x: 0.08, y: 0.05)
+        shineOverlay.endPoint = CGPoint(x: 0.92, y: 0.95)
+        shineOverlay.isHidden = true
+        swatchView.layer.addSublayer(shineOverlay)
+
         addSubview(swatchView)
         NSLayoutConstraint.activate([
-            swatchView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 2),
-            swatchView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -2),
-            swatchView.centerYAnchor.constraint(equalTo: centerYAnchor),
-            swatchView.heightAnchor.constraint(equalTo: heightAnchor, multiplier: ColoringCrayonPaletteLayout.shapeHeightMultiplier),
+            swatchView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            swatchView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            swatchView.topAnchor.constraint(equalTo: topAnchor),
+            swatchView.bottomAnchor.constraint(equalTo: bottomAnchor),
         ])
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        shineOverlay.frame = swatchView.bounds
+        shineOverlay.cornerRadius = swatchView.layer.cornerRadius
+        CATransaction.commit()
     }
 
     func setSwatch(image: UIImage?, wax _: UIColor) {
@@ -2482,12 +2565,21 @@ private final class MagicCrayonControl: UIControl {
     func setSelected(_ selected: Bool, animated: Bool) {
         let apply = {
             if selected {
+                self.swatchView.layer.borderWidth = Self.selectedBorderWidth
+                self.shineOverlay.isHidden = false
+                self.swatchView.layer.shadowColor = UIColor.white.cgColor
+                self.swatchView.layer.shadowOpacity = 0.9
+                self.swatchView.layer.shadowRadius = 5
+                self.swatchView.layer.shadowOffset = CGSize(width: 0, height: -1)
                 self.layer.shadowColor = UIColor.white.cgColor
-                self.layer.shadowOpacity = 0.95
-                self.layer.shadowRadius = 7
+                self.layer.shadowOpacity = 0.55
+                self.layer.shadowRadius = 10
                 self.layer.shadowOffset = .zero
-                self.transform = CGAffineTransform(scaleX: 1.01, y: 1.05)
+                self.transform = Self.selectedScale
             } else {
+                self.swatchView.layer.borderWidth = 0
+                self.shineOverlay.isHidden = true
+                self.swatchView.layer.shadowOpacity = 0
                 self.layer.shadowOpacity = 0
                 self.transform = .identity
             }

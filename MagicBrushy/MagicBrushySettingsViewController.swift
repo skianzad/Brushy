@@ -443,7 +443,7 @@ extension MagicBrushySettingsViewController: UIGestureRecognizerDelegate, UIPopo
 
 // MARK: - Gear button + presentation
 
-/// Blue gear chrome matching nav controls on home / grid / coloring screens.
+/// Orange nav chrome (matches home) on home / grid / coloring screens.
 final class MagicBrushySettingsGearButton: UIButton {
 
     private var widthConstraint: NSLayoutConstraint!
@@ -451,11 +451,12 @@ final class MagicBrushySettingsGearButton: UIButton {
 
     init() {
         super.init(frame: .zero)
-        var cfg = UIButton.Configuration.plain()
-        cfg.image = UIImage(systemName: "gearshape.fill")
-        cfg.baseForegroundColor = .white
-        configuration = cfg
         translatesAutoresizingMaskIntoConstraints = false
+        configuration = .plain()
+        setContentCompressionResistancePriority(.required, for: .horizontal)
+        setContentCompressionResistancePriority(.required, for: .vertical)
+        setContentHuggingPriority(.required, for: .horizontal)
+        setContentHuggingPriority(.required, for: .vertical)
         accessibilityLabel = "Settings"
         accessibilityHint = "Background music, coach feedback, voice, and language."
         widthConstraint = widthAnchor.constraint(equalToConstant: 52)
@@ -472,19 +473,11 @@ final class MagicBrushySettingsGearButton: UIButton {
         let side = MagicBrushyChromeMetrics.chromeButtonSide(traitCollection)
         widthConstraint.constant = side
         heightConstraint.constant = side
-        MagicBrushyChromeMetrics.applySquareChrome(
+        MagicBrushyChromeMetrics.applyHomeNavChrome(
             to: self,
-            fill: FigmaTheme.actionBlue,
-            border: FigmaTheme.actionBlueBorder,
-            traitCollection: traitCollection,
-            contentInsets: MagicBrushyChromeMetrics.navChromeContentInsets
+            image: MagicBrushyChromeMetrics.chromeNavSettingsImage(),
+            traitCollection: traitCollection
         )
-        var cfg = configuration ?? UIButton.Configuration.plain()
-        cfg.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(
-            pointSize: MagicBrushyChromeMetrics.chromeSymbolPointSize(traitCollection),
-            weight: .bold
-        )
-        configuration = cfg
     }
 }
 
