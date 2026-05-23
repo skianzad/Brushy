@@ -26,141 +26,62 @@ enum BuiltInColoringPages {
             CategoryPack(id: BuiltInColoringPages.savedDrawingsPackId, title: "Free drawing", symbolName: "pencil.and.outline", pages: [
                 Page(title: "Blank paper", image: renderBlankFreeDrawingPaper()),
             ]),
-            CategoryPack(id: "ocean", title: "Ocean", symbolName: "water.waves", pages: [
-                pageFromAsset("Ocean_01", fallbackTitle: "Ocean 1"),
-                pageFromAsset("Ocean_02", fallbackTitle: "Ocean 2"),
-                pageFromAsset("Ocean_03", fallbackTitle: "Ocean 3"),
-                pageFromAsset("Ocean_04", fallbackTitle: "Ocean 4"),
-                pageFromAsset("Ocean_05", fallbackTitle: "Ocean 5"),
-                pageFromAsset("Ocean_06", fallbackTitle: "Ocean 6"),
-                pageFromAsset("Ocean_07", fallbackTitle: "Ocean 7"),
-                pageFromAsset("Ocean_08", fallbackTitle: "Ocean 8"),
-                pageFromAsset("Ocean_09", fallbackTitle: "Ocean 9"),
-                pageFromAsset("Ocean_10", fallbackTitle: "Ocean 10"),
-            ]),
-            CategoryPack(id: "animals", title: "Animals", symbolName: "pawprint.fill", pages: [
-                pageFromAsset("Animals_01", fallbackTitle: "Animals 1"),
-                pageFromAsset("Animals_02", fallbackTitle: "Animals 2"),
-                pageFromAsset("Animals_03", fallbackTitle: "Animals 3"),
-                pageFromAsset("Animals_04", fallbackTitle: "Animals 4"),
-                pageFromAsset("Animals_05", fallbackTitle: "Animals 5"),
-                pageFromAsset("Animals_06", fallbackTitle: "Animals 6"),
-                pageFromAsset("Animals_07", fallbackTitle: "Animals 7"),
-                pageFromAsset("Animals_08", fallbackTitle: "Animals 8"),
-                pageFromAsset("Animals_09", fallbackTitle: "Animals 9"),
-                pageFromAsset("Animals_10", fallbackTitle: "Animals 10"),
-            ]),
-            CategoryPack(id: "dinosaurs", title: "Dinosaurs", symbolName: "lizard.fill", pages: [
-                pageFromAsset("Dinosaurs_01", fallbackTitle: "Dinosaurs 1"),
-                pageFromAsset("Dinosaurs_02", fallbackTitle: "Dinosaurs 2"),
-                pageFromAsset("Dinosaurs_03", fallbackTitle: "Dinosaurs 3"),
-                pageFromAsset("Dinosaurs_04", fallbackTitle: "Dinosaurs 4"),
-                pageFromAsset("Dinosaurs_05", fallbackTitle: "Dinosaurs 5"),
-                pageFromAsset("Dinosaurs_06", fallbackTitle: "Dinosaurs 6"),
-                pageFromAsset("Dinosaurs_07", fallbackTitle: "Dinosaurs 7"),
-                pageFromAsset("Dinosaurs_08", fallbackTitle: "Dinosaurs 8"),
-                pageFromAsset("Dinosaurs_09", fallbackTitle: "Dinosaurs 9"),
-                pageFromAsset("Dinosaurs_10", fallbackTitle: "Dinosaurs 10"),
-            ]),
-            CategoryPack(id: "famous_art", title: "Famous Art", symbolName: "paintpalette.fill", pages: [
-                pageFromAsset("FamousArt_01", fallbackTitle: "Famous Art 1"),
-                pageFromAsset("FamousArt_02", fallbackTitle: "Famous Art 2"),
-                pageFromAsset("FamousArt_03", fallbackTitle: "Famous Art 3"),
-                pageFromAsset("FamousArt_04", fallbackTitle: "Famous Art 4"),
-                pageFromAsset("FamousArt_05", fallbackTitle: "Famous Art 5"),
-                pageFromAsset("FamousArt_06", fallbackTitle: "Famous Art 6"),
-                pageFromAsset("FamousArt_07", fallbackTitle: "Famous Art 7"),
-                pageFromAsset("FamousArt_08", fallbackTitle: "Famous Art 8"),
-                pageFromAsset("FamousArt_09", fallbackTitle: "Famous Art 9"),
-                pageFromAsset("FamousArt_10", fallbackTitle: "Famous Art 10"),
-            ]),
-            CategoryPack(id: "fantasy_and_magic", title: "Fantasy & Magic", symbolName: "moon.stars.fill", pages: [
-                pageFromAsset("FantasyMagic_01", fallbackTitle: "Fantasy & Magic 1"),
-                pageFromAsset("FantasyMagic_02", fallbackTitle: "Fantasy & Magic 2"),
-                pageFromAsset("FantasyMagic_03", fallbackTitle: "Fantasy & Magic 3"),
-                pageFromAsset("FantasyMagic_04", fallbackTitle: "Fantasy & Magic 4"),
-                pageFromAsset("FantasyMagic_05", fallbackTitle: "Fantasy & Magic 5"),
-                pageFromAsset("FantasyMagic_06", fallbackTitle: "Fantasy & Magic 6"),
-                pageFromAsset("FantasyMagic_07", fallbackTitle: "Fantasy & Magic 7"),
-                pageFromAsset("FantasyMagic_08", fallbackTitle: "Fantasy & Magic 8"),
-                pageFromAsset("FantasyMagic_09", fallbackTitle: "Fantasy & Magic 9"),
-                pageFromAsset("FantasyMagic_10", fallbackTitle: "Fantasy & Magic 10"),
-                pageFromAsset("FantasyMagic_11", fallbackTitle: "Fantasy & Magic 11"),
-                pageFromAsset("FantasyMagic_12", fallbackTitle: "Fantasy & Magic 12"),
-            ]),
-            CategoryPack(id: "food", title: "Food", symbolName: "fork.knife", pages: [
-                pageFromAsset("Food_01", fallbackTitle: "Food 1"),
-                pageFromAsset("Food_02", fallbackTitle: "Food 2"),
-                pageFromAsset("Food_03", fallbackTitle: "Food 3"),
-                pageFromAsset("Food_04", fallbackTitle: "Food 4"),
-                pageFromAsset("Food_05", fallbackTitle: "Food 5"),
-                pageFromAsset("Food_06", fallbackTitle: "Food 6"),
-                pageFromAsset("Food_07", fallbackTitle: "Food 7"),
-                pageFromAsset("Food_08", fallbackTitle: "Food 8"),
-                pageFromAsset("Food_09", fallbackTitle: "Food 9"),
-                pageFromAsset("Food_10", fallbackTitle: "Food 10"),
-            ]),
-            CategoryPack(id: "nature_plants", title: "Nature & Plants", symbolName: "leaf.circle.fill", pages: [
-                pageFromAsset("NaturePlants_01", fallbackTitle: "Nature & Plants 1"),
-                pageFromAsset("NaturePlants_02", fallbackTitle: "Nature & Plants 2"),
-                pageFromAsset("NaturePlants_03", fallbackTitle: "Nature & Plants 3"),
-                pageFromAsset("NaturePlants_04", fallbackTitle: "Nature & Plants 4"),
-                pageFromAsset("NaturePlants_05", fallbackTitle: "Nature & Plants 5"),
-                pageFromAsset("NaturePlants_06", fallbackTitle: "Nature & Plants 6"),
-                pageFromAsset("NaturePlants_07", fallbackTitle: "Nature & Plants 7"),
-                pageFromAsset("NaturePlants_08", fallbackTitle: "Nature & Plants 8"),
-                pageFromAsset("NaturePlants_09", fallbackTitle: "Nature & Plants 9"),
-                pageFromAsset("NaturePlants_10", fallbackTitle: "Nature & Plants 10"),
-            ]),
-            CategoryPack(id: "sports", title: "Sports", symbolName: "sportscourt.fill", pages: [
-                pageFromAsset("Sports_01", fallbackTitle: "Sports 1"),
-                pageFromAsset("Sports_02", fallbackTitle: "Sports 2"),
-                pageFromAsset("Sports_03", fallbackTitle: "Sports 3"),
-                pageFromAsset("Sports_04", fallbackTitle: "Sports 4"),
-                pageFromAsset("Sports_05", fallbackTitle: "Sports 5"),
-                pageFromAsset("Sports_06", fallbackTitle: "Sports 6"),
-                pageFromAsset("Sports_07", fallbackTitle: "Sports 7"),
-                pageFromAsset("Sports_08", fallbackTitle: "Sports 8"),
-                pageFromAsset("Sports_09", fallbackTitle: "Sports 9"),
-                pageFromAsset("Sports_10", fallbackTitle: "Sports 10"),
-            ]),
-            CategoryPack(id: "vehicles", title: "Vehicles", symbolName: "car.fill", pages: [
-                pageFromAsset("Vehicles_01", fallbackTitle: "Camper Van"),
-                pageFromAsset("Vehicles_02", fallbackTitle: "Steam Train"),
-                pageFromAsset("Vehicles_03", fallbackTitle: "Cargo Ship"),
-                pageFromAsset("Vehicles_04", fallbackTitle: "Biplane"),
-                pageFromAsset("Vehicles_05", fallbackTitle: "Sports Car"),
-                pageFromAsset("Vehicles_06", fallbackTitle: "Passenger Jet"),
-                pageFromAsset("Vehicles_07", fallbackTitle: "School Bus"),
-                pageFromAsset("Vehicles_08", fallbackTitle: "Fire Truck"),
-                pageFromAsset("Vehicles_09", fallbackTitle: "Helicopter"),
-                pageFromAsset("Vehicles_10", fallbackTitle: "Tractor"),
-            ]),
-            CategoryPack(id: "winter_sports", title: "Winter Sports", symbolName: "snowflake", pages: [
-                pageFromAsset("WinterSports_01", fallbackTitle: "Winter Sports 1"),
-                pageFromAsset("WinterSports_02", fallbackTitle: "Winter Sports 2"),
-                pageFromAsset("WinterSports_03", fallbackTitle: "Winter Sports 3"),
-                pageFromAsset("WinterSports_04", fallbackTitle: "Winter Sports 4"),
-                pageFromAsset("WinterSports_05", fallbackTitle: "Winter Sports 5"),
-                pageFromAsset("WinterSports_06", fallbackTitle: "Winter Sports 6"),
-                pageFromAsset("WinterSports_07", fallbackTitle: "Winter Sports 7"),
-                pageFromAsset("WinterSports_08", fallbackTitle: "Winter Sports 8"),
-                pageFromAsset("WinterSports_09", fallbackTitle: "Winter Sports 9"),
-                pageFromAsset("WinterSports_10", fallbackTitle: "Winter Sports 10"),
-            ]),
+            CategoryPack(id: "dinosaurs", title: "Dinosaurs", symbolName: "lizard.fill", pages: pagesFromAsset("Dinosaurs", count: 16)),
+            CategoryPack(id: "fall", title: "Fall", symbolName: "leaf.fill", pages: pagesFromAsset("Fall", count: 12)),
+            CategoryPack(id: "food", title: "Food", symbolName: "fork.knife", pages: pagesFromAsset("Food", count: 16)),
+            CategoryPack(id: "magic", title: "Magic", symbolName: "moon.stars.fill", pages: pagesFromAsset("Magic", count: 16, pageTitlePrefix: "Magic")),
+            CategoryPack(id: "music", title: "Music", symbolName: "music.note", pages: pagesFromAsset("Music", count: 16)),
+            CategoryPack(id: "nature", title: "Nature", symbolName: "leaf.circle.fill", pages: pagesFromAsset("Nature", count: 16)),
+            CategoryPack(id: "ocean", title: "Ocean", symbolName: "water.waves", pages: pagesFromAsset("Ocean", count: 16)),
+            CategoryPack(id: "school", title: "School", symbolName: "backpack.fill", pages: pagesFromAsset("School", count: 16)),
+            CategoryPack(id: "sports", title: "Sports", symbolName: "sportscourt.fill", pages: pagesFromAsset("Sports", count: 16)),
+            CategoryPack(id: "transportation", title: "Transportation", symbolName: "car.fill", pages: pagesFromAsset("Transportation", count: 12)),
+            CategoryPack(id: "winter", title: "Winter", symbolName: "snowflake", pages: pagesFromAsset("Winter", count: 16)),
         ]
     }()
 
-    private static func pageFromAsset(_ assetName: String, fallbackTitle: String) -> Page {
-        Page(title: fallbackTitle, image: UIImage(named: assetName) ?? renderHouse())
+    /// Retired pack ids from older app versions → current `library` ids.
+    private static let retiredPackIdAliases: [String: String] = [
+        "fantasy_and_magic": "magic",
+        "nature_plants": "nature",
+        "vehicles": "transportation",
+        "winter_sports": "winter",
+    ]
+
+    static func resolvePackId(_ id: String) -> String {
+        retiredPackIdAliases[id] ?? id
     }
 
-    /// Flattened pages (Animals pack) for legacy call sites that expect a single list.
-    static var all: [Page] { library.first(where: { $0.id == "animals" })?.pages ?? library.first?.pages ?? [] }
+    static func pack(withId id: String) -> CategoryPack? {
+        let resolved = resolvePackId(id)
+        return library.first { $0.id == resolved }
+    }
+
+    static func legacyPackIds(forResolvedId resolvedId: String) -> [String] {
+        retiredPackIdAliases.compactMap { legacy, current in current == resolvedId ? legacy : nil }
+    }
+
+    private static func pageFromAsset(_ assetName: String, fallbackTitle: String) -> Page {
+        guard let raw = UIImage(named: assetName) else {
+            return Page(title: fallbackTitle, image: renderHouse())
+        }
+        return Page(title: fallbackTitle, image: raw.magicBrushyNormalizedAssetScale())
+    }
+
+    private static func pagesFromAsset(_ prefix: String, count: Int, pageTitlePrefix: String? = nil) -> [Page] {
+        let label = pageTitlePrefix ?? prefix
+        return (1...count).map { i in
+            let assetName = String(format: "%@_%02d", prefix, i)
+            return pageFromAsset(assetName, fallbackTitle: "\(label) \(i)")
+        }
+    }
+
+    /// Flattened pages for legacy call sites that expect a single list.
+    static var all: [Page] { library.first(where: { $0.id == "ocean" })?.pages ?? library.first?.pages ?? [] }
 
     /// First thumbnail for a home / browse tile.
     static func previewImage(packId: String) -> UIImage? {
-        library.first(where: { $0.id == packId })?.pages.first?.image
+        pack(withId: packId)?.pages.first?.image
     }
 
     // MARK: - Rendering

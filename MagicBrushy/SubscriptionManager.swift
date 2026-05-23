@@ -25,7 +25,7 @@ final class SubscriptionManager {
     static let premiumProductID = "Senscilab.MagicBrushy.premium"
 
     /// Pack IDs available without a subscription (first row on the home grid).
-    static let freeTierPackIds: Set<String> = [BuiltInColoringPages.savedDrawingsPackId, "ocean", "animals"]
+    static let freeTierPackIds: Set<String> = [BuiltInColoringPages.savedDrawingsPackId, "ocean", "dinosaurs"]
 
     private(set) var hasActiveSubscription = false
 

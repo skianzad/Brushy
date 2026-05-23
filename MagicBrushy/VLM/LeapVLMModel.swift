@@ -387,8 +387,13 @@ final class LeapVLMModel {
         }
     }
 
-    /// ODR pack (App Store) when configured; otherwise Liquid registry download (development).
+    /// Model source: Leap registry download (temp) or ODR / sideload (see commented block below).
     private func loadModelRunner() async throws -> any ModelRunner {
+        // TEMP: Leap registry only — faster for local dev; restore ODR / Application Support block when shipping.
+        return try await loadRunnerFromLeapRegistry()
+
+        /*
+        // ODR pack (App Store) when configured; otherwise Liquid registry download (development).
         if let weights = VLMCoachOnDemandResources.resolvedWeightsOnDisk() {
             publishDownloadProgress(0.08)
             publishLoadingIntoMemory()
@@ -410,6 +415,7 @@ final class LeapVLMModel {
         }
 
         return try await loadRunnerFromLeapRegistry()
+        */
     }
 
     private func loadRunner(

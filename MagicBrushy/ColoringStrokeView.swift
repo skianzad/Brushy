@@ -398,9 +398,32 @@ private enum MagicBrushyLineArtCache {
     static let store = NSCache<AnyObject, UIImage>()
 }
 
+/// Tuning for template outlines (see `magicBrushyLineArtOverlay`).
+private enum MagicBrushyLineArtStyle {
+    /// Pixels brighter than this are treated as paper (transparent).
+    static let paperLum: Double = 220
+    /// Pixels darker than this are full-strength ink; raising this thins the lines.
+    static let inkLum: Double = 115
+    /// Gray stroke color (0 = black, 255 = white).
+    static let inkGray: Double = 130
+    /// Peak opacity for the darkest ink (~0.59 at 150/255).
+    static let inkAlphaMax: Double = 150
+}
+
 extension UIImage {
-    /// Black line art on a transparent background so it can sit above user paint (including white eraser).
-    /// Light paper and bright template fills drop out; dark strokes stay opaque with soft edges for anti-aliasing.
+
+    /// Full-resolution PNGs in the 1× asset slot report `scale == 1` with huge point sizes; normalize for Retina layout.
+    func magicBrushyNormalizedAssetScale() -> UIImage {
+        guard scale == 1, let cg = cgImage else { return self }
+        let pxW = CGFloat(cg.width)
+        let pxH = CGFloat(cg.height)
+        guard pxW > 600 || pxH > 600 else { return self }
+        let displayScale = UIScreen.main.scale
+        return UIImage(cgImage: cg, scale: displayScale, orientation: imageOrientation)
+    }
+
+    /// Soft gray line art on a transparent background so it can sit above user paint (including white eraser).
+    /// Light paper drops out; dark strokes become thin, faded gray outlines with soft anti-aliased edges.
     func magicBrushyLineArtOverlay() -> UIImage {
         guard let cgKey = cgImage else { return self }
         if let cached = MagicBrushyLineArtCache.store.object(forKey: cgKey as AnyObject) {
@@ -434,8 +457,11 @@ extension UIImage {
 
         ctx.draw(cg, in: CGRect(x: 0, y: 0, width: w, height: h))
 
-        let paperLum: Double = 216
-        let inkLum: Double = 88
+        let paperLum = MagicBrushyLineArtStyle.paperLum
+        let inkLum = MagicBrushyLineArtStyle.inkLum
+        let inkGray = MagicBrushyLineArtStyle.inkGray
+        let inkAlphaMax = MagicBrushyLineArtStyle.inkAlphaMax
+        let lumSpan = max(1, paperLum - inkLum)
 
         for y in 0..<h {
             var o = y * rowBytes
@@ -451,23 +477,34 @@ extension UIImage {
                     ptr[o + 3] = 0
                 } else {
                     let lum = 0.299 * r + 0.587 * g + 0.114 * b
+                    let strength: Double
                     if lum >= paperLum {
+                        strength = 0
+                    } else if lum <= inkLum {
+                        strength = min(1, (inkLum - lum) / inkLum)
+                    } else {
+                        strength = 1 - (lum - inkLum) / lumSpan
+                    }
+
+                    if strength <= 0.02 {
                         ptr[o] = 0
                         ptr[o + 1] = 0
                         ptr[o + 2] = 0
                         ptr[o + 3] = 0
-                    } else if lum <= inkLum {
-                        ptr[o] = 0
-                        ptr[o + 1] = 0
-                        ptr[o + 2] = 0
-                        ptr[o + 3] = 255
                     } else {
-                        let t = (lum - inkLum) / (paperLum - inkLum)
-                        let alpha = UInt8((255 * (1 - t)).rounded())
-                        ptr[o] = 0
-                        ptr[o + 1] = 0
-                        ptr[o + 2] = 0
-                        ptr[o + 3] = alpha < 6 ? 0 : alpha
+                        let a = UInt8((inkAlphaMax * strength).rounded())
+                        if a < 6 {
+                            ptr[o] = 0
+                            ptr[o + 1] = 0
+                            ptr[o + 2] = 0
+                            ptr[o + 3] = 0
+                        } else {
+                            let premult = UInt8((inkGray * Double(a) / 255).rounded())
+                            ptr[o] = premult
+                            ptr[o + 1] = premult
+                            ptr[o + 2] = premult
+                            ptr[o + 3] = a
+                        }
                     }
                 }
                 o += 4

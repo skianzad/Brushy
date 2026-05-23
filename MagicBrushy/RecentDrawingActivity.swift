@@ -31,7 +31,7 @@ enum RecentDrawingActivity {
     /// Most recent in-progress template coloring (strokes over line art), if any.
     static func latestColoringThumbnail(maxPixelSide: CGFloat = 480) -> UIImage? {
         guard let ref = TemplateProgressStore.newestProgress(),
-              let pack = BuiltInColoringPages.library.first(where: { $0.id == ref.packId }),
+              let pack = BuiltInColoringPages.pack(withId: ref.packId),
               pack.pages.indices.contains(ref.pageIndex)
         else { return nil }
         let page = pack.pages[ref.pageIndex]
@@ -47,7 +47,7 @@ enum RecentDrawingActivity {
 
     private static func lastColoringPageTitle() -> String? {
         guard let ref = TemplateProgressStore.newestProgress(),
-              let pack = BuiltInColoringPages.library.first(where: { $0.id == ref.packId }),
+              let pack = BuiltInColoringPages.pack(withId: ref.packId),
               pack.pages.indices.contains(ref.pageIndex)
         else { return nil }
         return pack.pages[ref.pageIndex].title
@@ -55,7 +55,7 @@ enum RecentDrawingActivity {
 
     private static func lastColoringPackTitle() -> String? {
         guard let ref = TemplateProgressStore.newestProgress(),
-              let pack = BuiltInColoringPages.library.first(where: { $0.id == ref.packId })
+              let pack = BuiltInColoringPages.pack(withId: ref.packId)
         else { return nil }
         return pack.title
     }

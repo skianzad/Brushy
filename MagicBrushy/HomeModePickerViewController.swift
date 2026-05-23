@@ -60,7 +60,7 @@ final class HomeModePickerViewController: UIViewController {
 
     private var freeCard: HomeModeCardView!
     private var coloringCard: HomeModeCardView!
-    private let coloringPlaceholderPreview = BuiltInColoringPages.previewImage(packId: "animals")
+    private let coloringPlaceholderPreview = BuiltInColoringPages.previewImage(packId: "ocean")
     private let freeDrawPlaceholderPreview = BuiltInColoringPages.previewImage(
         packId: BuiltInColoringPages.savedDrawingsPackId
     )

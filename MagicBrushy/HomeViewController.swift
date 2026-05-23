@@ -5,64 +5,68 @@ final class HomeViewController: UIViewController {
 
     private enum Category: Int, CaseIterable {
         case ocean = 0
-        case animals = 1
-        case dinosaurs = 2
-        case famousArt = 3
-        case fantasyAndMagic = 4
-        case food = 5
-        case naturePlants = 6
-        case sports = 7
-        case vehicles = 8
-        case winterSports = 9
+        case dinosaurs = 1
+        case fall = 2
+        case food = 3
+        case magic = 4
+        case nature = 5
+        case music = 6
+        case school = 7
+        case sports = 8
+        case transportation = 9
+        case winter = 10
 
         var title: String {
             switch self {
             case .ocean: return "Ocean"
-            case .animals: return "Animals"
             case .dinosaurs: return "Dinosaurs"
-            case .famousArt: return "Art"
-            case .fantasyAndMagic: return "Fantasy & Magic"
+            case .fall: return "Fall"
             case .food: return "Food"
-            case .naturePlants: return "Nature & Plants"
+            case .magic: return "Magic"
+            case .nature: return "Nature"
+            case .music: return "Music"
+            case .school: return "School"
             case .sports: return "Sports"
-            case .vehicles: return "Vehicles"
-            case .winterSports: return "Winter"
+            case .transportation: return "Transportation"
+            case .winter: return "Winter"
             }
         }
 
         var packId: String {
             switch self {
             case .ocean: return "ocean"
-            case .animals: return "animals"
             case .dinosaurs: return "dinosaurs"
-            case .famousArt: return "famous_art"
-            case .fantasyAndMagic: return "fantasy_and_magic"
+            case .fall: return "fall"
             case .food: return "food"
-            case .naturePlants: return "nature_plants"
+            case .magic: return "magic"
+            case .nature: return "nature"
+            case .music: return "music"
+            case .school: return "school"
             case .sports: return "sports"
-            case .vehicles: return "vehicles"
-            case .winterSports: return "winter_sports"
+            case .transportation: return "transportation"
+            case .winter: return "winter"
             }
         }
 
         var accent: UIColor {
             switch self {
-            case .animals: return FigmaTheme.animalsAccent
             case .ocean: return FigmaTheme.oceanAccent
             case .dinosaurs: return FigmaTheme.dinosaursAccent
-            case .famousArt: return FigmaTheme.famousArtAccent
-            case .fantasyAndMagic: return FigmaTheme.fantasyAccent
+            case .fall: return FigmaTheme.fallAccent
             case .food: return FigmaTheme.foodAccent
-            case .naturePlants: return FigmaTheme.natureAccent
+            case .magic: return FigmaTheme.magicAccent
+            case .nature: return FigmaTheme.natureAccent
+            case .music: return FigmaTheme.musicAccent
+            case .school: return FigmaTheme.schoolAccent
             case .sports: return FigmaTheme.sportsAccent
-            case .vehicles: return FigmaTheme.vehiclesAccent
-            case .winterSports: return FigmaTheme.winterSportsAccent
+            case .transportation: return FigmaTheme.vehiclesAccent
+            case .winter: return FigmaTheme.winterSportsAccent
             }
         }
 
         var isFreeTier: Bool {
             switch self {
-            case .ocean, .animals:
+            case .ocean, .dinosaurs:
                 return true
             default:
                 return false
@@ -860,23 +864,16 @@ final class HomeViewController: UIViewController {
         row3.distribution = .fillEqually
 
         row0.addArrangedSubview(makeTile(for: .ocean))
-        row0.addArrangedSubview(makeTile(for: .animals))
         row0.addArrangedSubview(makeTile(for: .dinosaurs))
-        row1.addArrangedSubview(makeTile(for: .famousArt))
-        row1.addArrangedSubview(makeTile(for: .fantasyAndMagic))
+        row0.addArrangedSubview(makeTile(for: .fall))
         row1.addArrangedSubview(makeTile(for: .food))
-        row2.addArrangedSubview(makeTile(for: .naturePlants))
+        row1.addArrangedSubview(makeTile(for: .magic))
+        row1.addArrangedSubview(makeTile(for: .nature))
+        row2.addArrangedSubview(makeTile(for: .music))
+        row2.addArrangedSubview(makeTile(for: .school))
         row2.addArrangedSubview(makeTile(for: .sports))
-        row2.addArrangedSubview(makeTile(for: .vehicles))
-        row3.addArrangedSubview(makeTile(for: .winterSports))
-        let row3Spacer = UIView()
-        row3Spacer.backgroundColor = .clear
-        row3Spacer.isUserInteractionEnabled = false
-        row3.addArrangedSubview(row3Spacer)
-        let row3Spacer2 = UIView()
-        row3Spacer2.backgroundColor = .clear
-        row3Spacer2.isUserInteractionEnabled = false
-        row3.addArrangedSubview(row3Spacer2)
+        row3.addArrangedSubview(makeTile(for: .transportation))
+        row3.addArrangedSubview(makeTile(for: .winter))
         gridStack.addArrangedSubview(row0)
         gridStack.addArrangedSubview(row1)
         gridStack.addArrangedSubview(row2)

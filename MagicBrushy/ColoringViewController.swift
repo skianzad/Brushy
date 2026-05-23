@@ -26,6 +26,8 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         static let additionalSafeAreaShrink = UIEdgeInsets(top: 0, left: -4, bottom: -6, right: -4)
     }
 
+    private var coloringOnPhone: ColoringOnPhone!
+
     private let canvasContainer = UIView()
     private let templateView = UIImageView()
     /// Flattened snapshot when resuming from `LastDrawingStore` (sits between template and live strokes).
@@ -37,7 +39,8 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     private let mascotLipSync = MascotLipSyncDriver()
     /// Wraps mascot art and the tap-for-cheer gesture.
     private let mascotContainer = UIView()
-    private let paintRow = UIStackView()
+    private let paintRow = ColoringPhonePassThroughStackView()
+    private let headerChromeStack = UIStackView()
     private let rightPanelStack = UIStackView()
     private let feedbackButton = UIButton(type: .system)
     private let clearButton = UIButton(type: .system)
@@ -54,7 +57,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     var pinnedPageIndex: Int?
     /// Pages for this canvas session (defaults to the first built-in shelf).
     var coloringBookPages: [BuiltInColoringPages.Page] =
-        BuiltInColoringPages.library.first(where: { $0.id == "animals" })?.pages
+        BuiltInColoringPages.library.first(where: { $0.id == "ocean" })?.pages
         ?? BuiltInColoringPages.library.first?.pages
         ?? []
 
@@ -105,53 +108,16 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     private var crayonControls: [MagicCrayonControl] = []
     private var crayonRowHeightConstraints: [NSLayoutConstraint] = []
     private var crayonScrollViewportHeightConstraint: NSLayoutConstraint!
-    /// Display order (top → bottom): vivid primaries first, neutrals / lights last.
+    /// Display order (top → bottom): rainbow, then earth tones, then black & white last.
     /// Each value is a 0-based index into `palette` / `Colors/NN-color.png` (01→0, 02→1 …).
     private var crayonPaletteDisplayOrder: [Int] {
         guard palette.count == 30 else { return Array(0..<palette.count) }
-        return [
-            // ── Reds & warm ─────────────────────────────────────
-            6,   // red
-            5,   // orange
-            25,  // orange red
-            26,  // rust red
-            4,   // yellow
-            23,  // gold
-            24,  // amber
-            // ── Greens ───────────────────────────────────────────
-            3,   // green
-            20,  // forest green
-            18,  // sea green
-            19,  // mint
-            21,  // yellow green
-            16,  // teal blue
-            17,  // aqua
-            // ── Blues ────────────────────────────────────────────
-            2,   // sky blue
-            14,  // bright blue
-            12,  // blue
-            13,  // royal blue
-            15,  // navy
-            11,  // purple blue
-            // ── Purples & pinks ──────────────────────────────────
-            8,   // purple
-            10,  // violet
-            9,   // magenta
-            7,   // pink purple
-            // ── Earth tones ──────────────────────────────────────
-            27,  // brown
-            28,  // terracotta
-            // ── Neutrals & lights last ───────────────────────────
-            0,   // light pink
-            22,  // white (pearl stroke)
-            29,  // sand
-            1,   // dark gray
-        ]
+        return MagicBrushyCrayonResources.rainbowDisplayOrder
     }
     private var isEraserMode = false
     /// Index in `palette` when brush mode.
-    /// Default wax: strong blue (`colors/13-color.png`), similar to former system blue.
-    private var strokePaletteIndex: Int = 12
+    /// Default wax: sky blue (`colors/03-color.png` → palette index 2).
+    private var strokePaletteIndex: Int = 2
     private var brushToolButton: UIButton?
     private var eraserToolButton: UIButton?
 
@@ -160,7 +126,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     private let freeDrawStrokeWidthPresets: [CGFloat] = [6, 10, 14, 18, 24]
     /// Index into `strokeWidthPresets` (0 = smallest dot on the yellow strip).
     private var selectedStrokeSizeIndex: Int = 2
-    private let brushSizeBar = ColoringFigmaBrushSizeBarView()
+    private let brushSizeChrome = ColoringCollapsibleBrushSizeChrome()
     private let undoChromeButton = UIButton(type: .custom)
     private let cameraChromeButton = UIButton(type: .custom)
     private let topChromeLeftRow = UIStackView()
@@ -181,19 +147,25 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     private var rightPanelWidthConstraint: NSLayoutConstraint?
     private var paintRowLeadingConstraint: NSLayoutConstraint!
     private var paintRowTrailingConstraint: NSLayoutConstraint!
-    /// iPhone: pinch-to-zoom and two-finger pan on the coloring page.
-    private var phoneCanvasUserZoom: CGFloat = 1
-    private var phoneCanvasPanOffset: CGPoint = .zero
-    private var phonePinchBaselineZoom: CGFloat = 1
-    private var phonePanBaselineOffset: CGPoint = .zero
-    private var canvasPinchGesture: UIPinchGestureRecognizer!
-    private var canvasPanGesture: UIPanGestureRecognizer!
+    /// Phone only: pin paintRow to the real screen edge (bypasses safe-area gap on the right).
+    private var paintRowTrailingScreenEdgeConstraint: NSLayoutConstraint!
+    private var headerLeadingCanvasConstraint: NSLayoutConstraint!
+    private var headerLeadingPaintRowConstraint: NSLayoutConstraint!
+    private var headerTopConstraint: NSLayoutConstraint!
+    private var paintRowTopToHeaderBottomConstraint: NSLayoutConstraint!
+    private var paintRowTopToHeaderTopConstraint: NSLayoutConstraint!
+    private var canvasAspectConstraint: NSLayoutConstraint!
     private var mascotImageWidthConstraint: NSLayoutConstraint!
     private var mascotImageHeightConstraint: NSLayoutConstraint!
     private var mascotImageCenterXConstraint: NSLayoutConstraint!
     private var mascotImageLeadingConstraint: NSLayoutConstraint!
+    private var mascotImageTopConstraint: NSLayoutConstraint!
     private var mascotRailWidthConstraint: NSLayoutConstraint!
-    private var mascotIsOnLeadingRail = false
+    private let rightPanelPhoneTopSpacer = UIView()
+    private var rightPanelPhoneTopSpacerHeight: NSLayoutConstraint!
+    private var paintRowTopToSafeAreaConstraint: NSLayoutConstraint!
+    private var topChromeLeftRowHeightConstraint: NSLayoutConstraint!
+    private var topChromeRightRowHeightConstraint: NSLayoutConstraint!
 
     /// App-wide singleton model; loaded once at app startup from SceneDelegate.
     private let vlm = LeapVLMModel.shared
@@ -252,6 +224,8 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         drawingBackgroundView.backgroundColor = FigmaTheme.skyBlue
 
         templateView.contentMode = .scaleAspectFit
+        templateView.layer.minificationFilter = .linear
+        templateView.layer.magnificationFilter = .linear
         templateView.clipsToBounds = true
         templateView.backgroundColor = FigmaTheme.canvasFill
         templateView.layer.cornerRadius = 24
@@ -429,15 +403,22 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         mascotRailWidthConstraint = mascotContainer.widthAnchor.constraint(
             equalToConstant: BrushiMascotLayout.rightRailWidth(for: traitCollection)
         )
+        mascotImageTopConstraint = mascotImageView.topAnchor.constraint(equalTo: mascotContainer.topAnchor)
         NSLayoutConstraint.activate([
             mascotImageCenterXConstraint,
-            mascotImageView.topAnchor.constraint(equalTo: mascotContainer.topAnchor),
+            mascotImageTopConstraint,
             mascotImageView.bottomAnchor.constraint(equalTo: mascotContainer.bottomAnchor),
             mascotImageWidthConstraint,
             mascotImageHeightConstraint,
         ])
 
         // ── Right panel ───────────────────────────────────────────────────────
+        rightPanelPhoneTopSpacer.backgroundColor = .clear
+        rightPanelPhoneTopSpacer.translatesAutoresizingMaskIntoConstraints = false
+        rightPanelPhoneTopSpacer.isHidden = true
+        rightPanelPhoneTopSpacerHeight = rightPanelPhoneTopSpacer.heightAnchor.constraint(equalToConstant: 0)
+        rightPanelPhoneTopSpacerHeight.isActive = true
+        rightPanelStack.addArrangedSubview(rightPanelPhoneTopSpacer)
         rightPanelStack.addArrangedSubview(mascotContainer)
         rightPanelStack.addArrangedSubview(toolPairStack)
         rightPanelStack.addArrangedSubview(crayonScrollContainer)
@@ -448,8 +429,9 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         rightPanelStack.translatesAutoresizingMaskIntoConstraints = false
         rightPanelStack.setContentHuggingPriority(.defaultHigh, for: .horizontal)
         rightPanelStack.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
-        // Above scaled canvas layer so crayons are not covered by the page edge / border.
+        // Above the canvas layer so crayons overlap the page's right edge.
         rightPanelStack.layer.zPosition = 100
+        rightPanelStack.clipsToBounds = false
         rightPanelStack.setCustomSpacing(ColoringCrayonPaletteLayout.mascotToToolsSpacing, after: mascotContainer)
 
         // ── Top nav bar (Figma `3-2098`) ─────────────────────────────────────
@@ -525,25 +507,34 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         navButtonSizeConstraints += [camW, camH, undoW, undoH]
         chromeNavButtons.append(contentsOf: [cameraChromeButton, undoChromeButton])
 
-        brushSizeBar.translatesAutoresizingMaskIntoConstraints = false
-        brushSizeBar.setContentCompressionResistancePriority(.required, for: .horizontal)
-        brushSizeBar.setContentCompressionResistancePriority(.required, for: .vertical)
-        brushSizeBar.setContentHuggingPriority(.required, for: .horizontal)
-        brushSizeBar.setContentHuggingPriority(.required, for: .vertical)
-        brushSizeBar.dotCount = strokeWidthPresets.count
-        brushSizeBar.selectedIndex = selectedStrokeSizeIndex
-        brushSizeBar.onSelectionChanged = { [weak self] index in
+        brushSizeChrome.setContentCompressionResistancePriority(.required, for: .horizontal)
+        brushSizeChrome.setContentCompressionResistancePriority(.required, for: .vertical)
+        brushSizeChrome.setContentHuggingPriority(.required, for: .horizontal)
+        brushSizeChrome.setContentHuggingPriority(.required, for: .vertical)
+        brushSizeChrome.dotCount = strokeWidthPresets.count
+        brushSizeChrome.selectedIndex = selectedStrokeSizeIndex
+        brushSizeChrome.onSelectionChanged = { [weak self] index in
             guard let self else { return }
             self.selectedStrokeSizeIndex = index
             self.applyStrokeWidthFromSelection()
             self.refreshStrokeSizeAppearance()
         }
         let barSize = ColoringFigmaToolbarChrome.brushBarSize(for: traitCollection, dotCount: strokeWidthPresets.count)
-        brushSizeBar.applyChromeMetrics(barWidth: barSize.width, barHeight: barSize.height)
+        let collapsedSide = ColoringFigmaToolbarChrome.phoneCollapsedBrushSizeSide(for: traitCollection)
+        let phone = MagicBrushyChromeMetrics.isPhone(traitCollection)
+        brushSizeChrome.applyMetrics(
+            expandedWidth: barSize.width,
+            expandedHeight: barSize.height,
+            collapsedSide: collapsedSide,
+            traitCollection: traitCollection
+        )
+        brushSizeChrome.configureForPhone(phone, traitCollection: traitCollection)
 
         topChromeLeftRow.axis = .horizontal
         topChromeLeftRow.spacing = 8
         topChromeLeftRow.alignment = .center
+        topChromeLeftRowHeightConstraint = topChromeLeftRow.heightAnchor.constraint(equalToConstant: navSide)
+        topChromeLeftRowHeightConstraint.isActive = true
         topChromeLeftRow.addArrangedSubview(homeButton)
         topChromeLeftRow.addArrangedSubview(settingsBtn)
         topChromeLeftRow.addArrangedSubview(cameraChromeButton)
@@ -551,7 +542,9 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         topChromeRightRow.axis = .horizontal
         topChromeRightRow.spacing = 10
         topChromeRightRow.alignment = .center
-        topChromeRightRow.addArrangedSubview(brushSizeBar)
+        topChromeRightRowHeightConstraint = topChromeRightRow.heightAnchor.constraint(equalToConstant: navSide)
+        topChromeRightRowHeightConstraint.isActive = true
+        topChromeRightRow.addArrangedSubview(brushSizeChrome)
         topChromeRightRow.addArrangedSubview(undoChromeButton)
 
         let navSpacer = UIView()
@@ -588,6 +581,8 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         strokeView.translatesAutoresizingMaskIntoConstraints = false
         templateLineOverlayView.translatesAutoresizingMaskIntoConstraints = false
         templateLineOverlayView.contentMode = .scaleAspectFit
+        templateLineOverlayView.layer.minificationFilter = .linear
+        templateLineOverlayView.layer.magnificationFilter = .linear
         templateLineOverlayView.clipsToBounds = true
         templateLineOverlayView.layer.cornerRadius = 24
         templateLineOverlayView.backgroundColor = .clear
@@ -608,6 +603,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         paintRow.axis = .horizontal
         paintRow.alignment = .fill
         paintRow.spacing = 10
+        paintRow.clipsToBounds = false
         paintRow.translatesAutoresizingMaskIntoConstraints = false
         canvasContainer.setContentHuggingPriority(.defaultLow, for: .horizontal)
         canvasContainer.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
@@ -617,17 +613,18 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         bar.translatesAutoresizingMaskIntoConstraints = false
         paintRow.translatesAutoresizingMaskIntoConstraints = false
 
-        let headerStack = UIStackView(arrangedSubviews: [bar])
-        headerStack.axis = .vertical
-        headerStack.spacing = 8
-        headerStack.translatesAutoresizingMaskIntoConstraints = false
-        headerStack.isLayoutMarginsRelativeArrangement = false
-        headerStack.insetsLayoutMarginsFromSafeArea = false
-        headerStack.setContentCompressionResistancePriority(.required, for: .vertical)
-        headerStack.setContentHuggingPriority(.required, for: .vertical)
+        headerChromeStack.addArrangedSubview(bar)
+        headerChromeStack.axis = .vertical
+        headerChromeStack.spacing = 8
+        headerChromeStack.translatesAutoresizingMaskIntoConstraints = false
+        headerChromeStack.isLayoutMarginsRelativeArrangement = false
+        headerChromeStack.insetsLayoutMarginsFromSafeArea = false
+        headerChromeStack.setContentCompressionResistancePriority(.required, for: .vertical)
+        headerChromeStack.setContentHuggingPriority(.required, for: .vertical)
         view.addSubview(drawingBackgroundView)
-        view.addSubview(headerStack)
         view.addSubview(paintRow)
+        view.addSubview(headerChromeStack)
+        headerChromeStack.layer.zPosition = 200
 
         loadOverlay.translatesAutoresizingMaskIntoConstraints = false
         loadOverlay.backgroundColor = UIColor.black.withAlphaComponent(0.45)
@@ -647,8 +644,11 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         // installVLMInputPreviewChrome()
         // #endif
 
-        let canvasAspect = canvasContainer.widthAnchor.constraint(equalTo: canvasContainer.heightAnchor, multiplier: 4 / 5)
-        canvasAspect.priority = .defaultHigh
+        canvasAspectConstraint = canvasContainer.widthAnchor.constraint(
+            equalTo: canvasContainer.heightAnchor,
+            multiplier: 4 / 5
+        )
+        canvasAspectConstraint.priority = .defaultHigh
         let rightPanelWidth = rightPanelStack.widthAnchor.constraint(equalToConstant: ColoringCrayonPaletteLayout.rightPanelWidth)
         rightPanelWidth.priority = .required
         rightPanelWidthConstraint = rightPanelWidth
@@ -659,15 +659,11 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             drawingBackgroundView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             drawingBackgroundView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
-            headerStack.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: TopChromeMetrics.menuTopOffset),
-            headerStack.leadingAnchor.constraint(equalTo: canvasContainer.leadingAnchor, constant: TopChromeMetrics.navRowCanvasLeadingAlignmentOffset),
-            headerStack.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -TopChromeMetrics.menuTrailingInset),
-
-            paintRow.topAnchor.constraint(equalTo: headerStack.bottomAnchor, constant: 8),
+            headerChromeStack.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -TopChromeMetrics.menuTrailingInset),
             paintRow.bottomAnchor.constraint(equalTo: g.bottomAnchor, constant: -6),
 
             canvasContainer.heightAnchor.constraint(greaterThanOrEqualToConstant: 200),
-            canvasAspect,
+            canvasAspectConstraint,
             rightPanelWidth,
 
             templateView.leadingAnchor.constraint(equalTo: canvasContainer.leadingAnchor),
@@ -712,8 +708,45 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             equalTo: g.trailingAnchor,
             constant: -10
         )
+        // Phone uses the real screen edge so the crayon panel has no safe-area gap on the right.
+        paintRowTrailingScreenEdgeConstraint = paintRow.trailingAnchor.constraint(
+            equalTo: view.trailingAnchor
+        )
         paintRowLeadingConstraint.isActive = true
         paintRowTrailingConstraint.isActive = true
+        headerTopConstraint = headerChromeStack.topAnchor.constraint(
+            equalTo: view.safeAreaLayoutGuide.topAnchor,
+            constant: TopChromeMetrics.menuTopOffset
+        )
+        headerLeadingCanvasConstraint = headerChromeStack.leadingAnchor.constraint(
+            equalTo: canvasContainer.leadingAnchor,
+            constant: TopChromeMetrics.navRowCanvasLeadingAlignmentOffset
+        )
+        headerLeadingPaintRowConstraint = headerChromeStack.leadingAnchor.constraint(
+            equalTo: paintRow.leadingAnchor,
+            constant: 0
+        )
+        paintRowTopToHeaderBottomConstraint = paintRow.topAnchor.constraint(
+            equalTo: headerChromeStack.bottomAnchor,
+            constant: 8
+        )
+        paintRowTopToHeaderTopConstraint = paintRow.topAnchor.constraint(
+            equalTo: headerChromeStack.topAnchor
+        )
+        paintRowTopToSafeAreaConstraint = paintRow.topAnchor.constraint(
+            equalTo: view.safeAreaLayoutGuide.topAnchor,
+            constant: 4
+        )
+        coloringOnPhone = ColoringOnPhone(host: makeColoringOnPhoneHost())
+        coloringOnPhone.installChromeRows(navSide: navSide)
+        coloringOnPhone.onZoomChanged = { [weak self] in
+            guard let self else { return }
+            self.applyCanvasVisualTransform()
+            self.coloringOnPhone.updateZoomGesturesEnabled(for: self.traitCollection)
+        }
+        headerTopConstraint.isActive = true
+        headerLeadingCanvasConstraint.isActive = true
+        paintRowTopToHeaderBottomConstraint.isActive = true
 
         // #if DEBUG
         // activateVLMInputPreviewConstraints(safeGuide: g)
@@ -725,8 +758,8 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         } else {
             selectedStrokeSizeIndex = max(0, presetCount / 2)
         }
-        brushSizeBar.dotCount = presetCount
-        brushSizeBar.selectedIndex = selectedStrokeSizeIndex
+        brushSizeChrome.dotCount = presetCount
+        brushSizeChrome.selectedIndex = selectedStrokeSizeIndex
         applyStrokeWidthFromSelection()
         refreshStrokeSizeAppearance()
 
@@ -772,10 +805,10 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     private func refreshStrokeSizeAppearance() {
         let index = selectedStrokeSizeIndex.clamped(to: 0...(strokeWidthPresets.count - 1))
         // Never reset dotCount here — it rebuilds all buttons unnecessarily and wipes their frames.
-        brushSizeBar.selectedIndex = index
-        brushSizeBar.dotFillColor = activeCrayonStrokeColor()
+        brushSizeChrome.selectedIndex = index
+        brushSizeChrome.dotFillColor = activeCrayonStrokeColor()
         let preset = strokeWidthPresets[index]
-        brushSizeBar.accessibilityValue = "\(Int(preset)) points wide"
+        brushSizeChrome.bar.accessibilityValue = "\(Int(preset)) points wide"
     }
 
     private func applyStrokeWidthFromSelection() {
@@ -787,7 +820,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
 
     private static func toolIconSide(for tc: UITraitCollection) -> CGFloat {
         let toolSide = MagicBrushyChromeMetrics.isPhone(tc)
-            ? ColoringCrayonPaletteLayout.phoneToolButtonSide
+            ? ColoringOnPhoneMetrics.toolButtonSide
             : ColoringCrayonPaletteLayout.toolButtonHeight
         return toolSide * 0.68
     }
@@ -1016,14 +1049,15 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         let phone = MagicBrushyChromeMetrics.isPhone(tc)
         let compact = tc.verticalSizeClass == .compact
         let navSize = MagicBrushyChromeMetrics.chromeButtonSide(tc)
-        let panelWidth = BrushiMascotLayout.rightRailWidth(for: tc)
+        let panelWidth = phone
+            ? coloringOnPhone.sidePanelWidth(for: tc, brushDotCount: strokeWidthPresets.count)
+            : BrushiMascotLayout.rightRailWidth(for: tc)
         let toolHeight: CGFloat = phone
-            ? ColoringCrayonPaletteLayout.phoneToolButtonSide
+            ? ColoringOnPhoneMetrics.toolButtonSide
             : ColoringCrayonPaletteLayout.toolButtonHeight
         let navCorner = MagicBrushyChromeMetrics.chromeCornerRadius(tc)
         let navBorder = MagicBrushyChromeMetrics.chromeBorderWidth(tc)
         let navChromeInsets = MagicBrushyChromeMetrics.navChromeContentInsets
-        let navSymbol = phone ? MagicBrushyChromeMetrics.chromeSymbolPointSize(tc) : 20
         let barSize = ColoringFigmaToolbarChrome.brushBarSize(for: tc, dotCount: strokeWidthPresets.count)
 
         for c in navButtonSizeConstraints { c.constant = navSize }
@@ -1031,9 +1065,18 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         for c in toolButtonWidthConstraints { c.constant = toolHeight }
         toolPairStackHeightConstraint?.constant = toolHeight
         rightPanelWidthConstraint?.constant = panelWidth
-        applyPhonePaintRowInsets(for: tc)
-        brushSizeBar.dotCount = strokeWidthPresets.count
-        brushSizeBar.applyChromeMetrics(barWidth: barSize.width, barHeight: barSize.height)
+        brushSizeChrome.dotCount = strokeWidthPresets.count
+        let chromeSide = navSize
+        brushSizeChrome.applyMetrics(
+            expandedWidth: barSize.width,
+            expandedHeight: barSize.height,
+            collapsedSide: chromeSide,
+            traitCollection: tc
+        )
+        brushSizeChrome.configureForPhone(phone, traitCollection: tc)
+        topChromeLeftRowHeightConstraint?.constant = chromeSide
+        topChromeRightRowHeightConstraint?.constant = chromeSide
+        coloringOnPhone.updateChromeRowHeights(chromeSide)
         topChromeRightRow.spacing = (phone && compact) ? 6 : 10
         topChromeLeftRow.spacing = phone ? 6 : 8
 
@@ -1067,151 +1110,94 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         settingsGearButton?.applyStyle(for: tc)
         toolRowMinHeightConstraint?.constant = MagicBrushyChromeMetrics.chromeButtonSide(tc)
 
-        let crayonRowH = ColoringCrayonPaletteLayout.crayonRowHeight(for: tc)
+        let crayonRowH = phone
+            ? ColoringOnPhoneMetrics.crayonRowHeight(phonePanelWidth: panelWidth)
+            : ColoringCrayonPaletteLayout.crayonRowHeight(for: tc)
         for c in crayonRowHeightConstraints { c.constant = crayonRowH }
         crayonStack.spacing = ColoringCrayonPaletteLayout.crayonStackSpacing(for: tc)
-        crayonScrollViewportHeightConstraint?.constant = ColoringCrayonPaletteLayout.scrollViewportHeight(for: tc)
+        crayonScrollViewportHeightConstraint?.constant = phone
+            ? ColoringCrayonPaletteLayout.scrollViewportHeight(for: tc, phonePanelWidth: panelWidth)
+            : ColoringCrayonPaletteLayout.scrollViewportHeight(for: tc)
 
         updateMascotDisplaySize(for: tc)
-        applyMascotRailPlacement(for: tc)
-        updatePhoneCanvasZoomGesturesEnabled(for: tc)
+        toolPairStack.axis = .horizontal
+        toolPairStack.distribution = phone ? .fillEqually : .fill
+        coloringOnPhone.applyLayout(
+            isPhone: phone,
+            traitCollection: tc,
+            brushDotCount: strokeWidthPresets.count,
+            setCanvasAspectRatio: { [weak self] ratio, priority in
+                self?.setCanvasAspectRatio(widthOverHeight: ratio, priority: priority)
+            },
+            applyCanvasVisualTransform: { [weak self] in
+                self?.applyCanvasVisualTransform()
+            }
+        )
+        coloringOnPhone.updateZoomGesturesEnabled(for: tc)
         if !phone {
-            phoneCanvasUserZoom = 1
-            phoneCanvasPanOffset = .zero
-            applyCanvasVisualTransform()
+            coloringOnPhone.resetZoom(applyCanvasVisualTransform: { [weak self] in
+                self?.applyCanvasVisualTransform()
+            })
         }
     }
 
-    /// iPhone: mascot in a left rail beside the canvas; iPad: mascot atop the right crayon column.
-    private func applyMascotRailPlacement(for tc: UITraitCollection) {
-        let phone = MagicBrushyChromeMetrics.isPhone(tc)
-        let railWidth = BrushiMascotLayout.rightRailWidth(for: tc)
-        guard phone != mascotIsOnLeadingRail else {
-            if phone { mascotRailWidthConstraint.constant = railWidth }
-            applyPhonePaintRowInsets(for: tc)
-            return
-        }
-
-        if phone {
-            rightPanelStack.removeArrangedSubview(mascotContainer)
-            mascotContainer.removeFromSuperview()
-            paintRow.insertArrangedSubview(mascotContainer, at: 0)
-            mascotContainer.setContentHuggingPriority(.required, for: .horizontal)
-            mascotContainer.setContentCompressionResistancePriority(.required, for: .horizontal)
-            mascotRailWidthConstraint.constant = railWidth
-            mascotRailWidthConstraint.isActive = true
-            mascotImageCenterXConstraint.isActive = false
-            mascotImageLeadingConstraint.isActive = true
-        } else {
-            paintRow.removeArrangedSubview(mascotContainer)
-            mascotContainer.removeFromSuperview()
-            rightPanelStack.insertArrangedSubview(mascotContainer, at: 0)
-            rightPanelStack.setCustomSpacing(
-                ColoringCrayonPaletteLayout.mascotToToolsSpacing,
-                after: mascotContainer
-            )
-            mascotContainer.setContentHuggingPriority(.required, for: .vertical)
-            mascotContainer.setContentCompressionResistancePriority(.required, for: .vertical)
-            mascotRailWidthConstraint.isActive = false
-            mascotImageLeadingConstraint.isActive = false
-            mascotImageCenterXConstraint.isActive = true
-        }
-        mascotIsOnLeadingRail = phone
-        applyPhonePaintRowInsets(for: tc)
-    }
-
-    /// iPhone landscape: hug the left edge for Brushi and the right edge for crayons.
-    private func applyPhonePaintRowInsets(for tc: UITraitCollection) {
-        let phone = MagicBrushyChromeMetrics.isPhone(tc)
-        paintRowLeadingConstraint?.constant = phone
-            ? ColoringCrayonPaletteLayout.phonePaintRowLeadingInset
-            : TopChromeMetrics.menuHorizontalInset
-        paintRowTrailingConstraint?.constant = phone
-            ? -ColoringCrayonPaletteLayout.phonePaintRowTrailingInset
-            : -10
-        paintRow.spacing = phone
-            ? ColoringCrayonPaletteLayout.phonePaintRowRailSpacing
-            : 10
-        if phone, mascotIsOnLeadingRail {
-            mascotImageLeadingConstraint.constant = ColoringCrayonPaletteLayout.phoneMascotLeadingNudge
-        } else if mascotIsOnLeadingRail {
-            mascotImageLeadingConstraint.constant = -14
+    private func setCanvasAspectRatio(widthOverHeight ratio: CGFloat, priority: UILayoutPriority) {
+        canvasAspectConstraint?.isActive = false
+        canvasAspectConstraint = canvasContainer.widthAnchor.constraint(
+            equalTo: canvasContainer.heightAnchor,
+            multiplier: ratio
+        )
+        canvasAspectConstraint.priority = priority
+        if !coloringOnPhone.usesCanvasOverlayLayout {
+            canvasAspectConstraint.isActive = true
         }
     }
-
-    private static let phoneCanvasMinZoom: CGFloat = 1
-    private static let phoneCanvasMaxZoom: CGFloat = 3
 
     private func installPhoneCanvasZoomGestures() {
-        let pinch = UIPinchGestureRecognizer(target: self, action: #selector(handleCanvasPinch(_:)))
-        pinch.delegate = self
-        canvasContainer.addGestureRecognizer(pinch)
-        canvasPinchGesture = pinch
-
-        let pan = UIPanGestureRecognizer(target: self, action: #selector(handleCanvasPan(_:)))
-        pan.minimumNumberOfTouches = 2
-        pan.maximumNumberOfTouches = 2
-        pan.delegate = self
-        canvasContainer.addGestureRecognizer(pan)
-        canvasPanGesture = pan
-
-        updatePhoneCanvasZoomGesturesEnabled(for: traitCollection)
-    }
-
-    private func updatePhoneCanvasZoomGesturesEnabled(for traitCollection: UITraitCollection) {
-        let phone = MagicBrushyChromeMetrics.isPhone(traitCollection)
-        canvasPinchGesture?.isEnabled = phone
-        canvasPanGesture?.isEnabled = phone && phoneCanvasUserZoom > Self.phoneCanvasMinZoom + 0.01
+        coloringOnPhone.installCanvasZoomGestures(on: canvasContainer, traitCollection: traitCollection)
     }
 
     private func applyCanvasVisualTransform() {
-        let cvScale = ColoringCrayonPaletteLayout.canvasVisualScale
-        let cvLeft = ColoringCrayonPaletteLayout.canvasShiftLeftPoints
-        let phone = MagicBrushyChromeMetrics.isPhone(traitCollection)
-        let userZoom = phone ? phoneCanvasUserZoom : 1
-        let pan = phone ? phoneCanvasPanOffset : .zero
-        let scale = cvScale * userZoom
-        canvasContainer.transform = CGAffineTransform(translationX: -cvLeft + pan.x, y: pan.y)
-            .scaledBy(x: scale, y: scale)
+        canvasContainer.transform = coloringOnPhone.canvasTransform(for: traitCollection)
     }
 
-    @objc private func handleCanvasPinch(_ gesture: UIPinchGestureRecognizer) {
-        guard MagicBrushyChromeMetrics.isPhone(traitCollection) else { return }
-        switch gesture.state {
-        case .began:
-            phonePinchBaselineZoom = phoneCanvasUserZoom
-        case .changed:
-            phoneCanvasUserZoom = min(
-                max(Self.phoneCanvasMinZoom, phonePinchBaselineZoom * gesture.scale),
-                Self.phoneCanvasMaxZoom
-            )
-            applyCanvasVisualTransform()
-            updatePhoneCanvasZoomGesturesEnabled(for: traitCollection)
-        case .ended, .cancelled, .failed:
-            if phoneCanvasUserZoom <= Self.phoneCanvasMinZoom + 0.01 {
-                phoneCanvasPanOffset = .zero
-                applyCanvasVisualTransform()
+    private func makeColoringOnPhoneHost() -> ColoringOnPhone.Host {
+        ColoringOnPhone.Host(
+            view: view,
+            paintRow: paintRow,
+            canvasContainer: canvasContainer,
+            headerChromeStack: headerChromeStack,
+            rightPanelStack: rightPanelStack,
+            mascotContainer: mascotContainer,
+            toolPairStack: toolPairStack,
+            crayonScrollContainer: crayonScrollContainer,
+            homeButton: homeButton,
+            cameraChromeButton: cameraChromeButton,
+            undoChromeButton: undoChromeButton,
+            brushSizeChrome: brushSizeChrome,
+            settingsGearButton: settingsGearButton,
+            topChromeLeftRow: topChromeLeftRow,
+            topChromeRightRow: topChromeRightRow,
+            rightPanelPhoneTopSpacer: rightPanelPhoneTopSpacer,
+            rightPanelPhoneTopSpacerHeight: rightPanelPhoneTopSpacerHeight,
+            paintRowLeadingConstraint: paintRowLeadingConstraint,
+            paintRowTrailingConstraint: paintRowTrailingConstraint,
+            paintRowTrailingScreenEdgeConstraint: paintRowTrailingScreenEdgeConstraint,
+            headerLeadingCanvasConstraint: headerLeadingCanvasConstraint,
+            headerLeadingPaintRowConstraint: headerLeadingPaintRowConstraint,
+            paintRowTopToHeaderBottomConstraint: paintRowTopToHeaderBottomConstraint,
+            paintRowTopToHeaderTopConstraint: paintRowTopToHeaderTopConstraint,
+            paintRowTopToSafeAreaConstraint: paintRowTopToSafeAreaConstraint,
+            headerTopConstraint: headerTopConstraint,
+            rightPanelWidthConstraint: rightPanelWidthConstraint,
+            mascotRailWidthConstraint: mascotRailWidthConstraint,
+            mascotImageCenterXConstraint: mascotImageCenterXConstraint,
+            mascotImageLeadingConstraint: mascotImageLeadingConstraint,
+            mascotImageTopConstraint: mascotImageTopConstraint,
+            setStackCanvasAspectConstraintActive: { [weak self] active in
+                self?.canvasAspectConstraint.isActive = active
             }
-            updatePhoneCanvasZoomGesturesEnabled(for: traitCollection)
-        default:
-            break
-        }
-    }
-
-    @objc private func handleCanvasPan(_ gesture: UIPanGestureRecognizer) {
-        guard MagicBrushyChromeMetrics.isPhone(traitCollection),
-              phoneCanvasUserZoom > Self.phoneCanvasMinZoom + 0.01
-        else { return }
-        switch gesture.state {
-        case .began:
-            phonePanBaselineOffset = phoneCanvasPanOffset
-        case .changed:
-            let t = gesture.translation(in: view)
-            phoneCanvasPanOffset = CGPoint(x: phonePanBaselineOffset.x + t.x, y: phonePanBaselineOffset.y + t.y)
-            applyCanvasVisualTransform()
-        default:
-            break
-        }
+        )
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -1443,7 +1429,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     }
 
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
-        if gestureRecognizer === canvasPinchGesture || gestureRecognizer === canvasPanGesture {
+        if coloringOnPhone.isPhoneCanvasGesture(gestureRecognizer) {
             return true
         }
         return true
@@ -1453,7 +1439,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         _ gestureRecognizer: UIGestureRecognizer,
         shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
     ) -> Bool {
-        if gestureRecognizer === canvasPinchGesture || gestureRecognizer === canvasPanGesture {
+        if coloringOnPhone.isPhoneCanvasGesture(gestureRecognizer) {
             return otherGestureRecognizer.view === strokeView || otherGestureRecognizer.view?.isDescendant(of: strokeView) == true
         }
         return false
@@ -1557,8 +1543,18 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         interruptCoachAudioAndWork()
         clearResumeSnapshot()
         let page = coloringBookPages[pageIndex]
-        templateView.image = page.image
-        templateLineOverlayView.image = page.image.magicBrushyLineArtOverlay()
+        let isBlankFreeDraw = sessionPackId == BuiltInColoringPages.savedDrawingsPackId
+        if isBlankFreeDraw {
+            templateView.image = page.image
+            templateLineOverlayView.image = nil
+            templateLineOverlayView.isHidden = true
+        } else {
+            // Line art only in the overlay — avoid drawing the same ink in `templateView` (looked 2× thick).
+            templateView.image = nil
+            templateView.backgroundColor = FigmaTheme.canvasFill
+            templateLineOverlayView.image = page.image.magicBrushyLineArtOverlay()
+            templateLineOverlayView.isHidden = false
+        }
         strokeView.clearStrokes()
         // On mid-session page switches (no pending resume set by the caller), restore saved template progress.
         // The initial page load uses pendingResumeComposite instead (applied after layout via applyPendingResumeCompositeIfNeeded).
@@ -2356,6 +2352,22 @@ private enum MagicBrushyCrayonResources {
     private static let bundleSubdirectory = "Colors"
     private static let pngCount = 30
 
+    /// Top → bottom in the crayon rail: ROYGBIV, then earth tones, black & white last.
+    static let rainbowDisplayOrder: [Int] = [
+        6,                          // red
+        25, 26, 5,                  // orange family
+        4, 23, 24,                  // yellow family
+        3, 21, 19, 18, 20,          // green family
+        17, 16,                     // teal / aqua
+        2,                          // sky blue
+        14, 12, 13, 15,             // blues
+        11, 10, 8, 9, 7,            // indigo / violet / purple / pink
+        0,                          // light pink
+        27, 28, 29,                 // brown, terracotta, sand
+        1,                          // black
+        22,                         // white
+    ]
+
     /// `01-color.png` … `30-color.png` in the app bundle (folder reference `Colors`).
     static let swatchImages: [UIImage] = {
         var out: [UIImage] = []
@@ -2376,11 +2388,18 @@ private enum MagicBrushyCrayonResources {
         return colors
     }()
 
-    /// Canonical paint colors where swatch sampling reads too dull (yellow), gray (black), or off (pearl).
+    /// Brand-aligned stroke colors (see `FigmaTheme.Brand`).
     private static let strokeColorOverrides: [Int: UIColor] = [
-        1: UIColor(red: 0, green: 0, blue: 0, alpha: 1),           // black — full opacity
-        4: UIColor(red: 1, green: 0.92, blue: 0, alpha: 1),       // primary yellow
-        22: UIColor(red: 248 / 255, green: 245 / 255, blue: 238 / 255, alpha: 1), // white — pearl tone
+        0: FigmaTheme.Brand.mascotPink,
+        1: FigmaTheme.Brand.softBlack,
+        2: FigmaTheme.Brand.skyBlue,
+        3: FigmaTheme.Brand.successGreen,
+        4: FigmaTheme.Brand.rewardYellow,
+        5: FigmaTheme.Brand.playOrange,
+        6: FigmaTheme.Brand.warningRed,
+        8: FigmaTheme.Brand.imaginationPurple,
+        9: FigmaTheme.Brand.imaginationPurple,
+        22: FigmaTheme.Brand.warmWhite,
     ]
 
     private static func applyStrokeColorOverrides(_ colors: inout [UIColor]) {
@@ -2512,23 +2531,24 @@ private enum ColoringCrayonPaletteLayout {
     /// How many crayon rows are visible in the rail (4.5 = half of the 5th peeks).
     static let visibleCrayonRows: CGFloat = 4.5
 
-    static func scrollViewportHeight(for traitCollection: UITraitCollection) -> CGFloat {
-        let rowH = crayonRowHeight(for: traitCollection)
+    static func scrollViewportHeight(
+        for traitCollection: UITraitCollection,
+        phonePanelWidth: CGFloat? = nil
+    ) -> CGFloat {
+        let rowH: CGFloat
+        if let phonePanelWidth {
+            rowH = ColoringOnPhoneMetrics.crayonRowHeight(phonePanelWidth: phonePanelWidth)
+        } else {
+            rowH = crayonRowHeight(for: traitCollection)
+        }
         let spacing = crayonStackSpacing(for: traitCollection)
         let rows = visibleCrayonRows
         return rows * rowH + max(0, rows - 1) * spacing
     }
     static let toolButtonHeight: CGFloat = 72
-    /// iPhone: square brush / eraser chrome (avoids vertical crush in the right rail).
-    static let phoneToolButtonSide: CGFloat = 50
-    /// iPhone: pull Brushi toward the screen edge and crayons toward the right.
-    static let phonePaintRowLeadingInset: CGFloat = 0
-    static let phonePaintRowTrailingInset: CGFloat = 0
-    static let phonePaintRowRailSpacing: CGFloat = 4
-    static let phoneMascotLeadingNudge: CGFloat = -30
     /// Side gap between brush and eraser (~1 mm; scales with screen density).
     static var toolPairSpacing: CGFloat {
-        max(3, (4 * UIScreen.main.nativeScale / UIScreen.main.scale).rounded(.toNearestOrAwayFromZero))
+        ColoringOnPhoneMetrics.toolPairSpacing
     }
     /// Drawing page scale (uniform) and nudge vs. the stack layout.
     static let canvasVisualScale: CGFloat = 0.97

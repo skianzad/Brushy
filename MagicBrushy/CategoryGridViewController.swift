@@ -77,9 +77,11 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
     override func viewDidLoad() {
         super.viewDidLoad()
         LastDrawingStore.purgeLegacyNonFreeDrawingSavesIfNeeded()
-        if let id = initialPackId,
-           let idx = BuiltInColoringPages.library.firstIndex(where: { $0.id == id }) {
-            selectedPackIndex = idx
+        if let id = initialPackId {
+            let resolved = BuiltInColoringPages.resolvePackId(id)
+            if let idx = BuiltInColoringPages.library.firstIndex(where: { $0.id == resolved }) {
+                selectedPackIndex = idx
+            }
         }
         view.backgroundColor = .black
 
@@ -389,7 +391,7 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
         guard displayedSavedRecords.indices.contains(index) else { return }
         let rec = displayedSavedRecords[index]
         guard rec.packId == BuiltInColoringPages.savedDrawingsPackId else { return }
-        guard let pack = BuiltInColoringPages.library.first(where: { $0.id == rec.packId }) else { return }
+        guard let pack = BuiltInColoringPages.pack(withId: rec.packId) else { return }
         let packUnlocked = SubscriptionManager.shared.canOpenPack(id: pack.id)
         guard packUnlocked else {
             UIImpactFeedbackGenerator(style: .medium).impactOccurred()

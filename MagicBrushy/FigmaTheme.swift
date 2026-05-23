@@ -14,8 +14,12 @@ enum FigmaTheme {
 
     /// Extra home tiles (distinct from the four original Figma swatches).
     static let dinosaursAccent = UIColor(red: 34 / 255, green: 139 / 255, blue: 34 / 255, alpha: 1)
+    static let fallAccent = UIColor(red: 198 / 255, green: 93 / 255, blue: 24 / 255, alpha: 1)
+    static let musicAccent = UIColor(red: 175 / 255, green: 82 / 255, blue: 222 / 255, alpha: 1)
+    static let schoolAccent = UIColor(red: 66 / 255, green: 133 / 255, blue: 244 / 255, alpha: 1)
     static let famousArtAccent = UIColor(red: 138 / 255, green: 43 / 255, blue: 226 / 255, alpha: 1)
-    static let fantasyAccent = UIColor(red: 147 / 255, green: 112 / 255, blue: 219 / 255, alpha: 1)
+    /// Kept for older call sites; prefer `magicAccent`.
+    static let fantasyAccent = magicAccent
     static let funStuffAccent = UIColor(red: 255 / 255, green: 149 / 255, blue: 0, alpha: 1)
     static let natureAccent = UIColor(red: 52 / 255, green: 120 / 255, blue: 72 / 255, alpha: 1)
     static let roomsScenesAccent = UIColor(red: 169 / 255, green: 113 / 255, blue: 66 / 255, alpha: 1)
@@ -28,8 +32,8 @@ enum FigmaTheme {
     /// App icon + orange chrome buttons — Figma `122:593` (`#FF8903`).
     static let primaryOrange = UIColor(red: 1, green: 137 / 255, blue: 3 / 255, alpha: 1)
     static let primaryOrangeBorder = UIColor(red: 220 / 255, green: 103 / 255, blue: 39 / 255, alpha: 1)
-    static let actionBlue = UIColor(red: 60 / 255, green: 152 / 255, blue: 239 / 255, alpha: 1)
-    static let actionBlueBorder = UIColor(red: 32 / 255, green: 109 / 255, blue: 180 / 255, alpha: 1)
+    static let actionBlue = Brand.skyBlue
+    static let actionBlueBorder = UIColor(red: 24 / 255, green: 110 / 255, blue: 200 / 255, alpha: 1)
 
     /// Home mode picker — Figma `122:824` Free Draw card.
     static let freeDrawModeFill = UIColor(red: 153 / 255, green: 1, blue: 102 / 255, alpha: 1)
@@ -40,12 +44,25 @@ enum FigmaTheme {
 
     static let skyBlue = UIColor(red: 160 / 255, green: 232 / 255, blue: 251 / 255, alpha: 1)
 
+    /// Product palette (Tier 1–3) — crayons, canvas, chrome.
+    enum Brand {
+        static let skyBlue = UIColor(red: 30 / 255, green: 144 / 255, blue: 255 / 255, alpha: 1)           // #1E90FF
+        static let successGreen = UIColor(red: 60 / 255, green: 179 / 255, blue: 113 / 255, alpha: 1)    // #3CB371
+        static let rewardYellow = UIColor(red: 1, green: 215 / 255, blue: 0, alpha: 1)                    // #FFD700
+        static let warmWhite = UIColor(red: 1, green: 253 / 255, blue: 245 / 255, alpha: 1)              // #FFFDF5
+        static let softBlack = UIColor(red: 44 / 255, green: 44 / 255, blue: 42 / 255, alpha: 1)         // #2C2C2A
+        static let playOrange = UIColor(red: 1, green: 140 / 255, blue: 0, alpha: 1)                     // #FF8C00
+        static let imaginationPurple = UIColor(red: 218 / 255, green: 112 / 255, blue: 214 / 255, alpha: 1) // #DA70D6
+        static let warningRed = UIColor(red: 1, green: 79 / 255, blue: 79 / 255, alpha: 1)               // #FF4F4F
+        static let mascotPink = UIColor(red: 1, green: 105 / 255, blue: 180 / 255, alpha: 1)             // #FF69B4
+    }
+
     /// Bootstrap / download screen (Figma export).
     static let bootstrapSky = UIColor(red: 0.627, green: 0.91, blue: 0.984, alpha: 1)
     static let bootstrapProgressBorder = UIColor(red: 0.002, green: 0.684, blue: 1, alpha: 1)
     static let bootstrapProgressTrack = UIColor(red: 0.4, green: 0.87, blue: 1, alpha: 1)
     static let canvasBorder = UIColor(red: 0, green: 98 / 255, blue: 1, alpha: 1)
-    static let canvasFill = UIColor.white
+    static let canvasFill = Brand.warmWhite
 
     /// Home category grid panel (Figma wood fill behind tiles).
     static let categoryPanelWoodFallback = UIColor(red: 0.35, green: 0.72, blue: 0.95, alpha: 1)

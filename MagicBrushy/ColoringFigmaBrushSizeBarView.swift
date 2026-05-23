@@ -236,15 +236,259 @@ enum ColoringFigmaToolbarChrome {
     }
 
     static func brushBarSize(for tc: UITraitCollection, dotCount: Int) -> (width: CGFloat, height: CGFloat) {
-        let phone = MagicBrushyChromeMetrics.isPhone(tc)
         let n = max(1, dotCount)
+        let height = MagicBrushyChromeMetrics.chromeButtonSide(tc)
         // ≥48pt per segment keeps every dot easy to tap without overlap.
         let minSegment: CGFloat = 48
-        if phone {
-            let width = max(220, minSegment * CGFloat(n))
-            return (width: width, height: 42)
+        let minWidth: CGFloat = MagicBrushyChromeMetrics.isPhone(tc) ? 220 : 280
+        let width = max(minWidth, minSegment * CGFloat(n))
+        return (width: width, height: height)
+    }
+
+    static func phoneCollapsedBrushSizeSide(for tc: UITraitCollection) -> CGFloat {
+        MagicBrushyChromeMetrics.chromeButtonSide(tc)
+    }
+}
+
+// MARK: - iPhone collapsible brush-size chrome
+
+/// On iPhone, shows a compact square toggle; tap to expand the full size bar and free canvas width when collapsed.
+final class ColoringCollapsibleBrushSizeChrome: UIView {
+
+    let bar = ColoringFigmaBrushSizeBarView()
+
+    var dotCount: Int {
+        get { bar.dotCount }
+        set {
+            bar.dotCount = newValue
+            togglePreview.dotCount = newValue
         }
-        let width = max(280, minSegment * CGFloat(n))
-        return (width: width, height: 55)
+    }
+
+    var selectedIndex: Int {
+        get { bar.selectedIndex }
+        set {
+            bar.selectedIndex = newValue
+            togglePreview.selectedIndex = newValue
+            togglePreview.setNeedsDisplay()
+        }
+    }
+
+    var dotFillColor: UIColor {
+        get { bar.dotFillColor }
+        set {
+            bar.dotFillColor = newValue
+            togglePreview.dotFillColor = newValue
+            togglePreview.setNeedsDisplay()
+        }
+    }
+
+    var onSelectionChanged: ((Int) -> Void)? {
+        didSet { wireBarSelectionHandler() }
+    }
+
+    private(set) var isExpanded = false
+    var phoneCollapsibleEnabled = false
+
+    private let toggleButton = UIButton(type: .custom)
+    private let togglePreview = BrushSizeTogglePreviewView()
+    private var chromeWidthConstraint: NSLayoutConstraint!
+    private var chromeHeightConstraint: NSLayoutConstraint!
+    private var barWidthConstraint: NSLayoutConstraint!
+    private var barLeadingConstraint: NSLayoutConstraint!
+    private var barTrailingConstraint: NSLayoutConstraint!
+    private var toggleLeadingConstraint: NSLayoutConstraint!
+    private var toggleTrailingConstraint: NSLayoutConstraint!
+    private var expandedBarWidth: CGFloat = 220
+    private var collapsedSide: CGFloat = 38
+    private var barHeight: CGFloat = 42
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        commonInit()
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        commonInit()
+    }
+
+    private func commonInit() {
+        translatesAutoresizingMaskIntoConstraints = false
+        clipsToBounds = false
+        setContentCompressionResistancePriority(.required, for: .horizontal)
+        setContentHuggingPriority(.required, for: .horizontal)
+
+        bar.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(bar)
+
+        toggleButton.translatesAutoresizingMaskIntoConstraints = false
+        toggleButton.backgroundColor = ColoringFigmaToolbarChrome.brushBarFill
+        toggleButton.layer.borderColor = ColoringFigmaToolbarChrome.brushBarBorder.cgColor
+        toggleButton.clipsToBounds = true
+        toggleButton.accessibilityLabel = "Brush size"
+        toggleButton.accessibilityHint = "Shows brush thickness options"
+        toggleButton.addTarget(self, action: #selector(toggleTapped), for: .touchUpInside)
+        toggleButton.addSubview(togglePreview)
+        addSubview(toggleButton)
+
+        togglePreview.isUserInteractionEnabled = false
+        togglePreview.translatesAutoresizingMaskIntoConstraints = false
+
+        chromeWidthConstraint = widthAnchor.constraint(equalToConstant: expandedBarWidth)
+        chromeHeightConstraint = heightAnchor.constraint(equalToConstant: barHeight)
+        barWidthConstraint = bar.widthAnchor.constraint(equalToConstant: expandedBarWidth)
+        barLeadingConstraint = bar.leadingAnchor.constraint(equalTo: leadingAnchor)
+        barTrailingConstraint = bar.trailingAnchor.constraint(equalTo: trailingAnchor)
+        toggleLeadingConstraint = toggleButton.leadingAnchor.constraint(equalTo: leadingAnchor)
+        toggleTrailingConstraint = toggleButton.trailingAnchor.constraint(equalTo: trailingAnchor)
+        NSLayoutConstraint.activate([
+            chromeWidthConstraint,
+            chromeHeightConstraint,
+            barWidthConstraint,
+            barLeadingConstraint,
+            bar.centerYAnchor.constraint(equalTo: centerYAnchor),
+            bar.heightAnchor.constraint(equalTo: heightAnchor),
+            toggleLeadingConstraint,
+            toggleButton.centerYAnchor.constraint(equalTo: centerYAnchor),
+            toggleButton.widthAnchor.constraint(equalTo: heightAnchor),
+            toggleButton.heightAnchor.constraint(equalTo: heightAnchor),
+            togglePreview.centerXAnchor.constraint(equalTo: toggleButton.centerXAnchor),
+            togglePreview.centerYAnchor.constraint(equalTo: toggleButton.centerYAnchor),
+            togglePreview.widthAnchor.constraint(equalTo: toggleButton.widthAnchor, multiplier: 0.62),
+            togglePreview.heightAnchor.constraint(equalTo: togglePreview.widthAnchor),
+        ])
+        barTrailingConstraint.isActive = false
+        toggleTrailingConstraint.isActive = false
+
+        wireBarSelectionHandler()
+    }
+
+    private func wireBarSelectionHandler() {
+        bar.onSelectionChanged = { [weak self] index in
+            guard let self else { return }
+            self.togglePreview.selectedIndex = index
+            self.togglePreview.setNeedsDisplay()
+            self.onSelectionChanged?(index)
+            if self.phoneCollapsibleEnabled {
+                self.setExpanded(false, animated: true)
+            }
+        }
+    }
+
+    func applyMetrics(
+        expandedWidth: CGFloat,
+        expandedHeight: CGFloat,
+        collapsedSide: CGFloat,
+        traitCollection: UITraitCollection
+    ) {
+        expandedBarWidth = expandedWidth
+        self.collapsedSide = collapsedSide
+        // Match home / settings / camera / undo square chrome height.
+        let chromeHeight = collapsedSide
+        barHeight = chromeHeight
+        bar.applyChromeMetrics(barWidth: expandedWidth, barHeight: chromeHeight)
+        barWidthConstraint.constant = expandedWidth
+        chromeHeightConstraint.constant = chromeHeight
+        toggleButton.layer.cornerRadius = MagicBrushyChromeMetrics.chromeCornerRadius(traitCollection)
+        toggleButton.layer.borderWidth = MagicBrushyChromeMetrics.chromeBorderWidth(traitCollection)
+        if #available(iOS 13.0, *) {
+            toggleButton.layer.cornerCurve = .continuous
+        }
+        updateChromeWidth(animated: false)
+    }
+
+    func configureForPhone(_ phone: Bool, traitCollection: UITraitCollection) {
+        let wasPhone = phoneCollapsibleEnabled
+        phoneCollapsibleEnabled = phone
+        setPhoneTrailingExpansionLayout(phone)
+        if phone {
+            if !wasPhone { setExpanded(false, animated: false) }
+            toggleButton.accessibilityHint = "Tap to choose brush thickness"
+        } else {
+            setExpanded(true, animated: false)
+            toggleButton.accessibilityHint = "Pick how thick your paint is"
+        }
+        updateChromeWidth(animated: false)
+    }
+
+    /// On iPhone the bar grows left (toward the canvas) from the undo side of the rail.
+    private func setPhoneTrailingExpansionLayout(_ phone: Bool) {
+        barLeadingConstraint.isActive = !phone
+        toggleLeadingConstraint.isActive = !phone
+        barTrailingConstraint.isActive = phone
+        toggleTrailingConstraint.isActive = phone
+    }
+
+    func setExpanded(_ expanded: Bool, animated: Bool) {
+        guard phoneCollapsibleEnabled || expanded else { return }
+        isExpanded = expanded
+        toggleButton.accessibilityValue = expanded ? "Expanded" : "Collapsed, tap to expand"
+        let apply = {
+            self.updateChromeWidth(animated: false)
+        }
+        if animated {
+            UIView.animate(withDuration: 0.22, delay: 0, options: [.curveEaseOut], animations: apply)
+        } else {
+            apply()
+        }
+    }
+
+    private func updateChromeWidth(animated: Bool) {
+        let showBar = !phoneCollapsibleEnabled || isExpanded
+        bar.isHidden = !showBar
+        bar.isUserInteractionEnabled = showBar
+        toggleButton.isHidden = phoneCollapsibleEnabled && isExpanded
+        let width = phoneCollapsibleEnabled && !isExpanded ? collapsedSide : expandedBarWidth
+        chromeWidthConstraint.constant = width
+        if !animated { layoutIfNeeded() }
+    }
+
+    @objc private func toggleTapped() {
+        guard phoneCollapsibleEnabled else { return }
+        setExpanded(!isExpanded, animated: true)
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+    }
+}
+
+/// Single-dot preview for the collapsed brush-size toggle.
+private final class BrushSizeTogglePreviewView: UIView {
+
+    var selectedIndex = 0
+    var dotCount = 5
+    var dotFillColor = UIColor(red: 20 / 255, green: 102 / 255, blue: 1, alpha: 1)
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        backgroundColor = .clear
+        isOpaque = false
+        contentMode = .redraw
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        backgroundColor = .clear
+        isOpaque = false
+        contentMode = .redraw
+    }
+
+    override func draw(_ rect: CGRect) {
+        guard let ctx = UIGraphicsGetCurrentContext(), dotCount > 0 else { return }
+        let count = max(1, dotCount)
+        let idx = min(max(0, selectedIndex), count - 1)
+        let minR = bounds.height * 0.22
+        let maxR = bounds.height * 0.42
+        let t = count > 1 ? CGFloat(idx) / CGFloat(count - 1) : 0.5
+        let r = minR + (maxR - minR) * t
+        let center = CGPoint(x: bounds.midX, y: bounds.midY)
+        let dotRect = CGRect(x: center.x - r, y: center.y - r, width: r * 2, height: r * 2)
+        ctx.setFillColor(dotFillColor.cgColor)
+        ctx.fillEllipse(in: dotRect)
+        ctx.setStrokeColor(UIColor.black.cgColor)
+        ctx.setLineWidth(3)
+        ctx.strokeEllipse(in: dotRect.insetBy(dx: 1, dy: 1))
+        ctx.setStrokeColor(UIColor.white.cgColor)
+        ctx.setLineWidth(2.5)
+        ctx.strokeEllipse(in: dotRect.insetBy(dx: -0.5, dy: -0.5))
     }
 }

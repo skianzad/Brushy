@@ -26,6 +26,16 @@ enum TemplateProgressStore {
     }
 
     static func load(packId: String, pageIndex: Int) -> UIImage? {
+        let resolved = BuiltInColoringPages.resolvePackId(packId)
+        if let image = loadFile(packId: resolved, pageIndex: pageIndex) { return image }
+        if packId != resolved, let image = loadFile(packId: packId, pageIndex: pageIndex) { return image }
+        for legacyId in BuiltInColoringPages.legacyPackIds(forResolvedId: resolved) {
+            if let image = loadFile(packId: legacyId, pageIndex: pageIndex) { return image }
+        }
+        return nil
+    }
+
+    private static func loadFile(packId: String, pageIndex: Int) -> UIImage? {
         let url = fileURL(packId: packId, pageIndex: pageIndex)
         return UIImage(contentsOfFile: url.path)
     }
