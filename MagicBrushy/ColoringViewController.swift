@@ -173,10 +173,14 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     /// Nav chrome buttons whose symbol size / corner radius adapt on iPhone.
     private var chromeNavButtons: [UIButton] = []
     private var settingsGearButton: MagicBrushySettingsGearButton?
-    /// Height constraints for brush / eraser tool buttons.
+    /// Width / height constraints for brush / eraser tool buttons (kept square).
     private var toolButtonHeightConstraints: [NSLayoutConstraint] = []
+    private var toolButtonWidthConstraints: [NSLayoutConstraint] = []
+    private var toolPairStackHeightConstraint: NSLayoutConstraint!
     /// Right crayon-rail width.
     private var rightPanelWidthConstraint: NSLayoutConstraint?
+    private var paintRowLeadingConstraint: NSLayoutConstraint!
+    private var paintRowTrailingConstraint: NSLayoutConstraint!
     /// iPhone: pinch-to-zoom and two-finger pan on the coloring page.
     private var phoneCanvasUserZoom: CGFloat = 1
     private var phoneCanvasPanOffset: CGPoint = .zero
@@ -295,10 +299,18 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         toolPairStack.axis = .horizontal
         toolPairStack.spacing = ColoringCrayonPaletteLayout.toolPairSpacing
         toolPairStack.alignment = .center
-        toolPairStack.distribution = .fillEqually
+        toolPairStack.distribution = .fill
         toolPairStack.addArrangedSubview(brushToolButton!)
         toolPairStack.addArrangedSubview(eraserToolButton!)
         toolPairStack.translatesAutoresizingMaskIntoConstraints = false
+        toolPairStack.setContentCompressionResistancePriority(.required, for: .vertical)
+        toolPairStack.setContentHuggingPriority(.required, for: .vertical)
+        brushToolButton?.setContentCompressionResistancePriority(.required, for: .vertical)
+        eraserToolButton?.setContentCompressionResistancePriority(.required, for: .vertical)
+        toolPairStackHeightConstraint = toolPairStack.heightAnchor.constraint(
+            equalToConstant: ColoringCrayonPaletteLayout.toolButtonHeight
+        )
+        toolPairStackHeightConstraint.isActive = true
 
         // ── Crayons (custom horizontal wax crayons, scrollable) ─────────────
         crayonScrollContainer.translatesAutoresizingMaskIntoConstraints = false
@@ -652,8 +664,6 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             headerStack.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -TopChromeMetrics.menuTrailingInset),
 
             paintRow.topAnchor.constraint(equalTo: headerStack.bottomAnchor, constant: 8),
-            paintRow.leadingAnchor.constraint(equalTo: g.leadingAnchor, constant: TopChromeMetrics.menuHorizontalInset),
-            paintRow.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -10),
             paintRow.bottomAnchor.constraint(equalTo: g.bottomAnchor, constant: -6),
 
             canvasContainer.heightAnchor.constraint(greaterThanOrEqualToConstant: 200),
@@ -694,6 +704,16 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             loadProgress.leadingAnchor.constraint(equalTo: loadOverlay.leadingAnchor, constant: 48),
             loadProgress.trailingAnchor.constraint(equalTo: loadOverlay.trailingAnchor, constant: -48),
         ])
+        paintRowLeadingConstraint = paintRow.leadingAnchor.constraint(
+            equalTo: g.leadingAnchor,
+            constant: TopChromeMetrics.menuHorizontalInset
+        )
+        paintRowTrailingConstraint = paintRow.trailingAnchor.constraint(
+            equalTo: g.trailingAnchor,
+            constant: -10
+        )
+        paintRowLeadingConstraint.isActive = true
+        paintRowTrailingConstraint.isActive = true
 
         // #if DEBUG
         // activateVLMInputPreviewConstraints(safeGuide: g)
@@ -763,14 +783,20 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         strokeView.strokeWidth = strokeWidthPresets[index]
     }
 
-    private static let brushToolIconSide: CGFloat = 44 * 1.25
     private static let eraserToolIdleFill = UIColor(red: 1, green: 0.93, blue: 0.86, alpha: 1)
+
+    private static func toolIconSide(for tc: UITraitCollection) -> CGFloat {
+        let toolSide = MagicBrushyChromeMetrics.isPhone(tc)
+            ? ColoringCrayonPaletteLayout.phoneToolButtonSide
+            : ColoringCrayonPaletteLayout.toolButtonHeight
+        return toolSide * 0.68
+    }
 
     private func makeBrushToolButton() -> UIButton {
         let b = UIButton(type: .custom)
         b.tag = 0
         styleChromeButton(b, fill: FigmaTheme.primaryOrange, border: FigmaTheme.primaryOrangeBorder, cornerRadius: 14)
-        let iconSide = Self.brushToolIconSide
+        let iconSide = Self.toolIconSide(for: traitCollection)
         if let img = UIImage(named: "FigmaBrush") {
             let iv = UIImageView(image: img)
             iv.contentMode = .scaleAspectFit
@@ -798,9 +824,13 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         }
         b.addTarget(self, action: #selector(toolModeTapped(_:)), for: .touchUpInside)
         b.translatesAutoresizingMaskIntoConstraints = false
-        let brushH = b.heightAnchor.constraint(equalToConstant: ColoringCrayonPaletteLayout.toolButtonHeight)
+        let toolSide = ColoringCrayonPaletteLayout.toolButtonHeight
+        let brushH = b.heightAnchor.constraint(equalToConstant: toolSide)
+        let brushW = b.widthAnchor.constraint(equalToConstant: toolSide)
         brushH.isActive = true
+        brushW.isActive = true
         toolButtonHeightConstraints.append(brushH)
+        toolButtonWidthConstraints.append(brushW)
         return b
     }
 
@@ -811,6 +841,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         b.layer.borderWidth = 5
         b.layer.shadowOpacity = 0.28
         b.layer.shadowRadius = 5
+        let iconSide = Self.toolIconSide(for: traitCollection)
         if let img = UIImage(named: "FigmaEraser") {
             let iv = UIImageView(image: img)
             iv.contentMode = .scaleAspectFit
@@ -820,8 +851,8 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             NSLayoutConstraint.activate([
                 iv.centerXAnchor.constraint(equalTo: b.centerXAnchor),
                 iv.centerYAnchor.constraint(equalTo: b.centerYAnchor),
-                iv.widthAnchor.constraint(equalToConstant: 38),
-                iv.heightAnchor.constraint(equalToConstant: 38),
+                iv.widthAnchor.constraint(equalToConstant: iconSide),
+                iv.heightAnchor.constraint(equalToConstant: iconSide),
             ])
         } else {
             let icon = EraserIconView()
@@ -831,15 +862,19 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             NSLayoutConstraint.activate([
                 icon.centerXAnchor.constraint(equalTo: b.centerXAnchor),
                 icon.centerYAnchor.constraint(equalTo: b.centerYAnchor),
-                icon.widthAnchor.constraint(equalToConstant: 34),
-                icon.heightAnchor.constraint(equalToConstant: 34),
+                icon.widthAnchor.constraint(equalToConstant: iconSide),
+                icon.heightAnchor.constraint(equalToConstant: iconSide),
             ])
         }
         b.addTarget(self, action: #selector(toolModeTapped(_:)), for: .touchUpInside)
         b.translatesAutoresizingMaskIntoConstraints = false
-        let eraserH = b.heightAnchor.constraint(equalToConstant: ColoringCrayonPaletteLayout.toolButtonHeight)
+        let toolSide = ColoringCrayonPaletteLayout.toolButtonHeight
+        let eraserH = b.heightAnchor.constraint(equalToConstant: toolSide)
+        let eraserW = b.widthAnchor.constraint(equalToConstant: toolSide)
         eraserH.isActive = true
+        eraserW.isActive = true
         toolButtonHeightConstraints.append(eraserH)
+        toolButtonWidthConstraints.append(eraserW)
         return b
     }
 
@@ -982,7 +1017,9 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         let compact = tc.verticalSizeClass == .compact
         let navSize = MagicBrushyChromeMetrics.chromeButtonSide(tc)
         let panelWidth = BrushiMascotLayout.rightRailWidth(for: tc)
-        let toolHeight: CGFloat = phone ? 50 : ColoringCrayonPaletteLayout.toolButtonHeight
+        let toolHeight: CGFloat = phone
+            ? ColoringCrayonPaletteLayout.phoneToolButtonSide
+            : ColoringCrayonPaletteLayout.toolButtonHeight
         let navCorner = MagicBrushyChromeMetrics.chromeCornerRadius(tc)
         let navBorder = MagicBrushyChromeMetrics.chromeBorderWidth(tc)
         let navChromeInsets = MagicBrushyChromeMetrics.navChromeContentInsets
@@ -991,7 +1028,10 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
 
         for c in navButtonSizeConstraints { c.constant = navSize }
         for c in toolButtonHeightConstraints { c.constant = toolHeight }
+        for c in toolButtonWidthConstraints { c.constant = toolHeight }
+        toolPairStackHeightConstraint?.constant = toolHeight
         rightPanelWidthConstraint?.constant = panelWidth
+        applyPhonePaintRowInsets(for: tc)
         brushSizeBar.dotCount = strokeWidthPresets.count
         brushSizeBar.applyChromeMetrics(barWidth: barSize.width, barHeight: barSize.height)
         topChromeRightRow.spacing = (phone && compact) ? 6 : 10
@@ -1048,6 +1088,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         let railWidth = BrushiMascotLayout.rightRailWidth(for: tc)
         guard phone != mascotIsOnLeadingRail else {
             if phone { mascotRailWidthConstraint.constant = railWidth }
+            applyPhonePaintRowInsets(for: tc)
             return
         }
 
@@ -1076,6 +1117,26 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             mascotImageCenterXConstraint.isActive = true
         }
         mascotIsOnLeadingRail = phone
+        applyPhonePaintRowInsets(for: tc)
+    }
+
+    /// iPhone landscape: hug the left edge for Brushi and the right edge for crayons.
+    private func applyPhonePaintRowInsets(for tc: UITraitCollection) {
+        let phone = MagicBrushyChromeMetrics.isPhone(tc)
+        paintRowLeadingConstraint?.constant = phone
+            ? ColoringCrayonPaletteLayout.phonePaintRowLeadingInset
+            : TopChromeMetrics.menuHorizontalInset
+        paintRowTrailingConstraint?.constant = phone
+            ? -ColoringCrayonPaletteLayout.phonePaintRowTrailingInset
+            : -10
+        paintRow.spacing = phone
+            ? ColoringCrayonPaletteLayout.phonePaintRowRailSpacing
+            : 10
+        if phone, mascotIsOnLeadingRail {
+            mascotImageLeadingConstraint.constant = ColoringCrayonPaletteLayout.phoneMascotLeadingNudge
+        } else if mascotIsOnLeadingRail {
+            mascotImageLeadingConstraint.constant = -14
+        }
     }
 
     private static let phoneCanvasMinZoom: CGFloat = 1
@@ -2458,6 +2519,13 @@ private enum ColoringCrayonPaletteLayout {
         return rows * rowH + max(0, rows - 1) * spacing
     }
     static let toolButtonHeight: CGFloat = 72
+    /// iPhone: square brush / eraser chrome (avoids vertical crush in the right rail).
+    static let phoneToolButtonSide: CGFloat = 50
+    /// iPhone: pull Brushi toward the screen edge and crayons toward the right.
+    static let phonePaintRowLeadingInset: CGFloat = 0
+    static let phonePaintRowTrailingInset: CGFloat = 0
+    static let phonePaintRowRailSpacing: CGFloat = 4
+    static let phoneMascotLeadingNudge: CGFloat = -30
     /// Side gap between brush and eraser (~1 mm; scales with screen density).
     static var toolPairSpacing: CGFloat {
         max(3, (4 * UIScreen.main.nativeScale / UIScreen.main.scale).rounded(.toNearestOrAwayFromZero))
