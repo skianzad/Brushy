@@ -952,6 +952,17 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
                     )
                 }
                 continuingSavedDrawingId = nil
+            } else if !SubscriptionManager.shared.canStartAnotherFreeDrawing(),
+                      let existing = LastDrawingStore.allSavedGalleryRecordsNewestFirst().first {
+                _ = LastDrawingStore.updateRecord(
+                    id: existing.id,
+                    packId: packId,
+                    pageIndex: pageIndex,
+                    pageTitle: title,
+                    composite: composite,
+                    resumeUnderlay: underlay,
+                    thumbnailMaxEdge: thumbMaxEdge
+                )
             } else {
                 _ = LastDrawingStore.save(
                     packId: packId,

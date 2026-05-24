@@ -2,8 +2,9 @@
 //  VLMCoachOnDemandResources.swift
 //  MagicBrushy
 //
-//  Art-coach weights ship as an App Store On-Demand Resource tag (`vlm-coach-model`).
-//  See OnDemandResources/README.md for staging GGUF files into the Xcode project.
+//  Art-coach weights can ship as an App Store On-Demand Resource tag (`vlm-coach-model`).
+//  App Store builds currently omit ODR (ITMS-90557 — 1.6B pack exceeds 512 MB on iOS 17).
+//  See OnDemandResources/README.md for staging and re-enabling ODR.
 //
 
 import Foundation

@@ -234,6 +234,17 @@ enum MagicBrushyChromeMetrics {
         isPhone(traitCollection) ? 64 : 90.9
     }
 
+    /// Matches `HomeViewController` back placement on the safe area.
+    static let backButtonLeadingInset: CGFloat = 12
+    static let backButtonTopInset: CGFloat = 4
+    static let settingsTrailingInset: CGFloat = 16
+
+    /// Leading space through the rotated diamond corners (inset + visual width).
+    static func diamondBackOccupiedLeadingWidth(_ traitCollection: UITraitCollection) -> CGFloat {
+        let side = diamondBackSide(traitCollection)
+        return backButtonLeadingInset + side * CGFloat(2).squareRoot()
+    }
+
     static func diamondSquareSide(for backSide: CGFloat) -> CGFloat {
         backSide / 2.0.squareRoot()
     }

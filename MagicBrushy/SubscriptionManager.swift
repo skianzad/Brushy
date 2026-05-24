@@ -27,6 +27,9 @@ final class SubscriptionManager {
     /// Pack IDs available without a subscription (first row on the home grid).
     static let freeTierPackIds: Set<String> = [BuiltInColoringPages.savedDrawingsPackId, "ocean", "dinosaurs"]
 
+    /// Free tier: one saved blank-paper drawing; no delete until subscribed.
+    static let freeTierMaxSavedFreeDrawings = 1
+
     private(set) var hasActiveSubscription = false
 
     private var transactionUpdatesTask: Task<Void, Never>?
@@ -41,6 +44,41 @@ final class SubscriptionManager {
 
     func canOpenPack(id: String) -> Bool {
         Self.freeTierPackIds.contains(id) || hasFullLibraryAccess
+    }
+
+    var canDeleteFreeDrawings: Bool { hasFullLibraryAccess }
+
+    func savedFreeDrawingCount() -> Int {
+        LastDrawingStore.allSavedGalleryRecordsNewestFirst().count
+    }
+
+    func canStartAnotherFreeDrawing() -> Bool {
+        hasFullLibraryAccess || savedFreeDrawingCount() < Self.freeTierMaxSavedFreeDrawings
+    }
+
+    func presentPremiumUpsell(
+        from viewController: UIViewController,
+        title: String,
+        message: String
+    ) {
+        let sheet = UIAlertController(title: title, message: message, preferredStyle: .actionSheet)
+        sheet.addAction(UIAlertAction(title: "Subscribe", style: .default, handler: { _ in
+            Task { await self.purchase(from: viewController) }
+        }))
+        sheet.addAction(UIAlertAction(title: "Restore purchases", style: .default, handler: { _ in
+            Task { await self.restorePurchases(from: viewController) }
+        }))
+        sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        if let pop = sheet.popoverPresentationController {
+            pop.sourceView = viewController.view
+            pop.sourceRect = CGRect(
+                x: viewController.view.bounds.midX,
+                y: viewController.view.bounds.midY,
+                width: 1,
+                height: 1
+            )
+        }
+        viewController.present(sheet, animated: true)
     }
 
     func start() {

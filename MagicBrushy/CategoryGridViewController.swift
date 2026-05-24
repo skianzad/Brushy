@@ -30,9 +30,6 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
     }()
 
     private let titleLabel = UILabel()
-    private let headerRow = UIStackView()
-    private let headerLeadingContainer = UIView()
-    private let headerTrailingContainer = UIView()
     private lazy var settingsButton: MagicBrushySettingsGearButton = makeMagicBrushySettingsGearButton()
     private let diamondBackButton = MagicBrushyDiamondBackButton()
     private let categoryScroll = UIScrollView()
@@ -48,6 +45,7 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
     private let savedDrawingsStack = UIStackView()
     private var savedDrawingsHeightConstraint: NSLayoutConstraint!
     private var displayedSavedRecords: [LastDrawingStore.SavedDrawingRecord] = []
+    private var titleLeadingGutterConstraint: NSLayoutConstraint?
 
     private var currentPages: [BuiltInColoringPages.Page] {
         guard selectedPackIndex >= 0, selectedPackIndex < BuiltInColoringPages.library.count else {
@@ -103,23 +101,6 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
         titleLabel.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
         applyCategoryTitleAttributes()
 
-        headerRow.axis = .horizontal
-        headerRow.alignment = .center
-        headerRow.spacing = 12
-        headerRow.distribution = .fill
-        headerRow.translatesAutoresizingMaskIntoConstraints = false
-        headerRow.clipsToBounds = false
-        headerLeadingContainer.translatesAutoresizingMaskIntoConstraints = false
-        headerLeadingContainer.backgroundColor = .clear
-        headerTrailingContainer.translatesAutoresizingMaskIntoConstraints = false
-        headerTrailingContainer.backgroundColor = .clear
-        headerTrailingContainer.addSubview(settingsButton)
-
-        headerRow.addArrangedSubview(headerLeadingContainer)
-        headerRow.addArrangedSubview(titleLabel)
-        headerRow.addArrangedSubview(headerTrailingContainer)
-
-        headerLeadingContainer.addSubview(diamondBackButton)
         diamondBackButton.addTarget(self, action: #selector(goBack), for: .touchUpInside)
 
         // Horizontal pack chips (commented out — pack comes from home / `initialPackId`).
@@ -156,10 +137,17 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
 
         view.addSubview(backgroundImageView)
         view.addSubview(blurEffectView)
-        view.addSubview(headerRow)
+        view.addSubview(titleLabel)
+        view.addSubview(diamondBackButton)
+        view.addSubview(settingsButton)
         view.addSubview(mainColumn)
 
         let g = view.safeAreaLayoutGuide
+        let titleLeading = titleLabel.leadingAnchor.constraint(
+            greaterThanOrEqualTo: g.leadingAnchor,
+            constant: MagicBrushyChromeMetrics.diamondBackOccupiedLeadingWidth(traitCollection)
+        )
+        titleLeadingGutterConstraint = titleLeading
         NSLayoutConstraint.activate([
             backgroundImageView.topAnchor.constraint(equalTo: view.topAnchor),
             backgroundImageView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -171,22 +159,27 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
             blurEffectView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             blurEffectView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
-            headerRow.topAnchor.constraint(equalTo: g.topAnchor, constant: 8),
-            headerRow.leadingAnchor.constraint(equalTo: g.leadingAnchor, constant: 12),
-            headerRow.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -12),
+            diamondBackButton.topAnchor.constraint(
+                equalTo: g.topAnchor,
+                constant: MagicBrushyChromeMetrics.backButtonTopInset
+            ),
+            diamondBackButton.leadingAnchor.constraint(
+                equalTo: g.leadingAnchor,
+                constant: MagicBrushyChromeMetrics.backButtonLeadingInset
+            ),
 
-            diamondBackButton.leadingAnchor.constraint(equalTo: headerLeadingContainer.leadingAnchor),
-            diamondBackButton.trailingAnchor.constraint(equalTo: headerLeadingContainer.trailingAnchor),
-            diamondBackButton.topAnchor.constraint(equalTo: headerLeadingContainer.topAnchor),
-            diamondBackButton.bottomAnchor.constraint(equalTo: headerLeadingContainer.bottomAnchor),
+            settingsButton.centerYAnchor.constraint(equalTo: diamondBackButton.centerYAnchor),
+            settingsButton.trailingAnchor.constraint(
+                equalTo: g.trailingAnchor,
+                constant: -MagicBrushyChromeMetrics.settingsTrailingInset
+            ),
 
-            headerLeadingContainer.widthAnchor.constraint(equalTo: diamondBackButton.widthAnchor),
-            headerTrailingContainer.widthAnchor.constraint(equalTo: headerLeadingContainer.widthAnchor),
+            titleLabel.centerXAnchor.constraint(equalTo: g.centerXAnchor),
+            titleLabel.centerYAnchor.constraint(equalTo: diamondBackButton.centerYAnchor),
+            titleLeading,
+            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: settingsButton.leadingAnchor, constant: -8),
 
-            settingsButton.centerXAnchor.constraint(equalTo: headerTrailingContainer.centerXAnchor),
-            settingsButton.centerYAnchor.constraint(equalTo: headerTrailingContainer.centerYAnchor),
-
-            mainColumn.topAnchor.constraint(equalTo: headerRow.bottomAnchor, constant: 14),
+            mainColumn.topAnchor.constraint(equalTo: diamondBackButton.bottomAnchor, constant: 14),
             mainColumn.leadingAnchor.constraint(equalTo: g.leadingAnchor),
             mainColumn.trailingAnchor.constraint(equalTo: g.trailingAnchor),
             mainColumn.bottomAnchor.constraint(equalTo: g.bottomAnchor),
@@ -206,11 +199,15 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
             collectionView.bottomAnchor.constraint(equalTo: gridFill.bottomAnchor),
         ])
         applyChromeLayout(for: traitCollection)
+        view.bringSubviewToFront(diamondBackButton)
+        view.bringSubviewToFront(settingsButton)
+        view.bringSubviewToFront(titleLabel)
     }
 
     private func applyChromeLayout(for traitCollection: UITraitCollection) {
         diamondBackButton.applyLayout(for: traitCollection)
         settingsButton.applyStyle(for: traitCollection)
+        titleLeadingGutterConstraint?.constant = MagicBrushyChromeMetrics.diamondBackOccupiedLeadingWidth(traitCollection)
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -356,14 +353,16 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
         sheet.addAction(UIAlertAction(title: "Save to Photos", style: .default, handler: { [weak self] _ in
             self?.exportSavedDrawingToPhotos(record: rec)
         }))
-        sheet.addAction(UIAlertAction(title: "Delete this drawing", style: .destructive, handler: { [weak self] _ in
-            LastDrawingStore.deleteRecord(id: rec.id)
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
-            self?.refreshSavedDrawingsStrip()
-        }))
-        sheet.addAction(UIAlertAction(title: "Delete all drawings", style: .destructive, handler: { [weak self] _ in
-            self?.confirmDeleteAllSavedDrawings()
-        }))
+        if SubscriptionManager.shared.canDeleteFreeDrawings {
+            sheet.addAction(UIAlertAction(title: "Delete this drawing", style: .destructive, handler: { [weak self] _ in
+                LastDrawingStore.deleteRecord(id: rec.id)
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                self?.refreshSavedDrawingsStrip()
+            }))
+            sheet.addAction(UIAlertAction(title: "Delete all drawings", style: .destructive, handler: { [weak self] _ in
+                self?.confirmDeleteAllSavedDrawings()
+            }))
+        }
         sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
         if let pop = sheet.popoverPresentationController {
             pop.sourceView = sender
@@ -538,11 +537,6 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
         collectionView.reloadData()
     }
 
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        applyGridColumns()
-    }
-
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
         if previousTraitCollection?.verticalSizeClass != traitCollection.verticalSizeClass {
@@ -552,6 +546,14 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
             applyChromeLayout(for: traitCollection)
         }
         applyGridColumns()
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        applyGridColumns()
+        view.bringSubviewToFront(diamondBackButton)
+        view.bringSubviewToFront(settingsButton)
+        view.bringSubviewToFront(titleLabel)
     }
 
     /// Longest edge in pixels for composed progress thumbnails (matches grid image area × display scale).
@@ -612,11 +614,13 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
                 thumb = page.image
             }
             let isBlankPaperStarter = pack.id == BuiltInColoringPages.savedDrawingsPackId && pageIndex == 0
+            let blankPaperLocked = isBlankPaperStarter && !SubscriptionManager.shared.canStartAnotherFreeDrawing()
             cell.configure(
                 image: thumb,
                 title: page.title,
                 isSavedDrawing: false,
-                showsNewDrawingPlus: isBlankPaperStarter,
+                showsNewDrawingPlus: isBlankPaperStarter && !blankPaperLocked,
+                showsNewDrawingLocked: blankPaperLocked,
                 menuTarget: nil,
                 menuTag: 0
             )
@@ -626,6 +630,7 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
                 title: rec.pageTitle,
                 isSavedDrawing: true,
                 showsNewDrawingPlus: false,
+                showsNewDrawingLocked: false,
                 menuTarget: self,
                 menuTag: idx
             )
@@ -643,8 +648,20 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
     }
 
     private func openTemplatePage(pageIndex: Int) {
-        LastDrawingStore.clearContinueDrawingSession()
         let pack = BuiltInColoringPages.library[selectedPackIndex]
+        if pack.id == BuiltInColoringPages.savedDrawingsPackId,
+           pageIndex == 0,
+           !SubscriptionManager.shared.canStartAnotherFreeDrawing() {
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            SubscriptionManager.shared.presentPremiumUpsell(
+                from: self,
+                title: "One free drawing",
+                message: "Subscribe to save more blank-paper drawings and delete old ones. You can keep editing your saved drawing."
+            )
+            return
+        }
+
+        LastDrawingStore.clearContinueDrawingSession()
         let canvas = ColoringViewController()
         canvas.coloringBookPages = currentPages
         canvas.pinnedPageIndex = pageIndex
@@ -751,6 +768,8 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
         override func prepareForReuse() {
             super.prepareForReuse()
             newDrawingBadge.isHidden = true
+            newDrawingBadge.backgroundColor = FigmaTheme.primaryOrange
+            newDrawingBadge.layer.borderColor = FigmaTheme.primaryOrangeBorder.cgColor
         }
 
         func configure(
@@ -758,6 +777,7 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
             title: String,
             isSavedDrawing: Bool,
             showsNewDrawingPlus: Bool,
+            showsNewDrawingLocked: Bool,
             menuTarget: AnyObject?,
             menuTag: Int
         ) {
@@ -769,9 +789,33 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
             contentView.layer.borderColor = isSavedDrawing
                 ? FigmaTheme.primaryOrange.withAlphaComponent(0.55).cgColor
                 : FigmaTheme.primaryOrange.cgColor
-            newDrawingBadge.isHidden = !showsNewDrawingPlus
-            accessibilityLabel = showsNewDrawingPlus ? "New blank drawing" : title
-            accessibilityHint = showsNewDrawingPlus ? "Starts a fresh sheet to draw on." : nil
+            let showBadge = showsNewDrawingPlus || showsNewDrawingLocked
+            newDrawingBadge.isHidden = !showBadge
+            if showsNewDrawingLocked {
+                newDrawingBadge.backgroundColor = UIColor(white: 0.35, alpha: 0.92)
+                newDrawingBadge.layer.borderColor = UIColor(white: 0.2, alpha: 1).cgColor
+                newDrawingPlus.image = UIImage(
+                    systemName: "lock.fill",
+                    withConfiguration: UIImage.SymbolConfiguration(pointSize: 24, weight: .bold)
+                )
+            } else {
+                newDrawingBadge.backgroundColor = FigmaTheme.primaryOrange
+                newDrawingBadge.layer.borderColor = FigmaTheme.primaryOrangeBorder.cgColor
+                newDrawingPlus.image = UIImage(
+                    systemName: "plus",
+                    withConfiguration: UIImage.SymbolConfiguration(pointSize: 28, weight: .bold)
+                )
+            }
+            if showsNewDrawingLocked {
+                accessibilityLabel = "New drawing locked"
+                accessibilityHint = "Subscribe to save more than one free drawing."
+            } else if showsNewDrawingPlus {
+                accessibilityLabel = "New blank drawing"
+                accessibilityHint = "Starts a fresh sheet to draw on."
+            } else {
+                accessibilityLabel = title
+                accessibilityHint = nil
+            }
             menuButton.isHidden = !isSavedDrawing
             if let target = menuTarget as? CategoryGridViewController, isSavedDrawing {
                 menuButton.tag = menuTag

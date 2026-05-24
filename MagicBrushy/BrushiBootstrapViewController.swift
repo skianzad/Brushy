@@ -11,7 +11,10 @@ final class BrushiBootstrapViewController: UIViewController {
     private var didTransitionToHome = false
     /// UI fill never moves backward during one bootstrap download attempt.
     private var displayedDownloadProgress: CGFloat = 0
+    /// Download / memory phases fill only to half; `playPreHomeProgressRitual` completes to 100% before home.
+    private static let bootstrapProgressCap: CGFloat = 0.5
     private var memoryLoadFillTimer: Timer?
+    private var preHomeProgressTask: Task<Void, Never>?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -94,13 +97,9 @@ final class BrushiBootstrapViewController: UIViewController {
         startBootstrapLoadIfNeeded()
     }
 
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        refreshProgressBarFromDisplayedFraction()
-    }
-
     deinit {
         memoryLoadFillTimer?.invalidate()
+        preHomeProgressTask?.cancel()
         if let loadPanelObserver {
             NotificationCenter.default.removeObserver(loadPanelObserver)
         }
@@ -136,12 +135,11 @@ final class BrushiBootstrapViewController: UIViewController {
             guard let self else { return }
             #if targetEnvironment(simulator)
             await self.animateSimulatorBootstrapFill()
-            self.transitionToHomeIfNeeded()
+            self.schedulePreHomeProgressIfNeeded()
             #else
             await LeapVLMModel.shared.load()
             self.stopMemoryLoadFillAnimation()
             self.refreshFromModelState()
-            self.transitionToHomeIfNeeded()
             #endif
         }
     }
@@ -149,12 +147,13 @@ final class BrushiBootstrapViewController: UIViewController {
     #if targetEnvironment(simulator)
     private func animateSimulatorBootstrapFill() async {
         progressView.setIndeterminateActive(false)
-        for step in 0...24 {
-            displayedDownloadProgress = CGFloat(step) / 24
+        let halfSteps = 14
+        for step in 0...halfSteps {
+            displayedDownloadProgress = (CGFloat(step) / CGFloat(halfSteps)) * 0.5
             let pct = Int((displayedDownloadProgress * 100).rounded(.down))
             setCaptionText("Loading content… \(pct)%")
             refreshProgressBarFromDisplayedFraction(animated: step > 0)
-            try? await Task.sleep(nanoseconds: 25_000_000)
+            try? await Task.sleep(nanoseconds: 30_000_000)
         }
     }
     #endif
@@ -167,9 +166,10 @@ final class BrushiBootstrapViewController: UIViewController {
         progressView.isHidden = false
         progressView.setProgress(0, animated: false)
         Task { @MainActor in
+            preHomeProgressTask?.cancel()
+            preHomeProgressTask = nil
             await LeapVLMModel.shared.load()
             refreshFromModelState()
-            transitionToHomeIfNeeded()
         }
     }
 
@@ -192,7 +192,10 @@ final class BrushiBootstrapViewController: UIViewController {
         case .downloading(let p):
             stopMemoryLoadFillAnimation()
             progressView.setIndeterminateActive(false)
-            displayedDownloadProgress = max(displayedDownloadProgress, CGFloat(p))
+            displayedDownloadProgress = max(
+                displayedDownloadProgress,
+                min(Self.bootstrapProgressCap, CGFloat(p))
+            )
             let pct = Int((displayedDownloadProgress * 100).rounded(.down))
             setCaptionText("Downloading content… \(pct)%")
             refreshProgressBarFromDisplayedFraction(animated: true)
@@ -205,10 +208,8 @@ final class BrushiBootstrapViewController: UIViewController {
         case .ready, .simulatorPreview:
             stopMemoryLoadFillAnimation()
             progressView.setIndeterminateActive(false)
-            displayedDownloadProgress = 1
-            refreshProgressBarFromDisplayedFraction(animated: true)
-            setCaptionText("Loading content...")
-            progressView.accessibilityLabel = "Loading content"
+            schedulePreHomeProgressIfNeeded()
+            return
         default:
             progressView.setIndeterminateActive(false)
             if displayedDownloadProgress > 0 {
@@ -220,8 +221,6 @@ final class BrushiBootstrapViewController: UIViewController {
             }
             refreshProgressBarFromDisplayedFraction(animated: displayedDownloadProgress > 0)
         }
-
-        transitionToHomeIfNeeded()
     }
 
     private func refreshProgressBarFromDisplayedFraction(animated: Bool = false) {
@@ -232,9 +231,10 @@ final class BrushiBootstrapViewController: UIViewController {
     private func startMemoryLoadFillAnimationIfNeeded() {
         memoryLoadFillTimer?.invalidate()
         let start = displayedDownloadProgress
-        let remaining = max(0, 1 - start)
+        let cap = Self.bootstrapProgressCap
+        let remaining = max(0, cap - start)
         guard remaining > 0.02 else {
-            displayedDownloadProgress = 1
+            displayedDownloadProgress = cap
             refreshProgressBarFromDisplayedFraction(animated: true)
             return
         }
@@ -247,9 +247,11 @@ final class BrushiBootstrapViewController: UIViewController {
             }
             tick += 1
             let t = min(1, CGFloat(tick) / CGFloat(steps))
-            self.displayedDownloadProgress = start + remaining * t
+            self.displayedDownloadProgress = min(cap, start + remaining * t)
             self.refreshProgressBarFromDisplayedFraction(animated: true)
-            if tick >= steps {
+            if tick >= steps || self.displayedDownloadProgress >= cap - 0.01 {
+                self.displayedDownloadProgress = cap
+                self.refreshProgressBarFromDisplayedFraction(animated: true)
                 timer.invalidate()
                 self.memoryLoadFillTimer = nil
             }
@@ -262,6 +264,44 @@ final class BrushiBootstrapViewController: UIViewController {
     private func stopMemoryLoadFillAnimation() {
         memoryLoadFillTimer?.invalidate()
         memoryLoadFillTimer = nil
+    }
+
+    /// After weights are ready, ease the bar to 50% then 100% so loading feels visible before home.
+    private func schedulePreHomeProgressIfNeeded() {
+        guard !didTransitionToHome else { return }
+        guard preHomeProgressTask == nil else { return }
+        #if !targetEnvironment(simulator)
+        guard case .ready = LeapVLMModel.shared.modelBadgeState else { return }
+        #endif
+
+        preHomeProgressTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            await self.playPreHomeProgressRitual()
+            guard !Task.isCancelled else { return }
+            self.preHomeProgressTask = nil
+            self.transitionToHomeIfNeeded()
+        }
+    }
+
+    private func playPreHomeProgressRitual() async {
+        stopMemoryLoadFillAnimation()
+        progressView.setIndeterminateActive(false)
+        progressView.isHidden = false
+
+        let half = Self.bootstrapProgressCap
+        displayedDownloadProgress = half
+        setCaptionText("Loading content… 50%")
+        refreshProgressBarFromDisplayedFraction(animated: true)
+        progressView.accessibilityLabel = "Loading content, 50 percent"
+        try? await Task.sleep(nanoseconds: 450_000_000)
+
+        guard !Task.isCancelled else { return }
+
+        displayedDownloadProgress = 1
+        setCaptionText("Loading content… 100%")
+        refreshProgressBarFromDisplayedFraction(animated: true)
+        progressView.accessibilityLabel = "Loading content, 100 percent"
+        try? await Task.sleep(nanoseconds: 450_000_000)
     }
 
     private func transitionToHomeIfNeeded() {

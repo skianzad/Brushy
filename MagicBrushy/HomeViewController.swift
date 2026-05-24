@@ -287,11 +287,23 @@ final class HomeViewController: UIViewController {
             heroView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             heroView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
-            diamondBackButton.topAnchor.constraint(equalTo: g.topAnchor, constant: 4),
-            diamondBackButton.leadingAnchor.constraint(equalTo: g.leadingAnchor, constant: 12),
+            diamondBackButton.topAnchor.constraint(
+                equalTo: g.topAnchor,
+                constant: MagicBrushyChromeMetrics.backButtonTopInset
+            ),
+            diamondBackButton.leadingAnchor.constraint(
+                equalTo: g.leadingAnchor,
+                constant: MagicBrushyChromeMetrics.backButtonLeadingInset
+            ),
 
-            topChromeRow.topAnchor.constraint(equalTo: g.topAnchor, constant: 4),
-            topChromeRow.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -16),
+            topChromeRow.topAnchor.constraint(
+                equalTo: g.topAnchor,
+                constant: MagicBrushyChromeMetrics.backButtonTopInset
+            ),
+            topChromeRow.trailingAnchor.constraint(
+                equalTo: g.trailingAnchor,
+                constant: -MagicBrushyChromeMetrics.settingsTrailingInset
+            ),
             topChromeRow.leadingAnchor.constraint(greaterThanOrEqualTo: diamondBackButton.trailingAnchor, constant: 8),
             { unlockMinHeightConstraint = unlockButton.heightAnchor.constraint(
                 greaterThanOrEqualToConstant: MagicBrushyChromeMetrics.unlockMinHeight(traitCollection)

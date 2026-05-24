@@ -13,10 +13,10 @@ final class ColoringPhonePassThroughStackView: UIStackView {
         let leftRail = interactive.min { $0.frame.minX < $1.frame.minX }
         let rightRail = interactive.max { $0.frame.maxX < $1.frame.maxX }
 
-        // Leading rail first; trailing rail uses overflow hit testing for the brush bar.
-        if let leftRail, leftRail !== rightRail,
-           let hit = forwardHit(to: leftRail, point: point, event: event) {
-            return hit
+        // Leading rail first (chrome row prioritized inside `ColoringPhoneLeftRailStackView`).
+        if let leftRail, leftRail !== rightRail {
+            let local = convert(point, to: leftRail)
+            if let hit = leftRail.hitTest(local, with: event) { return hit }
         }
         if let rightRail {
             let local = convert(point, to: rightRail)
@@ -30,6 +30,20 @@ final class ColoringPhonePassThroughStackView: UIStackView {
 
     private func forwardHit(to subview: UIView, point: CGPoint, event: UIEvent?) -> UIView? {
         subview.hitTest(convert(point, to: subview), with: event)
+    }
+}
+
+/// Leading rail: chrome row (home / settings / camera) wins over the mascot column below.
+final class ColoringPhoneLeftRailStackView: UIStackView {
+    weak var chromeRow: UIView?
+
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        guard !isHidden, isUserInteractionEnabled, alpha >= 0.01 else { return nil }
+        if let chromeRow, !chromeRow.isHidden, chromeRow.isUserInteractionEnabled {
+            let local = convert(point, to: chromeRow)
+            if let hit = chromeRow.hitTest(local, with: event) { return hit }
+        }
+        return super.hitTest(point, with: event)
     }
 }
 
@@ -143,7 +157,7 @@ final class ColoringOnPhone: NSObject, UIGestureRecognizerDelegate {
         var setStackCanvasAspectConstraintActive: (Bool) -> Void
     }
 
-    let leftPanelStack = UIStackView()
+    let leftPanelStack = ColoringPhoneLeftRailStackView()
     let leftPanelChromeRow = UIStackView()
     let rightPanelChromeRow = UIStackView()
 
@@ -182,6 +196,7 @@ final class ColoringOnPhone: NSObject, UIGestureRecognizerDelegate {
         leftPanelStack.distribution = .fill
         leftPanelStack.translatesAutoresizingMaskIntoConstraints = false
         leftPanelStack.isHidden = true
+        leftPanelStack.chromeRow = leftPanelChromeRow
 
         leftPanelChromeRow.axis = .horizontal
         leftPanelChromeRow.alignment = .center

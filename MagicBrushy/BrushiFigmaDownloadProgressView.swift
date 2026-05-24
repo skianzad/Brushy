@@ -9,7 +9,6 @@ final class BrushiFigmaDownloadProgressView: UIView {
     private let trackContainer = UIView()
     private let trackWoodImageView = UIImageView()
     private let fillView = UIView()
-    private let fillWoodImageView = UIImageView()
     private let fillGradient = CAGradientLayer()
     private var fillWidthConstraint: NSLayoutConstraint?
     private var displayedProgress: CGFloat = 0
@@ -37,19 +36,19 @@ final class BrushiFigmaDownloadProgressView: UIView {
 
         configureWoodImageView(shellWoodImageView)
         configureWoodImageView(trackWoodImageView)
-        configureWoodImageView(fillWoodImageView)
 
         trackContainer.translatesAutoresizingMaskIntoConstraints = false
-        trackContainer.backgroundColor = .clear
+        trackContainer.backgroundColor = FigmaTheme.bootstrapProgressTrack
         trackContainer.clipsToBounds = true
 
         fillView.translatesAutoresizingMaskIntoConstraints = false
         fillView.clipsToBounds = true
-        fillView.backgroundColor = .clear
+        fillView.isOpaque = true
+        fillView.backgroundColor = UIColor(red: 1, green: 0.82, blue: 0.08, alpha: 1)
         fillView.layer.zPosition = 1
         fillGradient.colors = [
-            UIColor(red: 1, green: 0.78, blue: 0.05, alpha: 0.95).cgColor,
-            UIColor(red: 1, green: 0.92, blue: 0.35, alpha: 0.9).cgColor,
+            UIColor(red: 1, green: 0.72, blue: 0.02, alpha: 1).cgColor,
+            UIColor(red: 1, green: 0.94, blue: 0.38, alpha: 1).cgColor,
         ]
         fillGradient.startPoint = CGPoint(x: 0, y: 0.5)
         fillGradient.endPoint = CGPoint(x: 1, y: 0.5)
@@ -59,7 +58,6 @@ final class BrushiFigmaDownloadProgressView: UIView {
         addSubview(trackContainer)
         trackContainer.addSubview(trackWoodImageView)
         trackContainer.addSubview(fillView)
-        fillView.addSubview(fillWoodImageView)
         trackContainer.bringSubviewToFront(fillView)
 
         fillWidthConstraint = fillView.widthAnchor.constraint(equalToConstant: 0)
@@ -85,11 +83,6 @@ final class BrushiFigmaDownloadProgressView: UIView {
             fillView.topAnchor.constraint(equalTo: trackContainer.topAnchor),
             fillView.bottomAnchor.constraint(equalTo: trackContainer.bottomAnchor),
             fillWidthConstraint!,
-
-            fillWoodImageView.topAnchor.constraint(equalTo: trackContainer.topAnchor),
-            fillWoodImageView.bottomAnchor.constraint(equalTo: trackContainer.bottomAnchor),
-            fillWoodImageView.leadingAnchor.constraint(equalTo: trackContainer.leadingAnchor),
-            fillWoodImageView.widthAnchor.constraint(equalTo: trackContainer.widthAnchor),
         ])
 
         setProgress(0, animated: false)
@@ -114,7 +107,7 @@ final class BrushiFigmaDownloadProgressView: UIView {
         if trackContainer.bounds.width > 1 {
             let animate = pendingAnimateAfterLayout
             pendingAnimateAfterLayout = false
-            applyFillWidth(animated: animate)
+            applyFillWidth(animated: animate, allowLayoutPass: true)
         }
         syncFillGradientFrame()
     }
@@ -123,11 +116,10 @@ final class BrushiFigmaDownloadProgressView: UIView {
         stopIndeterminateAnimation()
         displayedProgress = min(1, max(0, value))
         if trackContainer.bounds.width > 1 {
-            applyFillWidth(animated: animated)
+            applyFillWidth(animated: animated, allowLayoutPass: false)
         } else {
             pendingAnimateAfterLayout = animated
             setNeedsLayout()
-            layoutIfNeeded()
         }
     }
 
@@ -140,12 +132,13 @@ final class BrushiFigmaDownloadProgressView: UIView {
         }
     }
 
-    private func applyFillWidth(animated: Bool) {
+    /// Updates the fill width constraint. Never calls `layoutIfNeeded()` on this view from inside `layoutSubviews`.
+    private func applyFillWidth(animated: Bool, allowLayoutPass: Bool) {
         let trackW = trackContainer.bounds.width
         guard trackW > 1 else { return }
 
         let clamped = displayedProgress
-        let minFill: CGFloat = clamped > 0 ? 8 : 0
+        let minFill: CGFloat = clamped > 0 ? max(12, trackW * 0.04) : 0
         let targetW = max(minFill, trackW * clamped)
         fillWidthConstraint?.constant = targetW
 
@@ -155,16 +148,17 @@ final class BrushiFigmaDownloadProgressView: UIView {
             self.syncFillGradientFrame()
         }
 
-        if animated {
+        if animated, !allowLayoutPass {
             UIView.animate(
                 withDuration: 0.4,
                 delay: 0,
                 options: [.curveEaseInOut, .beginFromCurrentState, .allowUserInteraction],
                 animations: layoutFill
             )
-        } else {
+        } else if !allowLayoutPass {
             layoutFill()
         }
+        // When `allowLayoutPass` is true we are already in `layoutSubviews`; constraint + super.layoutSubviews handled layout.
     }
 
     private func syncFillGradientFrame() {

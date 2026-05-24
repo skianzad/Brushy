@@ -1,34 +1,31 @@
 # Art coach model — On-Demand Resources (ODR)
 
-The App Store build downloads the vision-language weights via Apple’s **On-Demand Resource** tag `vlm-coach-model` instead of Liquid’s CDN at first launch.
+## App Store builds (current)
 
-## What to add in Xcode
+**ODR is not bundled in App Store builds.** Apple rejects asset packs over **512 MB** per pack on iOS 17 (`ITMS-90557`). The LFM2.5-VL-1.6B Q4_0 weights (~664 MB) and mmproj Q8_0 (~556 MB) each exceed that limit, and together they form a ~1 GB pack.
 
-1. **Preferred:** use the weights already in SmartDraw:
-   - `../ASU/SmartDraw/SmartDraw/Models/LFM2.5-VL-1.6B-Q4_0.gguf` (~664 MB)
-   - `../ASU/SmartDraw/SmartDraw/Models/mmproj-LFM2.5-VL-1.6b-Q8_0.gguf` (~556 MB)
-   The project uses **symlinks** in `OnDemandResources/VLMCoachModel/` pointing at SmartDraw (no duplicate disk use). Both `.gguf` files are in the target with ODR tag `vlm-coach-model`.
-2. Or run `./Scripts/stage-vlm-odr-from-leap-cache.sh` (copies from SmartDraw first, else searches Leap cache).
-3. Or copy `.gguf` files into `MagicBrushy/OnDemandResources/VLMCoachModel/` manually.
-3. In Xcode, select each GGUF (or the `VLMCoachModel` folder) → **File Inspector** → **On Demand Resource Tags** → `vlm-coach-model`.
-4. Ensure **Build Phases → Copy Bundle Resources** includes those files (folder reference is fine).
-5. When weights change, bump `version` in `vlm-coach-model-version.json` so devices recopy into Application Support.
+Production downloads the coach model from **Liquid’s Leap registry** on first use (same as local development). Weights are cached under Application Support after download.
 
-## App Store Connect
+To re-enable ODR later, use one of:
 
-- The tag appears as **additional downloadable content** on the product page (honest total size).
-- Test with a **TestFlight** build; ODR does not behave like production on a plain debug install without the tag hosted.
+- **iOS 18+ minimum deployment target** — per-pack ODR limit is 8 GB (see [Apple ODR size limits](https://developer.apple.com/help/app-store-connect/reference/on-demand-resources-size-limits)).
+- **Smaller model** — e.g. LFM2.5-VL-450M Q4_0 (~219 MB) + mmproj (~190 MB) fits in a single pack under 512 MB.
+- **Split tags** — only works if **each** tagged pack stays under 512 MB (splitting the current 1.6B files is not enough).
 
-## Local development without GGUFs
+## Local ODR staging (optional / TestFlight experiments)
 
-If only `vlm-coach-model-version.json` is present (no `.gguf` yet), the app **falls back** to `Leap.shared.load` from the Liquid registry — same as before.
+1. Copy or symlink weights into `OnDemandResources/VLMCoachModel/`:
+   - `LFM2.5-VL-1.6B-Q4_0.gguf`
+   - `mmproj-LFM2.5-VL-1.6b-Q8_0.gguf`
+   Or run `./Scripts/stage-vlm-odr-from-leap-cache.sh`.
+2. Add files to **Copy Bundle Resources** with ODR tag `vlm-coach-model`.
+3. Add `vlm-coach-model` to the project’s **Known Asset Tags**.
+4. Bump `version` in `vlm-coach-model-version.json` when weights change.
 
-## Staging script
+Do **not** ship the 1.6B pack to App Store Connect while the deployment target is iOS 17.
 
-After one successful on-device Leap download:
+## Runtime order
 
-```bash
-./Scripts/stage-vlm-odr-from-leap-cache.sh
-```
-
-Then add the copied files to the `VLMCoachModel` group with the ODR tag.
+1. Application Support cache (from a prior ODR or Leap download)
+2. ODR tag `vlm-coach-model` (only when configured in the app bundle)
+3. Leap registry download (`Leap.shared.load`)
