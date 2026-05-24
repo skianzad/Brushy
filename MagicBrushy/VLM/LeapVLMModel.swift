@@ -167,6 +167,12 @@ final class LeapVLMModel {
     /// After this fraction the file is on disk; remaining work is load-into-memory (Leap often never sends exactly 1.0).
     private static let downloadFinishedProgressThreshold = 0.99
     private static let modelBundleOnDiskKey = "magicBrushy.vlmModelBundleOnDisk"
+    private static let localBundleScanFileLimit = 8_000
+
+    private static func sanitizeProgressFraction(_ raw: Double) -> Double {
+        guard raw.isFinite else { return 0 }
+        return min(1, max(0, raw))
+    }
 
     private static var hasModelBundleOnDisk: Bool {
         UserDefaults.standard.bool(forKey: modelBundleOnDiskKey)
@@ -188,10 +194,13 @@ final class LeapVLMModel {
         for root in roots {
             guard let enumerator = fm.enumerator(
                 at: root,
-                includingPropertiesForKeys: nil,
+                includingPropertiesForKeys: [.isRegularFileKey],
                 options: [.skipsHiddenFiles]
             ) else { continue }
+            var scanned = 0
             for case let url as URL in enumerator {
+                scanned += 1
+                if scanned > localBundleScanFileLimit { break }
                 guard url.pathExtension.lowercased() == "gguf" else { continue }
                 if url.lastPathComponent.localizedCaseInsensitiveContains(modelName) {
                     markModelBundleOnDisk()
@@ -294,7 +303,7 @@ final class LeapVLMModel {
     private func publishDownloadProgress(_ rawProgress: Double) {
         guard modelLoadPhase != .loadingIntoMemory else { return }
         modelLoadPhase = .downloading
-        let clamped = min(1, max(0, rawProgress))
+        let clamped = Self.sanitizeProgressFraction(rawProgress)
         peakDownloadProgressFraction = max(peakDownloadProgressFraction, clamped)
         modelDownloadProgressFraction = peakDownloadProgressFraction
         let pct = Int((peakDownloadProgressFraction * 100).rounded(.down))
@@ -357,6 +366,7 @@ final class LeapVLMModel {
                 self.modelRunner = runner
                 self.hideLoadPanelLoaded()
             } catch {
+                self.modelRunner = nil
                 self.modelLoadPhase = .idle
                 self.peakDownloadProgressFraction = 0
                 self.publishLoadPanel(
@@ -400,7 +410,7 @@ final class LeapVLMModel {
             do {
                 let weights = try await VLMCoachOnDemandResources.ensureMaterialized { [weak self] fraction in
                     Task { @MainActor in
-                        self?.publishDownloadProgress(fraction)
+                        self?.publishDownloadProgress(Self.sanitizeProgressFraction(fraction))
                     }
                 }
                 publishLoadingIntoMemory()
@@ -427,27 +437,33 @@ final class LeapVLMModel {
     }
 
     private func loadRunnerFromLeapRegistry() async throws -> any ModelRunner {
-        try await Leap.shared.load(
-            model: Self.modelName,
-            quantization: Self.quantization,
-            progress: { [weak self] progress, _ in
-                Task { @MainActor in
-                    guard let self else { return }
-                    let fraction = Double(progress)
-                    if self.modelLoadPhase == .loadingIntoMemory {
-                        return
-                    }
-                    if fraction >= 1.0 || fraction >= Self.downloadFinishedProgressThreshold {
-                        self.publishDownloadProgress(1.0)
-                        self.publishLoadingIntoMemory()
-                    } else if Self.modelBundleIsAvailableLocally() {
-                        self.publishLoadingIntoMemory()
-                    } else {
-                        self.publishDownloadProgress(fraction)
+        do {
+            return try await Leap.shared.load(
+                model: Self.modelName,
+                quantization: Self.quantization,
+                progress: { [weak self] progress, _ in
+                    Task { @MainActor in
+                        guard let self else { return }
+                        let fraction = Self.sanitizeProgressFraction(Double(progress))
+                        if self.modelLoadPhase == .loadingIntoMemory {
+                            return
+                        }
+                        if fraction >= 1.0 || fraction >= Self.downloadFinishedProgressThreshold {
+                            self.publishDownloadProgress(1.0)
+                            self.publishLoadingIntoMemory()
+                        } else if Self.modelBundleIsAvailableLocally() {
+                            self.publishLoadingIntoMemory()
+                        } else {
+                            self.publishDownloadProgress(fraction)
+                        }
                     }
                 }
-            }
-        )
+            )
+        } catch {
+            modelLoadPhase = .idle
+            peakDownloadProgressFraction = 0
+            throw error
+        }
     }
 
     private func finishInferenceSession() async {

@@ -55,7 +55,11 @@ enum VLMCoachOnDemandResources {
         request.loadingPriority = NSBundleResourceRequestLoadingPriorityUrgent
 
         let progressObservation = request.progress.observe(\.fractionCompleted) { observed, _ in
-            progress(min(1, max(0, observed.fractionCompleted)))
+            let fraction = observed.fractionCompleted
+            guard fraction.isFinite else { return }
+            DispatchQueue.main.async {
+                progress(min(1, max(0, fraction)))
+            }
         }
 
         defer { progressObservation.invalidate() }

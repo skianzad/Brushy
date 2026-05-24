@@ -114,6 +114,10 @@ final class BrushiFigmaDownloadProgressView: UIView {
 
     func setProgress(_ value: CGFloat, animated: Bool) {
         stopIndeterminateAnimation()
+        guard value.isFinite else {
+            displayedProgress = 0
+            return
+        }
         displayedProgress = min(1, max(0, value))
         if trackContainer.bounds.width > 1 {
             applyFillWidth(animated: animated, allowLayoutPass: false)

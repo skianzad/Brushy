@@ -15,6 +15,7 @@ final class BrushiBootstrapViewController: UIViewController {
     private static let bootstrapProgressCap: CGFloat = 0.5
     private var memoryLoadFillTimer: Timer?
     private var preHomeProgressTask: Task<Void, Never>?
+    private var bootstrapLoadTask: Task<Void, Never>?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -100,9 +101,15 @@ final class BrushiBootstrapViewController: UIViewController {
     deinit {
         memoryLoadFillTimer?.invalidate()
         preHomeProgressTask?.cancel()
+        bootstrapLoadTask?.cancel()
         if let loadPanelObserver {
             NotificationCenter.default.removeObserver(loadPanelObserver)
         }
+    }
+
+    private static func sanitizeProgress(_ value: CGFloat) -> CGFloat {
+        guard value.isFinite else { return 0 }
+        return min(1, max(0, value))
     }
 
     private func applyOutlinedCaptionStyle(to label: UILabel) {
@@ -128,10 +135,12 @@ final class BrushiBootstrapViewController: UIViewController {
     }
 
     private func startBootstrapLoadIfNeeded() {
+        guard bootstrapLoadTask == nil else { return }
         progressView.setIndeterminateActive(false)
         displayedDownloadProgress = 0
         refreshProgressBarFromDisplayedFraction(animated: false)
-        Task { @MainActor [weak self] in
+        bootstrapLoadTask = Task { @MainActor [weak self] in
+            defer { self?.bootstrapLoadTask = nil }
             guard let self else { return }
             #if targetEnvironment(simulator)
             await self.animateSimulatorBootstrapFill()
@@ -140,6 +149,9 @@ final class BrushiBootstrapViewController: UIViewController {
             await LeapVLMModel.shared.load()
             self.stopMemoryLoadFillAnimation()
             self.refreshFromModelState()
+            if !LeapVLMModel.shared.modelLoadDidFail {
+                self.schedulePreHomeProgressIfNeeded()
+            }
             #endif
         }
     }
@@ -160,20 +172,20 @@ final class BrushiBootstrapViewController: UIViewController {
 
     @objc private func retryTapped() {
         stopMemoryLoadFillAnimation()
+        preHomeProgressTask?.cancel()
+        preHomeProgressTask = nil
+        bootstrapLoadTask?.cancel()
+        bootstrapLoadTask = nil
         retryButton.isHidden = true
         displayedDownloadProgress = 0
         setCaptionText("Downloading content… 0%")
         progressView.isHidden = false
         progressView.setProgress(0, animated: false)
-        Task { @MainActor in
-            preHomeProgressTask?.cancel()
-            preHomeProgressTask = nil
-            await LeapVLMModel.shared.load()
-            refreshFromModelState()
-        }
+        startBootstrapLoadIfNeeded()
     }
 
     private func refreshFromModelState() {
+        guard isViewLoaded, !didTransitionToHome else { return }
         let vlm = LeapVLMModel.shared
 
         if vlm.modelLoadDidFail {
@@ -194,7 +206,7 @@ final class BrushiBootstrapViewController: UIViewController {
             progressView.setIndeterminateActive(false)
             displayedDownloadProgress = max(
                 displayedDownloadProgress,
-                min(Self.bootstrapProgressCap, CGFloat(p))
+                min(Self.bootstrapProgressCap, Self.sanitizeProgress(CGFloat(p)))
             )
             let pct = Int((displayedDownloadProgress * 100).rounded(.down))
             setCaptionText("Downloading content… \(pct)%")
@@ -224,7 +236,7 @@ final class BrushiBootstrapViewController: UIViewController {
     }
 
     private func refreshProgressBarFromDisplayedFraction(animated: Bool = false) {
-        progressView.setProgress(displayedDownloadProgress, animated: animated)
+        progressView.setProgress(Self.sanitizeProgress(displayedDownloadProgress), animated: animated)
     }
 
     /// When weights are already on disk, Leap gives no byte progress — ease the yellow bar toward full.
@@ -247,7 +259,7 @@ final class BrushiBootstrapViewController: UIViewController {
             }
             tick += 1
             let t = min(1, CGFloat(tick) / CGFloat(steps))
-            self.displayedDownloadProgress = min(cap, start + remaining * t)
+            self.displayedDownloadProgress = Self.sanitizeProgress(min(cap, start + remaining * t))
             self.refreshProgressBarFromDisplayedFraction(animated: true)
             if tick >= steps || self.displayedDownloadProgress >= cap - 0.01 {
                 self.displayedDownloadProgress = cap
@@ -313,13 +325,13 @@ final class BrushiBootstrapViewController: UIViewController {
         guard case .ready = vlm.modelBadgeState else { return }
         #endif
 
-        didTransitionToHome = true
-        progressView.setIndeterminateActive(false)
-
         guard let window = view.window ?? UIApplication.shared.connectedScenes
             .compactMap({ $0 as? UIWindowScene })
             .flatMap(\.windows)
             .first(where: \.isKeyWindow) else { return }
+
+        didTransitionToHome = true
+        progressView.setIndeterminateActive(false)
 
         let homeRoot = MagicBrushyRootNavigation.makeLetterboxedRoot()
         UIView.transition(with: window, duration: 0.5, options: .transitionCrossDissolve) {
