@@ -1,0 +1,37 @@
+{
+  "identifier" : "MagicBrushyProducts",
+  "nonConsumables" : [
+    {
+      "displayPrice" : "9.99",
+      "familyShareable" : true,
+      "internalID" : "brushi-premium",
+      "localizations" : [
+        {
+          "description" : "Unlock every coloring category forever. Ocean, Dinosaurs, and Free Draw stay free.",
+          "displayName" : "Brushi Premium",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "Senscilab.MagicBrushy.premium",
+      "referenceName" : "Brushi Premium",
+      "type" : "NonConsumable"
+    }
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+    "_failTransactionsEnabled" : false,
+    "_storeKitErrors" : [
+
+    ],
+    "_timeRate" : 0
+  },
+  "subscriptionGroups" : [
+
+  ],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}

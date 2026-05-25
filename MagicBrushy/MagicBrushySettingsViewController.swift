@@ -3,6 +3,7 @@ import UIKit
 /// Background music volume and other app preferences.
 final class MagicBrushySettingsViewController: UIViewController {
 
+    private let scrollView = UIScrollView()
     private let cardView = UIView()
     private let titleLabel = UILabel()
     private let musicRow = UIStackView()
@@ -13,11 +14,20 @@ final class MagicBrushySettingsViewController: UIViewController {
     private let coachFeedbackCheckmark = UIImageView()
     private let coachFeedbackToggleButton = UIButton(type: .system)
     private let languageButton = UIButton(type: .system)
+    private let privacyButton = UIButton(type: .system)
+    private let termsButton = UIButton(type: .system)
 
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = UIColor.black.withAlphaComponent(0.35)
-        preferredContentSize = CGSize(width: 320, height: 428)
+
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.alwaysBounceVertical = true
+        scrollView.showsVerticalScrollIndicator = true
+        scrollView.backgroundColor = .clear
+        scrollView.keyboardDismissMode = .onDrag
+        scrollView.contentInsetAdjustmentBehavior = .always
+        scrollView.indicatorStyle = .white
 
         cardView.translatesAutoresizingMaskIntoConstraints = false
         cardView.backgroundColor = UIColor(white: 0.12, alpha: 0.94)
@@ -175,6 +185,21 @@ final class MagicBrushySettingsViewController: UIViewController {
         langRow.spacing = 10
         langRow.translatesAutoresizingMaskIntoConstraints = false
 
+        // MARK: Legal (Kids Category — parents only)
+
+        let legalCaption = makeCaption("Parents & legal")
+        configureLegalButton(privacyButton, title: "Privacy Policy")
+        configureLegalButton(termsButton, title: "Terms of Use")
+        privacyButton.addTarget(self, action: #selector(openPrivacyPolicy), for: .touchUpInside)
+        termsButton.addTarget(self, action: #selector(openTermsOfUse), for: .touchUpInside)
+
+        let legalRow = UIStackView(arrangedSubviews: [privacyButton, termsButton])
+        legalRow.axis = .horizontal
+        legalRow.alignment = .fill
+        legalRow.distribution = .fillEqually
+        legalRow.spacing = 10
+        legalRow.translatesAutoresizingMaskIntoConstraints = false
+
         // MARK: Divider
 
         let divider = UIView()
@@ -193,15 +218,28 @@ final class MagicBrushySettingsViewController: UIViewController {
         cardView.addSubview(divider)
         cardView.addSubview(langCaption)
         cardView.addSubview(langRow)
-        view.addSubview(cardView)
+        cardView.addSubview(legalCaption)
+        cardView.addSubview(legalRow)
+        scrollView.addSubview(cardView)
+        view.addSubview(scrollView)
+
+        let cardWidth = cardView.widthAnchor.constraint(equalToConstant: 320)
+        cardWidth.priority = .required
 
         NSLayoutConstraint.activate([
-            cardView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            cardView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            cardView.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: 28),
-            cardView.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -28),
-            cardView.widthAnchor.constraint(lessThanOrEqualToConstant: 360),
-            cardView.widthAnchor.constraint(equalToConstant: 320).withPriority(.defaultHigh),
+            scrollView.topAnchor.constraint(equalTo: view.topAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            scrollView.contentLayoutGuide.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor),
+
+            cardView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor, constant: 16),
+            cardView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor, constant: -28),
+            cardView.centerXAnchor.constraint(equalTo: scrollView.frameLayoutGuide.centerXAnchor),
+            cardWidth,
+            cardView.leadingAnchor.constraint(greaterThanOrEqualTo: scrollView.frameLayoutGuide.leadingAnchor, constant: 16),
+            cardView.trailingAnchor.constraint(lessThanOrEqualTo: scrollView.frameLayoutGuide.trailingAnchor, constant: -16),
 
             titleLabel.topAnchor.constraint(equalTo: cardView.topAnchor, constant: 20),
             titleLabel.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 20),
@@ -256,11 +294,21 @@ final class MagicBrushySettingsViewController: UIViewController {
             langRow.topAnchor.constraint(equalTo: langCaption.bottomAnchor, constant: 10),
             langRow.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 20),
             langRow.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -20),
-            langRow.bottomAnchor.constraint(equalTo: cardView.bottomAnchor, constant: -22),
+
+            legalCaption.topAnchor.constraint(equalTo: langRow.bottomAnchor, constant: 16),
+            legalCaption.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 20),
+            legalCaption.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -20),
+
+            legalRow.topAnchor.constraint(equalTo: legalCaption.bottomAnchor, constant: 10),
+            legalRow.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 20),
+            legalRow.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -20),
+            legalRow.bottomAnchor.constraint(equalTo: cardView.bottomAnchor, constant: -28),
 
             langIconView.widthAnchor.constraint(equalToConstant: 28),
             langIconView.heightAnchor.constraint(equalToConstant: 28),
             languageButton.heightAnchor.constraint(equalToConstant: 38),
+            privacyButton.heightAnchor.constraint(equalToConstant: 38),
+            termsButton.heightAnchor.constraint(equalToConstant: 38),
         ])
 
         syncMusicControlsFromStorage()
@@ -273,12 +321,23 @@ final class MagicBrushySettingsViewController: UIViewController {
 
     @objc private func dismissFromBackgroundTap(_ recognizer: UITapGestureRecognizer) {
         let pt = recognizer.location(in: view)
-        guard !cardView.frame.contains(pt) else { return }
+        let cardFrameInView = cardView.convert(cardView.bounds, to: view)
+        guard !cardFrameInView.contains(pt) else { return }
         dismiss(animated: true)
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        let inset = view.safeAreaInsets
+        scrollView.contentInset = UIEdgeInsets(top: inset.top + 8, left: 0, bottom: inset.bottom + 12, right: 0)
+        scrollView.scrollIndicatorInsets = scrollView.contentInset
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        if traitCollection.userInterfaceIdiom == .pad {
+            preferredContentSize = CGSize(width: 320, height: 500)
+        }
         syncMusicControlsFromStorage()
         syncCoachFeedbackControls()
         syncCoachVoiceForCurrentLanguage()
@@ -419,6 +478,24 @@ final class MagicBrushySettingsViewController: UIViewController {
     }
 
     // MARK: - Helpers
+
+    private func configureLegalButton(_ button: UIButton, title: String) {
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.setTitle(title, for: .normal)
+        button.titleLabel?.font = FigmaTheme.bodyFont(size: 15, weight: .semibold)
+        button.setTitleColor(FigmaTheme.creamText, for: .normal)
+        button.backgroundColor = UIColor.white.withAlphaComponent(0.12)
+        button.layer.cornerRadius = 10
+        if #available(iOS 13.0, *) { button.layer.cornerCurve = .continuous }
+    }
+
+    @objc private func openPrivacyPolicy() {
+        MagicBrushyParentalGate.openExternalURL(MagicBrushyLegal.privacyPolicyURL, from: self)
+    }
+
+    @objc private func openTermsOfUse() {
+        MagicBrushyParentalGate.openExternalURL(MagicBrushyLegal.termsOfUseURL, from: self)
+    }
 
     private func makeCaption(_ text: String) -> UILabel {
         let label = UILabel()

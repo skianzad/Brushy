@@ -3,43 +3,47 @@ import StoreKit
 import UIKit
 
 extension Notification.Name {
-    /// Posted on the main thread when subscription or legacy unlock state may have changed.
+    /// Posted on the main thread when premium purchase or legacy unlock state may have changed.
     static let magicBrushySubscriptionAccessDidChange = Notification.Name("MagicBrushy.subscriptionAccessDidChange")
 }
 
-/// StoreKit 2 subscription gate. Wire the same product ID in App Store Connect (auto‑renewable subscription).
+/// StoreKit 2 gate for the one-time **non-consumable** premium unlock.
 ///
 /// **Setup (required before App Store review):**
-/// 1. In App Store Connect → your app → Subscriptions, create a subscription group and an auto‑renewable product whose **Product ID** matches `premiumProductID`.
-/// 2. In Xcode → Signing & Capabilities → add **In-App Purchase**.
-/// 3. For local testing, add a **StoreKit Configuration** file and assign it in the Run scheme.
+/// 1. App Store Connect → your app → **In-App Purchases** → **Non-Consumable** (not Consumable, not Subscription).
+/// 2. Product ID must match `premiumProductID` exactly.
+/// 3. Xcode → Signing & Capabilities → **In-App Purchase**.
+/// 4. Local testing: `MagicBrushyProducts.storekit` is wired in the Run scheme.
 @MainActor
 final class SubscriptionManager {
 
     static let shared = SubscriptionManager()
 
-    /// Same key as `HomeViewController` / legacy “unlock all” (kept for internal builds and migration).
+    /// Legacy QA unlock (Debug builds only).
     static let legacyUnlockAllKey = "MagicBrushyUnlockAllCategories"
 
-    /// Must match the auto‑renewable subscription’s Product ID in App Store Connect exactly.
+    /// Must match the non-consumable Product ID in App Store Connect exactly.
     static let premiumProductID = "Senscilab.MagicBrushy.premium"
 
-    /// Pack IDs available without a subscription (first row on the home grid).
+    /// Pack IDs available without purchasing premium.
     static let freeTierPackIds: Set<String> = [BuiltInColoringPages.savedDrawingsPackId, "ocean", "dinosaurs"]
 
-    /// Free tier: one saved blank-paper drawing; no delete until subscribed.
+    /// Free tier: one saved blank-paper drawing; no delete until premium is owned.
     static let freeTierMaxSavedFreeDrawings = 1
 
-    private(set) var hasActiveSubscription = false
+    private(set) var ownsPremiumUnlock = false
 
     private var transactionUpdatesTask: Task<Void, Never>?
     private var didStartListening = false
 
     private init() {}
 
-    /// Legacy QA unlock or an active App Store subscription.
+    /// Purchased premium or legacy QA unlock (Debug only).
     var hasFullLibraryAccess: Bool {
-        UserDefaults.standard.bool(forKey: Self.legacyUnlockAllKey) || hasActiveSubscription
+        #if DEBUG
+        if UserDefaults.standard.bool(forKey: Self.legacyUnlockAllKey) { return true }
+        #endif
+        return ownsPremiumUnlock
     }
 
     func canOpenPack(id: String) -> Bool {
@@ -54,31 +58,6 @@ final class SubscriptionManager {
 
     func canStartAnotherFreeDrawing() -> Bool {
         hasFullLibraryAccess || savedFreeDrawingCount() < Self.freeTierMaxSavedFreeDrawings
-    }
-
-    func presentPremiumUpsell(
-        from viewController: UIViewController,
-        title: String,
-        message: String
-    ) {
-        let sheet = UIAlertController(title: title, message: message, preferredStyle: .actionSheet)
-        sheet.addAction(UIAlertAction(title: "Subscribe", style: .default, handler: { _ in
-            Task { await self.purchase(from: viewController) }
-        }))
-        sheet.addAction(UIAlertAction(title: "Restore purchases", style: .default, handler: { _ in
-            Task { await self.restorePurchases(from: viewController) }
-        }))
-        sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-        if let pop = sheet.popoverPresentationController {
-            pop.sourceView = viewController.view
-            pop.sourceRect = CGRect(
-                x: viewController.view.bounds.midX,
-                y: viewController.view.bounds.midY,
-                width: 1,
-                height: 1
-            )
-        }
-        viewController.present(sheet, animated: true)
     }
 
     func start() {
@@ -101,16 +80,16 @@ final class SubscriptionManager {
     }
 
     func refreshEntitlements() async {
-        var subscribed = false
+        var ownsPremium = false
         for await entitlement in Transaction.currentEntitlements {
             guard case .verified(let transaction) = entitlement else { continue }
             if transaction.productID == Self.premiumProductID {
-                subscribed = true
+                ownsPremium = true
                 break
             }
         }
-        if subscribed != hasActiveSubscription {
-            hasActiveSubscription = subscribed
+        if ownsPremium != ownsPremiumUnlock {
+            ownsPremiumUnlock = ownsPremium
             NotificationCenter.default.post(name: .magicBrushySubscriptionAccessDidChange, object: nil)
         }
     }
@@ -119,10 +98,29 @@ final class SubscriptionManager {
         do {
             let products = try await Product.products(for: [Self.premiumProductID])
             guard let product = products.first else {
+                #if DEBUG
+                let testingHint = """
+
+                Testing from Xcode?
+                • Product → Scheme → Edit Scheme → Run → Options
+                • Set StoreKit Configuration to MagicBrushyProducts.storekit
+                • Stop the app, Run again (⌘R)
+
+                Testing TestFlight or a device build without StoreKit?
+                • App Store Connect → In-App Purchases → Non-Consumable
+                • Product ID: \(Self.premiumProductID)
+                • Wait up to an hour after creating it, then try again
+                """
+                #else
+                let testingHint = """
+
+                Ask a parent to try again later. If you already bought Brushi Premium, tap Restore purchases.
+                """
+                #endif
                 presentSimpleAlert(
                     on: viewController,
                     title: "Store not ready",
-                    message: "No subscription product was returned for “\(Self.premiumProductID)”. Create this auto‑renewable subscription in App Store Connect and enable In‑App Purchase for the app target."
+                    message: "No product was returned for “\(Self.premiumProductID)”.\(testingHint)"
                 )
                 return
             }
@@ -148,15 +146,13 @@ final class SubscriptionManager {
         do {
             try await AppStore.sync()
             await refreshEntitlements()
-            if hasActiveSubscription {
-                presentSimpleAlert(on: viewController, title: "Restored", message: "Your subscription is active on this device.")
-            } else if UserDefaults.standard.bool(forKey: Self.legacyUnlockAllKey) {
-                presentSimpleAlert(on: viewController, title: "Restored", message: "A previous unlock is still active on this device.")
+            if ownsPremiumUnlock {
+                presentSimpleAlert(on: viewController, title: "Restored", message: "Brushi Premium is active on this device.")
             } else {
                 presentSimpleAlert(
                     on: viewController,
-                    title: "No subscription found",
-                    message: "We couldn’t find an active subscription for this Apple ID. Tap Subscribe if you haven’t purchased yet."
+                    title: "No purchase found",
+                    message: "We couldn’t find Brushi Premium for this Apple ID. Tap Unlock all if you haven’t purchased yet."
                 )
             }
         } catch {

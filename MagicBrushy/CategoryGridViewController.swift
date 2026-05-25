@@ -396,7 +396,7 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
             UIImpactFeedbackGenerator(style: .medium).impactOccurred()
             let sheet = UIAlertController(
                 title: "Locked",
-                message: "Subscribe on the home screen to open drawings from this pack again.",
+                message: "Ask a parent or guardian to buy Brushi Premium on the home screen to open drawings from this pack again.",
                 preferredStyle: .alert
             )
             sheet.addAction(UIAlertAction(title: "OK", style: .default))
@@ -477,10 +477,9 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
             preferredStyle: .alert
         )
         sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-        sheet.addAction(UIAlertAction(title: "Open Settings", style: .default) { _ in
-            if let url = URL(string: UIApplication.openSettingsURLString) {
-                UIApplication.shared.open(url)
-            }
+        sheet.addAction(UIAlertAction(title: "Open Settings", style: .default) { [weak self] _ in
+            guard let self else { return }
+            MagicBrushyParentalGate.openSystemSettings(from: self)
         })
         present(sheet, animated: true)
     }
@@ -656,7 +655,7 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
             SubscriptionManager.shared.presentPremiumUpsell(
                 from: self,
                 title: "One free drawing",
-                message: "Subscribe to save more blank-paper drawings and delete old ones. You can keep editing your saved drawing."
+                message: "Buy Brushi Premium to save more blank-paper drawings and delete old ones. You can keep editing your saved drawing."
             )
             return
         }
@@ -808,7 +807,7 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
             }
             if showsNewDrawingLocked {
                 accessibilityLabel = "New drawing locked"
-                accessibilityHint = "Subscribe to save more than one free drawing."
+                accessibilityHint = "Buy Brushi Premium to save more than one free drawing."
             } else if showsNewDrawingPlus {
                 accessibilityLabel = "New blank drawing"
                 accessibilityHint = "Starts a fresh sheet to draw on."

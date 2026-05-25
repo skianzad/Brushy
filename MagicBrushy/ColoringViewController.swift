@@ -2078,10 +2078,9 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             preferredStyle: .alert
         )
         sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-        sheet.addAction(UIAlertAction(title: "Open Settings", style: .default) { _ in
-            if let url = URL(string: UIApplication.openSettingsURLString) {
-                UIApplication.shared.open(url)
-            }
+        sheet.addAction(UIAlertAction(title: "Open Settings", style: .default) { [weak self] _ in
+            guard let self else { return }
+            MagicBrushyParentalGate.openSystemSettings(from: self)
         })
         present(sheet, animated: true)
     }

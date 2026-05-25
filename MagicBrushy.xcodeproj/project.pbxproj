@@ -48,6 +48,8 @@
 		C1F700000000000000000104 /* FigmaAlignedHeroBackgroundView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F700000000000000000105 /* FigmaAlignedHeroBackgroundView.swift */; };
 		C1F700000000000000000106 /* LandscapeLetterboxHostViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F700000000000000000107 /* LandscapeLetterboxHostViewController.swift */; };
 		D1MAC000000000000000001 /* MascotReactionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1MAC000000000000000101 /* MascotReactionState.swift */; };
+		K1KID000000000000000001 /* MagicBrushyKidsCompliance.swift in Sources */ = {isa = PBXBuildFile; fileRef = K1KID000000000000000101 /* MagicBrushyKidsCompliance.swift */; };
+		K1KID000000000000000002 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = K1KID000000000000000102 /* PrivacyInfo.xcprivacy */; };
 		L1AST000000000000000001 /* LastDrawingStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = L1AST000000000000000101 /* LastDrawingStore.swift */; };
 		L1REC000000000000000001 /* RecentDrawingActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = L1REC000000000000000101 /* RecentDrawingActivity.swift */; };
 		L1TPL000000000000000001 /* TemplateProgressStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = L1TPL000000000000000101 /* TemplateProgressStore.swift */; };
@@ -115,12 +117,15 @@
 		C1F700000000000000000105 /* FigmaAlignedHeroBackgroundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FigmaAlignedHeroBackgroundView.swift; sourceTree = "<group>"; };
 		C1F700000000000000000107 /* LandscapeLetterboxHostViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LandscapeLetterboxHostViewController.swift; sourceTree = "<group>"; };
 		D1MAC000000000000000101 /* MascotReactionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MascotReactionState.swift; sourceTree = "<group>"; };
+		K1KID000000000000000101 /* MagicBrushyKidsCompliance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagicBrushyKidsCompliance.swift; sourceTree = "<group>"; };
+		K1KID000000000000000102 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		L1AST000000000000000101 /* LastDrawingStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LastDrawingStore.swift; sourceTree = "<group>"; };
 		L1REC000000000000000101 /* RecentDrawingActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentDrawingActivity.swift; sourceTree = "<group>"; };
 		L1TPL000000000000000101 /* TemplateProgressStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemplateProgressStore.swift; sourceTree = "<group>"; };
 		M1LIP000000000000000101 /* MascotLipSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MascotLipSync.swift; sourceTree = "<group>"; };
 		R1ACT000000000000000101 /* Reaction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Reaction.swift; sourceTree = "<group>"; };
 		S1SUB000000000000000101 /* SubscriptionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionManager.swift; sourceTree = "<group>"; };
+		K1STK000000000000000101 /* MagicBrushyProducts.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = MagicBrushyProducts.storekit; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -140,6 +145,7 @@
 		A1B100000000000000000100 = {
 			isa = PBXGroup;
 			children = (
+				K1STK000000000000000101 /* MagicBrushyProducts.storekit */,
 				A1B100000000000000000101 /* MagicBrushy */,
 				B1EAD0000701 /* AlbaTTS_via_SmartDraw */,
 				A1B100000000000000000102 /* Products */,
@@ -167,6 +173,7 @@
 				C1F700000000000000000105 /* FigmaAlignedHeroBackgroundView.swift */,
 				C1F700000000000000000107 /* LandscapeLetterboxHostViewController.swift */,
 				S1SUB000000000000000101 /* SubscriptionManager.swift */,
+				K1KID000000000000000101 /* MagicBrushyKidsCompliance.swift */,
 				B1EAD0000501 /* FeedbackAlbaSpeech.swift */,
 				B1BGM000000000000000101 /* MagicBrushyBackgroundMusic.swift */,
 				B1SET000000000000000101 /* MagicBrushySettingsViewController.swift */,
@@ -188,6 +195,7 @@
 				C1CLR000000000000000101 /* Colors */,
 				A1B200000000000000013 /* LaunchScreen.storyboard */,
 				A1B200000000000000008 /* Info.plist */,
+				K1KID000000000000000102 /* PrivacyInfo.xcprivacy */,
 			);
 			path = MagicBrushy;
 			sourceTree = "<group>";
@@ -280,6 +288,11 @@
 				TargetAttributes = {
 					A1B100000000000000000200 = {
 						CreatedOnToolsVersion = 15.0.1;
+						SystemCapabilities = {
+							com.apple.InAppPurchase = {
+								enabled = 1;
+							};
+						};
 					};
 				};
 			};
@@ -316,6 +329,7 @@
 				B1KOK000000000000000611 /* KokoroEnV019 in Resources */,
 				B1BGM000000000000000002 /* MagicBrushyBackgroundTrack.mp3 in Resources */,
 				C1CLR000000000000000001 /* Colors in Resources */,
+				K1KID000000000000000002 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -385,6 +399,7 @@
 				C1F700000000000000000104 /* FigmaAlignedHeroBackgroundView.swift in Sources */,
 				C1F700000000000000000106 /* LandscapeLetterboxHostViewController.swift in Sources */,
 				S1SUB000000000000000001 /* SubscriptionManager.swift in Sources */,
+				K1KID000000000000000001 /* MagicBrushyKidsCompliance.swift in Sources */,
 				A1B200000000000000000006 /* LeapVLMModel.swift in Sources */,
 				B1ODR000000000000000001 /* VLMCoachOnDemandResources.swift in Sources */,
 				B1EAD0000511 /* FeedbackAlbaSpeech.swift in Sources */,
@@ -560,7 +575,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = RDP29X8YF2;
 				ENABLE_ON_DEMAND_RESOURCES = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
@@ -573,6 +588,7 @@
 				);
 				INFOPLIST_FILE = MagicBrushy/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Brushi;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
@@ -584,7 +600,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/Frameworks/LeapSDK.framework/Frameworks",
 				);
-				MARKETING_VERSION = 0.1.4;
+				MARKETING_VERSION = 0.1.6;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-lc++",
@@ -610,7 +626,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = RDP29X8YF2;
 				ENABLE_ON_DEMAND_RESOURCES = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
@@ -623,6 +639,7 @@
 				);
 				INFOPLIST_FILE = MagicBrushy/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Brushi;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
@@ -633,7 +650,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.1.4;
+				MARKETING_VERSION = 0.1.6;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-lc++",

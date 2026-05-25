@@ -723,11 +723,14 @@ final class HomeViewController: UIViewController {
     private func applySubscribeButtonEnabledState() {
         let full = SubscriptionManager.shared.hasFullLibraryAccess
         let tc = traitCollection
-        unlockButton.isEnabled = !full
-        unlockButton.alpha = full ? 0.55 : 1
+        unlockButton.isEnabled = true
+        unlockButton.alpha = 1
+        unlockButton.accessibilityHint = full
+            ? "Opens premium options including restore purchases."
+            : "Unlock every coloring category or restore a past purchase."
 
         var cfg = UIButton.Configuration.filled()
-        cfg.title = full ? "Unlocked" : "Unlock all"
+        cfg.title = full ? "Premium" : "Unlock all"
         let symbolName = full ? "lock.open.fill" : "lock.fill"
         let symCfg = UIImage.SymbolConfiguration(
             pointSize: MagicBrushyChromeMetrics.unlockSymbolPointSize(tc),
@@ -902,7 +905,7 @@ final class HomeViewController: UIViewController {
             UIImpactFeedbackGenerator(style: .medium).impactOccurred()
             let sheet = UIAlertController(
                 title: "Locked",
-                message: "Subscribe to open every category, or try Ocean and Animals for free.",
+                message: "Ask a parent or guardian to buy Brushi Premium to open every category. \(MagicBrushyLegal.freeTierSummary)",
                 preferredStyle: .alert
             )
             sheet.addAction(UIAlertAction(title: "OK", style: .default))
@@ -916,56 +919,9 @@ final class HomeViewController: UIViewController {
     }
 
     @objc private func unlockTapped() {
-        guard !SubscriptionManager.shared.hasFullLibraryAccess else { return }
-        let sheet = UIAlertController(
-            title: "Full library",
-            message: "Subscribe with your Apple ID, restore a past purchase, or solve a quick multiplication puzzle to unlock every coloring category. Ocean and Animals stay free.",
-            preferredStyle: .actionSheet
+        SubscriptionManager.shared.presentFullLibraryUnlock(
+            from: self,
+            popoverSourceView: unlockButton
         )
-        sheet.addAction(UIAlertAction(title: "Subscribe", style: .default, handler: { [weak self] _ in
-            guard let self else { return }
-            Task { await SubscriptionManager.shared.purchase(from: self) }
-        }))
-        sheet.addAction(UIAlertAction(title: "Restore purchases", style: .default, handler: { [weak self] _ in
-            guard let self else { return }
-            Task { await SubscriptionManager.shared.restorePurchases(from: self) }
-        }))
-        sheet.addAction(UIAlertAction(title: "Solve puzzle", style: .default, handler: { [weak self] _ in
-            self?.presentPuzzleCodeUnlock()
-        }))
-        sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-        if let pop = sheet.popoverPresentationController {
-            pop.sourceView = unlockButton
-            pop.sourceRect = unlockButton.bounds
-        }
-        present(sheet, animated: true)
-    }
-
-    private func presentPuzzleCodeUnlock() {
-        let a = Int.random(in: 3...9)
-        let b = Int.random(in: 3...9)
-        let expectedAnswer = a * b
-        let sheet = UIAlertController(
-            title: "Unlock",
-            message: "What is \(a) × \(b)? Enter the answer to unlock every category.",
-            preferredStyle: .alert
-        )
-        sheet.addTextField { $0.keyboardType = .numberPad }
-        sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-        sheet.addAction(UIAlertAction(title: "Unlock", style: .default, handler: { [weak self] _ in
-            guard let raw = sheet.textFields?.first?.text?.trimmingCharacters(in: .whitespacesAndNewlines),
-                  let userAnswer = Int(raw),
-                  userAnswer == expectedAnswer
-            else {
-                UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
-                return
-            }
-            UserDefaults.standard.set(true, forKey: SubscriptionManager.legacyUnlockAllKey)
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
-            NotificationCenter.default.post(name: .magicBrushySubscriptionAccessDidChange, object: nil)
-            self?.populateCategoryGrid()
-            self?.applySubscribeButtonEnabledState()
-        }))
-        present(sheet, animated: true)
     }
 }
