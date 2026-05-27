@@ -26,7 +26,7 @@ final class MagicBrushySettingsViewController: UIViewController {
         scrollView.showsVerticalScrollIndicator = true
         scrollView.backgroundColor = .clear
         scrollView.keyboardDismissMode = .onDrag
-        scrollView.contentInsetAdjustmentBehavior = .always
+        scrollView.contentInsetAdjustmentBehavior = .never
         scrollView.indicatorStyle = .white
 
         cardView.translatesAutoresizingMaskIntoConstraints = false
@@ -227,10 +227,10 @@ final class MagicBrushySettingsViewController: UIViewController {
         cardWidth.priority = .required
 
         NSLayoutConstraint.activate([
-            scrollView.topAnchor.constraint(equalTo: view.topAnchor),
+            scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -8),
 
             scrollView.contentLayoutGuide.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor),
 
@@ -324,13 +324,6 @@ final class MagicBrushySettingsViewController: UIViewController {
         let cardFrameInView = cardView.convert(cardView.bounds, to: view)
         guard !cardFrameInView.contains(pt) else { return }
         dismiss(animated: true)
-    }
-
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        let inset = view.safeAreaInsets
-        scrollView.contentInset = UIEdgeInsets(top: inset.top + 8, left: 0, bottom: inset.bottom + 12, right: 0)
-        scrollView.scrollIndicatorInsets = scrollView.contentInset
     }
 
     override func viewWillAppear(_ animated: Bool) {

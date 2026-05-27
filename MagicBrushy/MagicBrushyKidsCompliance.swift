@@ -114,14 +114,6 @@ extension SubscriptionManager {
                 Task { await self.restorePurchases(from: viewController) }
             }
         })
-        #if DEBUG
-        sheet.addAction(UIAlertAction(title: "Debug: unlock all", style: .default) { _ in
-            MagicBrushyParentalGate.perform(from: viewController) {
-                UserDefaults.standard.set(true, forKey: Self.legacyUnlockAllKey)
-                NotificationCenter.default.post(name: .magicBrushySubscriptionAccessDidChange, object: nil)
-            }
-        })
-        #endif
         addLegalActions(to: sheet, from: viewController)
         sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
 

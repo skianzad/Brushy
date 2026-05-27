@@ -125,7 +125,6 @@
 		M1LIP000000000000000101 /* MascotLipSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MascotLipSync.swift; sourceTree = "<group>"; };
 		R1ACT000000000000000101 /* Reaction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Reaction.swift; sourceTree = "<group>"; };
 		S1SUB000000000000000101 /* SubscriptionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionManager.swift; sourceTree = "<group>"; };
-		K1STK000000000000000101 /* MagicBrushyProducts.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = MagicBrushyProducts.storekit; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -145,7 +144,6 @@
 		A1B100000000000000000100 = {
 			isa = PBXGroup;
 			children = (
-				K1STK000000000000000101 /* MagicBrushyProducts.storekit */,
 				A1B100000000000000000101 /* MagicBrushy */,
 				B1EAD0000701 /* AlbaTTS_via_SmartDraw */,
 				A1B100000000000000000102 /* Products */,
@@ -575,7 +573,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 8;
+				CURRENT_PROJECT_VERSION = 9;
 				DEVELOPMENT_TEAM = RDP29X8YF2;
 				ENABLE_ON_DEMAND_RESOURCES = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
@@ -600,7 +598,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/Frameworks/LeapSDK.framework/Frameworks",
 				);
-				MARKETING_VERSION = 0.1.6;
+				MARKETING_VERSION = 0.1.7;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-lc++",
@@ -626,7 +624,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 8;
+				CURRENT_PROJECT_VERSION = 9;
 				DEVELOPMENT_TEAM = RDP29X8YF2;
 				ENABLE_ON_DEMAND_RESOURCES = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
@@ -650,7 +648,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.1.6;
+				MARKETING_VERSION = 0.1.7;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-lc++",
