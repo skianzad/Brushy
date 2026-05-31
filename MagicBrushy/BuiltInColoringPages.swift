@@ -23,8 +23,8 @@ enum BuiltInColoringPages {
     /// All shelves, in the order they appear in the horizontal category bar (matches home tiles + extras).
     static let library: [CategoryPack] = {
         [
-            CategoryPack(id: BuiltInColoringPages.savedDrawingsPackId, title: "Free drawing", symbolName: "pencil.and.outline", pages: [
-                Page(title: "Blank paper", image: renderBlankFreeDrawingPaper()),
+            CategoryPack(id: BuiltInColoringPages.savedDrawingsPackId, title: "Free Draw", symbolName: "pencil.and.outline", pages: [
+                Page(title: "New drawing", image: renderBlankFreeDrawingPaper()),
             ]),
             CategoryPack(id: "dinosaurs", title: "Dinosaurs", symbolName: "lizard.fill", pages: pagesFromAsset("Dinosaurs", count: 16)),
             CategoryPack(id: "fall", title: "Fall", symbolName: "leaf.fill", pages: pagesFromAsset("Fall", count: 12)),
@@ -113,9 +113,41 @@ enum BuiltInColoringPages {
         c.strokePath()
     }
 
-    /// Solid white sheet—no border or line art; kids draw freely on top.
+    /// Warm paper with a light dot grid — reads as “empty sheet” in the grid and on canvas.
     private static func renderBlankFreeDrawingPaper() -> UIImage {
-        render { _ in }
+        let size = CGSize(width: 800, height: 1000)
+        let format = UIGraphicsImageRendererFormat.default()
+        format.opaque = true
+        format.scale = 1
+        return UIGraphicsImageRenderer(size: size, format: format).image { ctx in
+            let c = ctx.cgContext
+            let bounds = CGRect(origin: .zero, size: size)
+            c.setFillColor(UIColor(red: 1, green: 252 / 255, blue: 244 / 255, alpha: 1).cgColor)
+            c.fill(bounds)
+
+            c.setFillColor(UIColor(red: 12 / 255, green: 58 / 255, blue: 118 / 255, alpha: 0.07).cgColor)
+            let dotSpacing: CGFloat = 36
+            let dotRadius: CGFloat = 1.4
+            var y = dotSpacing
+            while y < size.height - dotSpacing {
+                var x = dotSpacing
+                while x < size.width - dotSpacing {
+                    c.fillEllipse(in: CGRect(x: x - dotRadius, y: y - dotRadius, width: dotRadius * 2, height: dotRadius * 2))
+                    x += dotSpacing
+                }
+                y += dotSpacing
+            }
+
+            let pencilCenter = CGPoint(x: size.width * 0.5, y: size.height * 0.46)
+            c.setStrokeColor(UIColor(red: 12 / 255, green: 58 / 255, blue: 118 / 255, alpha: 0.1).cgColor)
+            c.setLineWidth(5)
+            c.setLineCap(.round)
+            c.move(to: CGPoint(x: pencilCenter.x - 70, y: pencilCenter.y + 50))
+            c.addLine(to: CGPoint(x: pencilCenter.x + 78, y: pencilCenter.y - 58))
+            c.strokePath()
+            c.setFillColor(UIColor(red: 1, green: 196 / 255, blue: 92 / 255, alpha: 0.22).cgColor)
+            c.fillEllipse(in: CGRect(x: pencilCenter.x + 54, y: pencilCenter.y - 74, width: 34, height: 34))
+        }
     }
 
     private static func renderHouse() -> UIImage {

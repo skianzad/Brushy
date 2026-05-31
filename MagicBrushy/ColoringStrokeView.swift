@@ -7,6 +7,7 @@ final class ColoringStrokeView: UIView {
         var points: [CGPoint]
         var color: UIColor
         var width: CGFloat
+        var isRainbowGlitter: Bool = false
     }
 
     private var strokes: [Stroke] = []
@@ -30,6 +31,17 @@ final class ColoringStrokeView: UIView {
 
     var strokeColor: UIColor = .systemRed
     var strokeWidth: CGFloat = 22
+    /// When true, strokes cycle rainbow hues (crayon `17-color.png`).
+    var usesRainbowGlitterStroke = false
+
+    // MARK: - Live rainbow bitmap cache
+    // Accumulates the in-progress rainbow stroke incrementally so draw() only blits one image
+    // instead of issuing O(n) per-segment strokePath() calls every frame.
+    private var rainbowLiveBitmap: UIImage?
+    /// Number of points already rendered into rainbowLiveBitmap.
+    private var rainbowBitmapPtCount: Int = 0
+    /// Cumulative path length at pts[rainbowBitmapPtCount - 1].
+    private var rainbowBitmapLength: CGFloat = 0
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -49,7 +61,15 @@ final class ColoringStrokeView: UIView {
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let p = touches.first?.location(in: self) else { return }
         onPaintingBegan?()
-        current = Stroke(points: [p], color: strokeColor, width: scaledWidth(for: touches.first))
+        current = Stroke(
+            points: [p],
+            color: strokeColor,
+            width: scaledWidth(for: touches.first),
+            isRainbowGlitter: usesRainbowGlitterStroke
+        )
+        rainbowLiveBitmap = nil
+        rainbowBitmapPtCount = 0
+        rainbowBitmapLength = 0
         setNeedsDisplay()
     }
 
@@ -65,6 +85,7 @@ final class ColoringStrokeView: UIView {
         }
         current?.points.append(contentsOf: pts)
         current?.width = scaledWidth(for: t)
+        if current?.isRainbowGlitter == true { growRainbowBitmap() }
         setNeedsDisplay()
     }
 
@@ -74,12 +95,18 @@ final class ColoringStrokeView: UIView {
 
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
         current = nil
+        rainbowLiveBitmap = nil
+        rainbowBitmapPtCount = 0
+        rainbowBitmapLength = 0
         setNeedsDisplay()
     }
 
     /// Drops the live stroke without committing (e.g. when a pinch takes over the first finger).
     func cancelInProgressStroke() {
         current = nil
+        rainbowLiveBitmap = nil
+        rainbowBitmapPtCount = 0
+        rainbowBitmapLength = 0
         setNeedsDisplay()
     }
 
@@ -93,7 +120,12 @@ final class ColoringStrokeView: UIView {
             s.width = scaledWidth(for: touch)
         }
         strokes.append(s)
-        finishedStrokeColors.append(s.color)
+        finishedStrokeColors.append(
+            s.isRainbowGlitter ? MagicBrushyRainbowGlitterStroke.historyTagColor : s.color
+        )
+        rainbowLiveBitmap = nil
+        rainbowBitmapPtCount = 0
+        rainbowBitmapLength = 0
         if finishedStrokeColors.count > 48 {
             finishedStrokeColors.removeFirst(finishedStrokeColors.count - 48)
         }
@@ -122,6 +154,10 @@ final class ColoringStrokeView: UIView {
     }
 
     private func paintStroke(_ stroke: Stroke, in ctx: CGContext) {
+        if stroke.isRainbowGlitter {
+            MagicBrushyRainbowGlitterStroke.paint(points: stroke.points, width: stroke.width, in: ctx)
+            return
+        }
         guard stroke.points.count >= 2 else {
             ctx.setFillColor(stroke.color.cgColor)
             let r = stroke.width * 0.55
@@ -212,7 +248,9 @@ final class ColoringStrokeView: UIView {
         if !redoStack.isEmpty {
             let restored = redoStack.removeLast()
             strokes.append(restored)
-            finishedStrokeColors.append(restored.color)
+            finishedStrokeColors.append(
+                restored.isRainbowGlitter ? MagicBrushyRainbowGlitterStroke.historyTagColor : restored.color
+            )
             if finishedStrokeColors.count > 48 {
                 finishedStrokeColors.removeFirst(finishedStrokeColors.count - 48)
             }
@@ -385,13 +423,146 @@ final class ColoringStrokeView: UIView {
 
     override func draw(_ rect: CGRect) {
         guard let ctx = UIGraphicsGetCurrentContext() else { return }
-        // Draw baked historical strokes first (single image draw, very cheap).
-        if let baked = bakedLayer {
-            baked.draw(in: bounds)
-        }
-        // Draw live (undoable) strokes + active stroke on top.
+        if let baked = bakedLayer { baked.draw(in: bounds) }
         for s in strokes { paintStroke(s, in: ctx) }
-        if let cur = current { paintStroke(cur, in: ctx) }
+        if let cur = current {
+            if cur.isRainbowGlitter, let bmp = rainbowLiveBitmap {
+                // O(1): just blit the pre-rendered bitmap — no per-segment draw calls.
+                bmp.draw(in: bounds)
+            } else {
+                paintStroke(cur, in: ctx)
+            }
+        }
+    }
+
+    // MARK: - Incremental rainbow bitmap
+
+    private func growRainbowBitmap() {
+        guard let s = current, s.isRainbowGlitter else { return }
+        let pts = s.points
+        guard pts.count >= 2 else { return }
+
+        // Overlap by one point so round-joins knit seamlessly.
+        let fromIdx = max(0, rainbowBitmapPtCount - 1)
+        guard fromIdx < pts.count - 1 else { return }
+
+        let sz = bounds.size
+        guard sz.width > 1, sz.height > 1 else { return }
+
+        // Cumulative length at fromIdx = rainbowBitmapLength (already tracked).
+        let lengthOffset = rainbowBitmapLength
+
+        // Compute the length of the new slice (fromIdx … pts.last) for bookkeeping.
+        var addedLen: CGFloat = 0
+        for i in fromIdx..<pts.count - 1 {
+            addedLen += hypot(pts[i + 1].x - pts[i].x, pts[i + 1].y - pts[i].y)
+        }
+
+        let slice = Array(pts[fromIdx...])
+        let existing = rainbowLiveBitmap
+        let fmt = UIGraphicsImageRendererFormat.default()
+        fmt.opaque = false
+        fmt.scale = contentScaleFactor
+        rainbowLiveBitmap = UIGraphicsImageRenderer(size: sz, format: fmt).image { _ in
+            existing?.draw(in: CGRect(origin: .zero, size: sz))
+            guard let ctx = UIGraphicsGetCurrentContext() else { return }
+            MagicBrushyRainbowGlitterStroke.paintTail(
+                points: slice, lengthOffset: lengthOffset, width: s.width, in: ctx)
+        }
+
+        rainbowBitmapLength = lengthOffset + addedLen
+        rainbowBitmapPtCount = pts.count
+    }
+}
+
+// MARK: - Rainbow glitter stroke (`colors 2/17.png`)
+
+enum MagicBrushyRainbowGlitterStroke {
+    /// Fill for brush-size dots when the rainbow crayon is active.
+    static let uiAccentColor = UIColor(red: 0.18, green: 0.42, blue: 1.00, alpha: 1)
+
+    /// Stored in stroke history so VLM / kid-name hints can identify rainbow paint.
+    static let historyTagColor = UIColor(red: 0.501, green: 0.001, blue: 0.999, alpha: 1)
+
+    /// One full rainbow cycle repeats every this many points of travel.
+    private static let cyclePx: CGFloat = 320
+
+    /// Horizontal rainbow on the crayon asset: cyan → blue → purple → magenta → red → orange → yellow.
+    private static let bandColors: [UIColor] = [
+        UIColor(red: 0.00, green: 0.88, blue: 0.96, alpha: 1),
+        UIColor(red: 0.18, green: 0.42, blue: 1.00, alpha: 1),
+        UIColor(red: 0.52, green: 0.18, blue: 0.96, alpha: 1),
+        UIColor(red: 0.94, green: 0.20, blue: 0.72, alpha: 1),
+        UIColor(red: 1.00, green: 0.22, blue: 0.28, alpha: 1),
+        UIColor(red: 1.00, green: 0.52, blue: 0.08, alpha: 1),
+        UIColor(red: 1.00, green: 0.88, blue: 0.12, alpha: 1),
+    ]
+
+    /// Pre-extracted components — avoids repeated getRed/getGreen calls in the hot path.
+    private static let bandRGBA: [(r: CGFloat, g: CGFloat, b: CGFloat)] = {
+        bandColors.map { c in
+            var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+            c.getRed(&r, green: &g, blue: &b, alpha: &a)
+            return (r, g, b)
+        }
+    }()
+
+    /// Color at an absolute cumulative distance along any stroke, cycling every `cyclePx` points.
+    /// This is stable: adding more points to a stroke never changes the colour of already-drawn segments.
+    static func colorCyclic(at distance: CGFloat) -> CGColor {
+        let t = distance.truncatingRemainder(dividingBy: cyclePx) / cyclePx
+        let clamped = max(0, min(1, t))
+        let band = bandRGBA
+        let scaled = clamped * CGFloat(band.count - 1)
+        let idx = min(Int(scaled), band.count - 2)
+        let frac = scaled - CGFloat(idx)
+        let c0 = band[idx], c1 = band[idx + 1]
+        return UIColor(
+            red:   c0.r + (c1.r - c0.r) * frac,
+            green: c0.g + (c1.g - c0.g) * frac,
+            blue:  c0.b + (c1.b - c0.b) * frac,
+            alpha: 1
+        ).cgColor
+    }
+
+    // MARK: - Incremental tail renderer (used for the live stroke bitmap)
+
+    /// Paint only the segments `points[0…]` whose position along the overall stroke begins at
+    /// `lengthOffset` (cumulative distance from the stroke's true start to `points[0]`).
+    static func paintTail(points: [CGPoint], lengthOffset: CGFloat, width: CGFloat, in ctx: CGContext) {
+        guard points.count >= 2 else {
+            if let p = points.first {
+                ctx.setFillColor(colorCyclic(at: lengthOffset))
+                let r = width * 0.55
+                ctx.fillEllipse(in: CGRect(x: p.x - r, y: p.y - r, width: r * 2, height: r * 2))
+            }
+            return
+        }
+        ctx.setLineCap(.round)
+        ctx.setLineJoin(.round)
+        ctx.setLineWidth(width)
+        var runLen = lengthOffset
+        for i in 1..<points.count {
+            let seg = hypot(points[i].x - points[i - 1].x, points[i].y - points[i - 1].y)
+            ctx.setStrokeColor(colorCyclic(at: runLen + seg * 0.5))
+            ctx.beginPath()
+            ctx.move(to: points[i - 1])
+            ctx.addLine(to: points[i])
+            ctx.strokePath()
+            runLen += seg
+        }
+    }
+
+    // MARK: - Finalised stroke renderer (bitmap is gone; draw full path)
+
+    static func paint(points: [CGPoint], width: CGFloat, in ctx: CGContext) {
+        paintTail(points: points, lengthOffset: 0, width: width, in: ctx)
+    }
+
+    private static func paintDot(at center: CGPoint, width: CGFloat, color: UIColor, in ctx: CGContext) {
+        ctx.setFillColor(color.cgColor)
+        let r = width * 0.55
+        ctx.fillEllipse(in: CGRect(x: center.x - r, y: center.y - r, width: r * 2, height: r * 2))
     }
 }
 

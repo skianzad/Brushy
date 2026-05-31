@@ -35,9 +35,9 @@ enum FigmaTheme {
     static let actionBlue = Brand.skyBlue
     static let actionBlueBorder = UIColor(red: 24 / 255, green: 110 / 255, blue: 200 / 255, alpha: 1)
 
-    /// Home mode picker — Figma `122:824` Free Draw card.
-    static let freeDrawModeFill = UIColor(red: 153 / 255, green: 1, blue: 102 / 255, alpha: 1)
-    static let freeDrawModeBorder = UIColor(red: 36 / 255, green: 160 / 255, blue: 2 / 255, alpha: 1)
+    /// Home mode picker — softer mint (less neon than legacy Figma export).
+    static let freeDrawModeFill = UIColor(red: 198 / 255, green: 1, blue: 228 / 255, alpha: 1)
+    static let freeDrawModeBorder = UIColor(red: 48 / 255, green: 168 / 255, blue: 108 / 255, alpha: 1)
     /// Home mode picker — Figma `122:989` Coloring card.
     static let coloringModeFill = UIColor(red: 102 / 255, green: 222 / 255, blue: 1, alpha: 1)
     static let coloringModeBorder = UIColor(red: 1 / 255, green: 174 / 255, blue: 1, alpha: 1)
@@ -95,6 +95,23 @@ enum FigmaTheme {
         layer.shadowRadius = 6
         layer.shadowOffset = .zero
         layer.shadowPath = path
+    }
+
+    /// Softer elevation for browse tiles and paper sheets.
+    static func applySoftCardShadow(to layer: CALayer) {
+        layer.shadowColor = UIColor(red: 12 / 255, green: 58 / 255, blue: 118 / 255, alpha: 1).cgColor
+        layer.shadowOpacity = 0.14
+        layer.shadowRadius = 10
+        layer.shadowOffset = CGSize(width: 0, height: 4)
+    }
+
+    /// Category browser + free-draw shelf.
+    enum BrowseShelf {
+        static let cardFill = Brand.warmWhite
+        static let cardBorder = UIColor(red: 12 / 255, green: 58 / 255, blue: 118 / 255, alpha: 0.12)
+        static let cardImageWell = UIColor(red: 245 / 255, green: 250 / 255, blue: 1, alpha: 1)
+        static let cardTitle = coastTitle
+        static let newDrawingAccent = freeDrawModeBorder
     }
 }
 

@@ -111,7 +111,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     /// Display order (top → bottom): rainbow, then earth tones, then black & white last.
     /// Each value is a 0-based index into `palette` / `Colors/NN-color.png` (01→0, 02→1 …).
     private var crayonPaletteDisplayOrder: [Int] {
-        guard palette.count == 30 else { return Array(0..<palette.count) }
+        guard palette.count == 17 else { return Array(0..<palette.count) }
         return MagicBrushyCrayonResources.rainbowDisplayOrder
     }
     private var isEraserMode = false
@@ -170,12 +170,10 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     /// App-wide singleton model; loaded once at app startup from SceneDelegate.
     private let vlm = LeapVLMModel.shared
 
-    /// Same order as bundled `Colors/01-color.png` … `30-color.png` — short words for a11y + VLM hints.
+    /// Same order as bundled `Colors/01-color.png` … `17-color.png` — short words for a11y + VLM hints.
     private let paletteKidNames = [
-        "light pink", "dark gray", "sky blue", "green", "yellow", "orange", "red", "pink purple", "purple", "magenta",
-        "violet", "purple blue", "blue", "royal blue", "bright blue", "navy", "teal blue", "aqua", "sea green", "mint",
-        "forest green", "yellow green", "white", "gold", "amber", "orange red", "rust red", "brown",
-        "terracotta", "sand",
+        "white", "black", "sky blue", "blue", "lime green", "forest green", "yellow", "orange",
+        "coral pink", "red", "light pink", "purple pink", "purple", "brown", "terracotta", "gray", "rainbow",
     ]
 
     /// Stroke colors from each PNG in `MagicBrushy/Colors/` — sampled at the **wax tip** (see `MagicBrushyCrayonResources`).
@@ -799,6 +797,9 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     private func activeCrayonStrokeColor() -> UIColor {
         if isEraserMode { return .white }
         let i = strokePaletteIndex.clamped(to: 0...(palette.count - 1))
+        if i == MagicBrushyCrayonResources.rainbowPaletteIndex {
+            return MagicBrushyRainbowGlitterStroke.uiAccentColor
+        }
         return palette[i]
     }
 
@@ -870,7 +871,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     private func makeEraserToolButton() -> UIButton {
         let b = UIButton(type: .custom)
         b.tag = 1
-        styleChromeButton(b, fill: Self.eraserToolIdleFill, border: FigmaTheme.primaryOrangeBorder, cornerRadius: 14)
+        styleChromeButton(b, fill: Self.eraserToolIdleFill, border: UIColor(white: 0.78, alpha: 1), cornerRadius: 14)
         b.layer.borderWidth = 5
         b.layer.shadowOpacity = 0.28
         b.layer.shadowRadius = 5
@@ -1010,9 +1011,11 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         applyStrokeWidthFromSelection()
         if isEraserMode {
             strokeView.strokeColor = .white
+            strokeView.usesRainbowGlitterStroke = false
         } else {
             let i = strokePaletteIndex.clamped(to: 0...(palette.count - 1))
             strokeView.strokeColor = palette[i]
+            strokeView.usesRainbowGlitterStroke = i == MagicBrushyCrayonResources.rainbowPaletteIndex
         }
         updateToolButtonChrome()
         refreshStrokeSizeAppearance()
@@ -1021,13 +1024,14 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     private func updateToolButtonChrome() {
         let selectedFill = FigmaTheme.primaryOrange
         let idleFill = Self.eraserToolIdleFill
-        let border = FigmaTheme.primaryOrangeBorder
+        let activeBorder = FigmaTheme.primaryOrangeBorder
+        let idleBorder = UIColor(white: 0.78, alpha: 1)
         brushToolButton?.backgroundColor = isEraserMode ? idleFill : selectedFill
-        brushToolButton?.layer.borderColor = border.cgColor
+        brushToolButton?.layer.borderColor = (isEraserMode ? idleBorder : activeBorder).cgColor
         eraserToolButton?.backgroundColor = isEraserMode ? selectedFill : idleFill
-        eraserToolButton?.layer.borderColor = border.cgColor
+        eraserToolButton?.layer.borderColor = (isEraserMode ? activeBorder : idleBorder).cgColor
         brushToolButton?.alpha = isEraserMode ? 0.55 : 1.0
-        eraserToolButton?.alpha = isEraserMode ? 1.0 : 0.95
+        eraserToolButton?.alpha = isEraserMode ? 1.0 : 0.55
     }
 
     deinit {
@@ -2270,8 +2274,19 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         return ok ? raw : nil
     }
 
+    private func colorsClose(_ a: UIColor, _ b: UIColor, epsilon: CGFloat = 0.02) -> Bool {
+        var ar: CGFloat = 0, ag: CGFloat = 0, ab: CGFloat = 0, aa: CGFloat = 0
+        var br: CGFloat = 0, bg: CGFloat = 0, bb: CGFloat = 0, ba: CGFloat = 0
+        guard a.getRed(&ar, green: &ag, blue: &ab, alpha: &aa),
+              b.getRed(&br, green: &bg, blue: &bb, alpha: &ba) else { return false }
+        return abs(ar - br) < epsilon && abs(ag - bg) < epsilon && abs(ab - bb) < epsilon
+    }
+
     /// Nearest app palette swatch name so "history" stays consistent with the picker.
     private func simpleKidColorName(for color: UIColor) -> String {
+        if colorsClose(color, MagicBrushyRainbowGlitterStroke.historyTagColor) {
+            return "rainbow"
+        }
         var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
         guard color.cgColor.colorSpace?.model == .rgb,
               color.getRed(&r, green: &g, blue: &b, alpha: &a)
@@ -2360,25 +2375,26 @@ private extension UIImage {
 
 private enum MagicBrushyCrayonResources {
     private static let bundleSubdirectory = "Colors"
-    private static let pngCount = 30
+    private static let pngCount = 17
 
-    /// Top → bottom in the crayon rail: ROYGBIV, then earth tones, black & white last.
+    /// `17-color.png` — rainbow glitter crayon (0-based index 16).
+    static let rainbowPaletteIndex = 16
+
+    /// Top → bottom in the crayon rail: ROYGBIV, then earth tones, rainbow magic, black & white last.
     static let rainbowDisplayOrder: [Int] = [
-        6,                          // red
-        25, 26, 5,                  // orange family
-        4, 23, 24,                  // yellow family
-        3, 21, 19, 18, 20,          // green family
-        17, 16,                     // teal / aqua
-        2,                          // sky blue
-        14, 12, 13, 15,             // blues
-        11, 10, 8, 9, 7,            // indigo / violet / purple / pink
-        0,                          // light pink
-        27, 28, 29,                 // brown, terracotta, sand
+        9,                          // red
+        7,                          // orange
+        6,                          // yellow
+        4, 5,                       // lime, forest green
+        2, 3,                       // sky blue, blue
+        12, 11, 10, 8,              // purple → pink
+        13, 14, 15,                 // brown, terracotta, gray
+        16,                         // rainbow
+        0,                          // white
         1,                          // black
-        22,                         // white
     ]
 
-    /// `01-color.png` … `30-color.png` in the app bundle (folder reference `Colors`).
+    /// `01-color.png` … `17-color.png` in the app bundle (folder reference `Colors`).
     static let swatchImages: [UIImage] = {
         var out: [UIImage] = []
         out.reserveCapacity(pngCount)
@@ -2400,16 +2416,14 @@ private enum MagicBrushyCrayonResources {
 
     /// Brand-aligned stroke colors (see `FigmaTheme.Brand`).
     private static let strokeColorOverrides: [Int: UIColor] = [
-        0: FigmaTheme.Brand.mascotPink,
+        0: FigmaTheme.Brand.warmWhite,
         1: FigmaTheme.Brand.softBlack,
         2: FigmaTheme.Brand.skyBlue,
-        3: FigmaTheme.Brand.successGreen,
-        4: FigmaTheme.Brand.rewardYellow,
-        5: FigmaTheme.Brand.playOrange,
-        6: FigmaTheme.Brand.warningRed,
-        8: FigmaTheme.Brand.imaginationPurple,
-        9: FigmaTheme.Brand.imaginationPurple,
-        22: FigmaTheme.Brand.warmWhite,
+        5: FigmaTheme.Brand.successGreen,
+        6: FigmaTheme.Brand.rewardYellow,
+        7: FigmaTheme.Brand.playOrange,
+        9: FigmaTheme.Brand.warningRed,
+        12: FigmaTheme.Brand.imaginationPurple,
     ]
 
     private static func applyStrokeColorOverrides(_ colors: inout [UIColor]) {
@@ -2590,7 +2604,7 @@ private final class CrayonPaletteScrollView: UIScrollView {
  • `HorizontalCrayonShapeView` — CoreGraphics “wax crayon” vector (Figma-aligned).
  • `Assets.xcassets` / `FigmaCrayon1`…`FigmaCrayon7` — SVG exports; never wired in Swift after vector path.
 
- Palette UI now uses `MagicBrushy/Colors/01-color.png` … `30-color.png` via `MagicBrushyCrayonResources` + `MagicCrayonControl`.
+ Palette UI now uses `MagicBrushy/Colors/01-color.png` … `17-color.png` via `MagicBrushyCrayonResources` + `MagicCrayonControl`.
 */
 
 private final class MagicCrayonControl: UIControl {

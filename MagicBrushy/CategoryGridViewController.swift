@@ -16,9 +16,9 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
 
     private lazy var collectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
-        layout.minimumInteritemSpacing = 14
-        layout.minimumLineSpacing = 18
-        layout.sectionInset = UIEdgeInsets(top: 10, left: 20, bottom: 28, right: 20)
+        layout.minimumInteritemSpacing = 16
+        layout.minimumLineSpacing = 20
+        layout.sectionInset = UIEdgeInsets(top: 14, left: 22, bottom: 32, right: 22)
         let cv = UICollectionView(frame: .zero, collectionViewLayout: layout)
         cv.backgroundColor = .clear
         cv.alwaysBounceVertical = true
@@ -70,6 +70,11 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
             return pages + saved
         }
         return pages
+    }
+
+    private var isFreeDrawPack: Bool {
+        guard selectedPackIndex >= 0, selectedPackIndex < BuiltInColoringPages.library.count else { return false }
+        return BuiltInColoringPages.library[selectedPackIndex].id == BuiltInColoringPages.savedDrawingsPackId
     }
 
     override func viewDidLoad() {
@@ -484,22 +489,25 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
         present(sheet, animated: true)
     }
 
-    /// Large pack name: white fill + orange stroke (matches diamond back control).
+    /// Pack name over the hero — coastal blue type with a soft halo (free draw uses mint stroke).
     private func applyCategoryTitleAttributes() {
         let text = BuiltInColoringPages.library.indices.contains(selectedPackIndex)
             ? BuiltInColoringPages.library[selectedPackIndex].title
             : "Categories"
         let compact = traitCollection.verticalSizeClass == .compact
-        let fontSize: CGFloat = compact ? 44 : 58
+        let fontSize: CGFloat = compact ? 34 : 42
         let font = FigmaTheme.titleFont(size: fontSize)
         let paragraph = NSMutableParagraphStyle()
         paragraph.alignment = .center
         paragraph.lineBreakMode = .byTruncatingTail
+        let strokeColor: UIColor = isFreeDrawPack
+            ? FigmaTheme.freeDrawModeBorder
+            : UIColor.white.withAlphaComponent(0.92)
         let attrs: [NSAttributedString.Key: Any] = [
             .font: font,
-            .foregroundColor: UIColor.white,
-            .strokeColor: MagicBrushyChromeMetrics.diamondBackFillColor,
-            .strokeWidth: -4.5,
+            .foregroundColor: FigmaTheme.coastTitle,
+            .strokeColor: strokeColor,
+            .strokeWidth: -3.2,
             .paragraphStyle: paragraph,
         ]
         titleLabel.attributedText = NSAttributedString(string: text, attributes: attrs)
@@ -589,7 +597,7 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
         let heightBasedCellW = floor(rowHeight / 0.78)
 
         let cellW = min(widthBasedCellW, heightBasedCellW)
-        layout.itemSize = CGSize(width: cellW, height: cellW * 0.78)
+        layout.itemSize = CGSize(width: cellW, height: cellW * 0.84)
     }
 
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
@@ -618,6 +626,7 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
                 image: thumb,
                 title: page.title,
                 isSavedDrawing: false,
+                isFreeDrawShelf: pack.id == BuiltInColoringPages.savedDrawingsPackId,
                 showsNewDrawingPlus: isBlankPaperStarter && !blankPaperLocked,
                 showsNewDrawingLocked: blankPaperLocked,
                 menuTarget: nil,
@@ -628,6 +637,7 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
                 image: LastDrawingStore.loadThumbnail(id: rec.id),
                 title: rec.pageTitle,
                 isSavedDrawing: true,
+                isFreeDrawShelf: true,
                 showsNewDrawingPlus: false,
                 showsNewDrawingLocked: false,
                 menuTarget: self,
@@ -766,6 +776,7 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
 
         override func prepareForReuse() {
             super.prepareForReuse()
+            imageView.backgroundColor = .clear
             newDrawingBadge.isHidden = true
             newDrawingBadge.backgroundColor = FigmaTheme.primaryOrange
             newDrawingBadge.layer.borderColor = FigmaTheme.primaryOrangeBorder.cgColor
@@ -775,6 +786,7 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
             image: UIImage?,
             title: String,
             isSavedDrawing: Bool,
+            isFreeDrawShelf: Bool,
             showsNewDrawingPlus: Bool,
             showsNewDrawingLocked: Bool,
             menuTarget: AnyObject?,
@@ -785,9 +797,25 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
             imageView.contentMode = isSavedDrawing ? .scaleAspectFill : .scaleAspectFit
             imageView.clipsToBounds = isSavedDrawing
             imageView.layer.cornerRadius = isSavedDrawing ? 6 : 0
-            contentView.layer.borderColor = isSavedDrawing
-                ? FigmaTheme.primaryOrange.withAlphaComponent(0.55).cgColor
-                : FigmaTheme.primaryOrange.cgColor
+            imageView.backgroundColor = isFreeDrawShelf ? FigmaTheme.BrowseShelf.cardImageWell : .clear
+
+            contentView.backgroundColor = isFreeDrawShelf
+                ? FigmaTheme.BrowseShelf.cardFill
+                : .white
+            titleLabel.textColor = isFreeDrawShelf
+                ? FigmaTheme.BrowseShelf.cardTitle
+                : FigmaTheme.titleStroke.withAlphaComponent(0.75)
+
+            if isSavedDrawing {
+                contentView.layer.borderColor = isFreeDrawShelf
+                    ? FigmaTheme.BrowseShelf.newDrawingAccent.withAlphaComponent(0.55).cgColor
+                    : FigmaTheme.primaryOrange.withAlphaComponent(0.55).cgColor
+            } else if isFreeDrawShelf {
+                contentView.layer.borderColor = FigmaTheme.BrowseShelf.cardBorder.cgColor
+            } else {
+                contentView.layer.borderColor = FigmaTheme.primaryOrange.cgColor
+            }
+
             let showBadge = showsNewDrawingPlus || showsNewDrawingLocked
             newDrawingBadge.isHidden = !showBadge
             if showsNewDrawingLocked {
@@ -798,8 +826,10 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
                     withConfiguration: UIImage.SymbolConfiguration(pointSize: 24, weight: .bold)
                 )
             } else {
-                newDrawingBadge.backgroundColor = FigmaTheme.primaryOrange
-                newDrawingBadge.layer.borderColor = FigmaTheme.primaryOrangeBorder.cgColor
+                let accent = isFreeDrawShelf ? FigmaTheme.BrowseShelf.newDrawingAccent : FigmaTheme.primaryOrange
+                let accentBorder = isFreeDrawShelf ? FigmaTheme.freeDrawModeBorder : FigmaTheme.primaryOrangeBorder
+                newDrawingBadge.backgroundColor = accent
+                newDrawingBadge.layer.borderColor = accentBorder.cgColor
                 newDrawingPlus.image = UIImage(
                     systemName: "plus",
                     withConfiguration: UIImage.SymbolConfiguration(pointSize: 28, weight: .bold)
