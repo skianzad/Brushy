@@ -13,6 +13,26 @@
           "location" : "https://github.com/Liquid4All/leap-sdk",
           "name" : "LeapSDK"
         },
+        "path" : "/Users/soheil/Documents/MagicPen/repo/MPen/Apps/MagicBrushy/.derivedData_ci/SourcePackages/artifacts/leap-sdk/LeapSDK/LeapSDK.xcframework",
+        "source" : {
+          "checksum" : "ae9ecddbe5dc226ddd4ec8fe42178b721faeab71a20b3f14efceaae5a2495b7e",
+          "type" : "remote",
+          "url" : "https://github.com/Liquid4All/leap-sdk/releases/download/v0.10.4.5/LeapSDK.xcframework.zip"
+        },
+        "targetName" : "LeapSDK"
+      },
+      {
+        "kind" : {
+          "xcframework" : {
+
+          }
+        },
+        "packageRef" : {
+          "identity" : "leap-sdk",
+          "kind" : "remoteSourceControl",
+          "location" : "https://github.com/Liquid4All/leap-sdk",
+          "name" : "LeapSDK"
+        },
         "path" : "/Users/soheil/Documents/MagicPen/repo/MPen/Apps/MagicBrushy/.derivedData_ci/SourcePackages/artifacts/leap-sdk/LeapModelDownloader/LeapModelDownloader.xcframework",
         "source" : {
           "checksum" : "eeee13f4c464cad32c998865041932985fcbac515a77f95ad5460a6f2df74b1e",
@@ -40,26 +60,6 @@
           "url" : "https://github.com/Liquid4All/leap-sdk/releases/download/v0.10.4.5/LeapOpenAIClient.xcframework.zip"
         },
         "targetName" : "LeapOpenAIClient"
-      },
-      {
-        "kind" : {
-          "xcframework" : {
-
-          }
-        },
-        "packageRef" : {
-          "identity" : "leap-sdk",
-          "kind" : "remoteSourceControl",
-          "location" : "https://github.com/Liquid4All/leap-sdk",
-          "name" : "LeapSDK"
-        },
-        "path" : "/Users/soheil/Documents/MagicPen/repo/MPen/Apps/MagicBrushy/.derivedData_ci/SourcePackages/artifacts/leap-sdk/LeapSDK/LeapSDK.xcframework",
-        "source" : {
-          "checksum" : "ae9ecddbe5dc226ddd4ec8fe42178b721faeab71a20b3f14efceaae5a2495b7e",
-          "type" : "remote",
-          "url" : "https://github.com/Liquid4All/leap-sdk/releases/download/v0.10.4.5/LeapSDK.xcframework.zip"
-        },
-        "targetName" : "LeapSDK"
       },
       {
         "kind" : {

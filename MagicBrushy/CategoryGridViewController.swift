@@ -618,7 +618,7 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
                     maxPixelSide: gridThumbnailMaxPixelSide()
                 )
             } else {
-                thumb = page.image
+                thumb = page.image.magicBrushyCompositedOnPaper()
             }
             let isBlankPaperStarter = pack.id == BuiltInColoringPages.savedDrawingsPackId && pageIndex == 0
             let blankPaperLocked = isBlankPaperStarter && !SubscriptionManager.shared.canStartAnotherFreeDrawing()

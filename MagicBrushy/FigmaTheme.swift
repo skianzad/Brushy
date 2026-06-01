@@ -47,6 +47,9 @@ enum FigmaTheme {
     /// Product palette (Tier 1–3) — crayons, canvas, chrome.
     enum Brand {
         static let skyBlue = UIColor(red: 30 / 255, green: 144 / 255, blue: 255 / 255, alpha: 1)           // #1E90FF
+        /// Light cyan wax — clearly lighter than `skyBlue` / royal blue.
+        static let lightSkyBlue = UIColor(red: 125 / 255, green: 211 / 255, blue: 252 / 255, alpha: 1)      // #7DD3FC
+        static let royalBlue = UIColor(red: 0 / 255, green: 82 / 255, blue: 204 / 255, alpha: 1)           // #0052CC
         static let successGreen = UIColor(red: 60 / 255, green: 179 / 255, blue: 113 / 255, alpha: 1)    // #3CB371
         static let rewardYellow = UIColor(red: 1, green: 215 / 255, blue: 0, alpha: 1)                    // #FFD700
         static let warmWhite = UIColor(red: 1, green: 253 / 255, blue: 245 / 255, alpha: 1)              // #FFFDF5

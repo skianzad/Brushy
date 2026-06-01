@@ -26,17 +26,18 @@ enum BuiltInColoringPages {
             CategoryPack(id: BuiltInColoringPages.savedDrawingsPackId, title: "Free Draw", symbolName: "pencil.and.outline", pages: [
                 Page(title: "New drawing", image: renderBlankFreeDrawingPaper()),
             ]),
-            CategoryPack(id: "dinosaurs", title: "Dinosaurs", symbolName: "lizard.fill", pages: pagesFromAsset("Dinosaurs", count: 16)),
+            CategoryPack(id: "animals", title: "Animals", symbolName: "pawprint.fill", pages: pagesFromAsset("Animals", count: 12)),
+            CategoryPack(id: "dinosaurs", title: "Dinosaurs", symbolName: "lizard.fill", pages: pagesFromAsset("Dinosaurs", count: 12)),
             CategoryPack(id: "fall", title: "Fall", symbolName: "leaf.fill", pages: pagesFromAsset("Fall", count: 12)),
-            CategoryPack(id: "food", title: "Food", symbolName: "fork.knife", pages: pagesFromAsset("Food", count: 16)),
-            CategoryPack(id: "magic", title: "Magic", symbolName: "moon.stars.fill", pages: pagesFromAsset("Magic", count: 16, pageTitlePrefix: "Magic")),
-            CategoryPack(id: "music", title: "Music", symbolName: "music.note", pages: pagesFromAsset("Music", count: 16)),
+            CategoryPack(id: "food", title: "Food", symbolName: "fork.knife", pages: pagesFromAsset("Food", count: 12)),
+            CategoryPack(id: "magic", title: "Magic", symbolName: "moon.stars.fill", pages: pagesFromAsset("Magic", count: 12, pageTitlePrefix: "Magic")),
+            CategoryPack(id: "music", title: "Music", symbolName: "music.note", pages: pagesFromAsset("Music", count: 12)),
             CategoryPack(id: "nature", title: "Nature", symbolName: "leaf.circle.fill", pages: pagesFromAsset("Nature", count: 16)),
             CategoryPack(id: "ocean", title: "Ocean", symbolName: "water.waves", pages: pagesFromAsset("Ocean", count: 16)),
-            CategoryPack(id: "school", title: "School", symbolName: "backpack.fill", pages: pagesFromAsset("School", count: 16)),
+            CategoryPack(id: "school", title: "School", symbolName: "backpack.fill", pages: pagesFromAsset("School", count: 12)),
             CategoryPack(id: "sports", title: "Sports", symbolName: "sportscourt.fill", pages: pagesFromAsset("Sports", count: 16)),
             CategoryPack(id: "transportation", title: "Transportation", symbolName: "car.fill", pages: pagesFromAsset("Transportation", count: 12)),
-            CategoryPack(id: "winter", title: "Winter", symbolName: "snowflake", pages: pagesFromAsset("Winter", count: 16)),
+            CategoryPack(id: "winter", title: "Winter", symbolName: "snowflake", pages: pagesFromAsset("Winter", count: 12)),
         ]
     }()
 
@@ -81,7 +82,7 @@ enum BuiltInColoringPages {
 
     /// First thumbnail for a home / browse tile.
     static func previewImage(packId: String) -> UIImage? {
-        pack(withId: packId)?.pages.first?.image
+        pack(withId: packId)?.pages.first?.image.magicBrushyCompositedOnPaper()
     }
 
     // MARK: - Rendering

@@ -33,8 +33,22 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     /// Flattened snapshot when resuming from `LastDrawingStore` (sits between template and live strokes).
     private let resumeSnapshotView = UIImageView()
     private let strokeView = ColoringStrokeView()
-    /// Line art only, above strokes so white eraser cannot hide template outlines.
+    /// Line art only, above colored strokes so the eraser cannot hide template outlines.
     private let templateLineOverlayView = UIImageView()
+    /// Opaque white crayon strokes above line art so white paint covers black outlines.
+    private let whiteStrokeOverlayView = ColoringStrokeView()
+    /// Receives eraser touches and applies them to both stroke layers at once.
+    private let eraserTouchBridgeView = DualLayerEraserTouchView()
+
+    private enum StrokeLayerRef {
+        case main
+        case whiteOverlay
+        case eraserBoth
+    }
+
+    /// Chronological undo stack across `strokeView` and `whiteStrokeOverlayView`.
+    private var strokeUndoHistory: [StrokeLayerRef] = []
+    private var strokeRedoHistory: [StrokeLayerRef] = []
     private let mascotImageView = UIImageView()
     private let mascotLipSync = MascotLipSyncDriver()
     /// Wraps mascot art and the tap-for-cheer gesture.
@@ -577,6 +591,11 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
 
         templateView.translatesAutoresizingMaskIntoConstraints = false
         strokeView.translatesAutoresizingMaskIntoConstraints = false
+        whiteStrokeOverlayView.translatesAutoresizingMaskIntoConstraints = false
+        whiteStrokeOverlayView.isUserInteractionEnabled = false
+        eraserTouchBridgeView.translatesAutoresizingMaskIntoConstraints = false
+        eraserTouchBridgeView.isUserInteractionEnabled = false
+        eraserTouchBridgeView.backgroundColor = .clear
         templateLineOverlayView.translatesAutoresizingMaskIntoConstraints = false
         templateLineOverlayView.contentMode = .scaleAspectFit
         templateLineOverlayView.layer.minificationFilter = .linear
@@ -597,6 +616,8 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         canvasContainer.addSubview(resumeSnapshotView)
         canvasContainer.addSubview(strokeView)
         canvasContainer.addSubview(templateLineOverlayView)
+        canvasContainer.addSubview(whiteStrokeOverlayView)
+        canvasContainer.addSubview(eraserTouchBridgeView)
 
         paintRow.axis = .horizontal
         paintRow.alignment = .fill
@@ -683,6 +704,16 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             templateLineOverlayView.trailingAnchor.constraint(equalTo: templateView.trailingAnchor),
             templateLineOverlayView.topAnchor.constraint(equalTo: templateView.topAnchor),
             templateLineOverlayView.bottomAnchor.constraint(equalTo: templateView.bottomAnchor),
+
+            whiteStrokeOverlayView.leadingAnchor.constraint(equalTo: templateView.leadingAnchor),
+            whiteStrokeOverlayView.trailingAnchor.constraint(equalTo: templateView.trailingAnchor),
+            whiteStrokeOverlayView.topAnchor.constraint(equalTo: templateView.topAnchor),
+            whiteStrokeOverlayView.bottomAnchor.constraint(equalTo: templateView.bottomAnchor),
+
+            eraserTouchBridgeView.leadingAnchor.constraint(equalTo: templateView.leadingAnchor),
+            eraserTouchBridgeView.trailingAnchor.constraint(equalTo: templateView.trailingAnchor),
+            eraserTouchBridgeView.topAnchor.constraint(equalTo: templateView.topAnchor),
+            eraserTouchBridgeView.bottomAnchor.constraint(equalTo: templateView.bottomAnchor),
 
             loadOverlay.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             loadOverlay.trailingAnchor.constraint(equalTo: view.trailingAnchor),
@@ -772,8 +803,19 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             self?.onColoringStrokeBegan()
         }
         strokeView.onCommittedStrokeEnded = { [weak self] in
-            // self?.scheduleDebouncedStrokeReaction()  // legacy: separate reaction VLM; mascot pose now comes from combined prompt with coach line
-            self?.scheduleFeedbackIdleTimer()
+            self?.onStrokeCommitted(on: .main)
+        }
+        whiteStrokeOverlayView.onPaintingBegan = { [weak self] in
+            self?.onColoringStrokeBegan()
+        }
+        whiteStrokeOverlayView.onCommittedStrokeEnded = { [weak self] in
+            self?.onStrokeCommitted(on: .whiteOverlay)
+        }
+        eraserTouchBridgeView.onPaintingBegan = { [weak self] in
+            self?.onColoringStrokeBegan()
+        }
+        eraserTouchBridgeView.onCommittedStrokeEnded = { [weak self] in
+            self?.onEraserStrokeCommitted()
         }
         applyToolMode()
         refreshCrayonSelection(animated: false)
@@ -795,10 +837,13 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     }
 
     private func activeCrayonStrokeColor() -> UIColor {
-        if isEraserMode { return .white }
+        if isEraserMode { return FigmaTheme.canvasFill }
         let i = strokePaletteIndex.clamped(to: 0...(palette.count - 1))
         if i == MagicBrushyCrayonResources.rainbowPaletteIndex {
             return MagicBrushyRainbowGlitterStroke.uiAccentColor
+        }
+        if i == MagicBrushyCrayonResources.whitePaletteIndex {
+            return UIColor(red: 1, green: 1, blue: 1, alpha: 1)
         }
         return palette[i]
     }
@@ -814,7 +859,53 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
 
     private func applyStrokeWidthFromSelection() {
         let index = selectedStrokeSizeIndex.clamped(to: 0...(strokeWidthPresets.count - 1))
-        strokeView.strokeWidth = strokeWidthPresets[index]
+        let width = strokeWidthPresets[index]
+        strokeView.strokeWidth = width
+        whiteStrokeOverlayView.strokeWidth = width
+    }
+
+    private var isWhiteCrayonMode: Bool {
+        !isEraserMode && strokePaletteIndex == MagicBrushyCrayonResources.whitePaletteIndex
+    }
+
+    private func strokeView(for layer: StrokeLayerRef) -> ColoringStrokeView {
+        switch layer {
+        case .main, .eraserBoth: return strokeView
+        case .whiteOverlay: return whiteStrokeOverlayView
+        }
+    }
+
+    private func onStrokeCommitted(on layer: StrokeLayerRef) {
+        guard !isEraserMode else { return }
+        strokeUndoHistory.append(layer)
+        strokeRedoHistory.removeAll()
+        scheduleFeedbackIdleTimer()
+    }
+
+    private func onEraserStrokeCommitted() {
+        strokeUndoHistory.append(.eraserBoth)
+        strokeRedoHistory.removeAll()
+        scheduleFeedbackIdleTimer()
+    }
+
+    private func lastCommittedStrokeView() -> ColoringStrokeView {
+        switch strokeUndoHistory.last {
+        case .whiteOverlay: return whiteStrokeOverlayView
+        case .eraserBoth: return whiteStrokeOverlayView
+        case .main, nil: return strokeView
+        }
+    }
+
+    private var hasAnyStrokeHistory: Bool {
+        !strokeView.chronologicalStrokeColors.isEmpty
+            || !whiteStrokeOverlayView.chronologicalStrokeColors.isEmpty
+    }
+
+    private func clearAllStrokes() {
+        strokeView.clearStrokes()
+        whiteStrokeOverlayView.clearStrokes()
+        strokeUndoHistory.removeAll()
+        strokeRedoHistory.removeAll()
     }
 
     private static let eraserToolIdleFill = UIColor(red: 1, green: 0.93, blue: 0.86, alpha: 1)
@@ -921,7 +1012,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
 
         let isFreeDrawing = packId == BuiltInColoringPages.savedDrawingsPackId
 
-        if isFreeDrawing, strokeView.hasUserPaint, coloringBookPages.indices.contains(pageIndex) {
+        if isFreeDrawing, (strokeView.hasUserPaint || whiteStrokeOverlayView.hasUserPaint), coloringBookPages.indices.contains(pageIndex) {
             // Persist free-drawing session to LastDrawingStore so it appears in the grid.
             let title = coloringBookPages[pageIndex].title
             // Legacy flat resume hides the line overlay; outlines live inside the JPEG — no true line-free underlay to save.
@@ -1009,10 +1100,32 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
 
     private func applyToolMode() {
         applyStrokeWidthFromSelection()
+        eraserTouchBridgeView.targets = [strokeView, whiteStrokeOverlayView]
         if isEraserMode {
-            strokeView.strokeColor = .white
+            // Below line art: paper-colored eraser. Above line art: clear punch-out for white crayon.
+            strokeView.strokeColor = FigmaTheme.canvasFill
             strokeView.usesRainbowGlitterStroke = false
+            strokeView.usesClearEraserStroke = false
+            whiteStrokeOverlayView.strokeColor = .clear
+            whiteStrokeOverlayView.usesRainbowGlitterStroke = false
+            whiteStrokeOverlayView.usesClearEraserStroke = true
+            strokeView.isUserInteractionEnabled = false
+            whiteStrokeOverlayView.isUserInteractionEnabled = false
+            eraserTouchBridgeView.isUserInteractionEnabled = true
+        } else if isWhiteCrayonMode {
+            strokeView.isUserInteractionEnabled = false
+            whiteStrokeOverlayView.isUserInteractionEnabled = true
+            eraserTouchBridgeView.isUserInteractionEnabled = false
+            whiteStrokeOverlayView.strokeColor = UIColor(red: 1, green: 1, blue: 1, alpha: 1)
+            whiteStrokeOverlayView.usesRainbowGlitterStroke = false
+            whiteStrokeOverlayView.usesClearEraserStroke = false
+            strokeView.usesClearEraserStroke = false
         } else {
+            strokeView.isUserInteractionEnabled = true
+            whiteStrokeOverlayView.isUserInteractionEnabled = false
+            eraserTouchBridgeView.isUserInteractionEnabled = false
+            strokeView.usesClearEraserStroke = false
+            whiteStrokeOverlayView.usesClearEraserStroke = false
             let i = strokePaletteIndex.clamped(to: 0...(palette.count - 1))
             strokeView.strokeColor = palette[i]
             strokeView.usesRainbowGlitterStroke = i == MagicBrushyCrayonResources.rainbowPaletteIndex
@@ -1354,7 +1467,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
 
     private func scheduleFeedbackIdleTimer() {
         cancelFeedbackIdleTimer()
-        guard !strokeView.chronologicalStrokeColors.isEmpty else { return }
+        guard hasAnyStrokeHistory else { return }
         // Eraser pen-lift: do not schedule idle coach VLM.
         guard !isEraserMode else { return }
         // Settings coach-feedback off: skip auto-feedback.
@@ -1455,7 +1568,12 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
     ) -> Bool {
         if coloringOnPhone.isPhoneCanvasGesture(gestureRecognizer) {
-            return otherGestureRecognizer.view === strokeView || otherGestureRecognizer.view?.isDescendant(of: strokeView) == true
+            return otherGestureRecognizer.view === strokeView
+                || otherGestureRecognizer.view === whiteStrokeOverlayView
+                || otherGestureRecognizer.view === eraserTouchBridgeView
+                || otherGestureRecognizer.view?.isDescendant(of: strokeView) == true
+                || otherGestureRecognizer.view?.isDescendant(of: whiteStrokeOverlayView) == true
+                || otherGestureRecognizer.view?.isDescendant(of: eraserTouchBridgeView) == true
         }
         return false
     }
@@ -1516,7 +1634,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     private func saveCurrentTemplateProgressIfNeeded() {
         guard let packId = sessionPackId,
               packId != BuiltInColoringPages.savedDrawingsPackId else { return }
-        let hasPaint = strokeView.hasUserPaint || !resumeSnapshotView.isHidden
+        let hasPaint = strokeView.hasUserPaint || whiteStrokeOverlayView.hasUserPaint || !resumeSnapshotView.isHidden
         guard hasPaint else { return }
         let canSaveLineFreeUnderlay = resumeSnapshotView.isHidden || !templateLineOverlayView.isHidden
         guard canSaveLineFreeUnderlay else { return }
@@ -1570,7 +1688,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             templateLineOverlayView.image = page.image.magicBrushyLineArtOverlay()
             templateLineOverlayView.isHidden = false
         }
-        strokeView.clearStrokes()
+        clearAllStrokes()
         // On mid-session page switches (no pending resume set by the caller), restore saved template progress.
         // The initial page load uses pendingResumeComposite instead (applied after layout via applyPendingResumeCompositeIfNeeded).
         if pendingResumeComposite == nil,
@@ -1587,18 +1705,39 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
 
     @objc private func clearStrokes() {
         interruptCoachAudioAndWork()
-        strokeView.clearStrokes()
+        clearAllStrokes()
     }
 
     @objc private func undoStroke() {
         interruptCoachAudioAndWork()
-        guard strokeView.undoLastStroke() else { return }
+        guard let last = strokeUndoHistory.last else { return }
+        switch last {
+        case .eraserBoth:
+            strokeUndoHistory.removeLast()
+            _ = whiteStrokeOverlayView.undoLastStroke()
+            _ = strokeView.undoLastStroke()
+            strokeRedoHistory.append(.eraserBoth)
+        default:
+            guard strokeView(for: last).undoLastStroke() else { return }
+            strokeUndoHistory.removeLast()
+            strokeRedoHistory.append(last)
+        }
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
     }
 
     @objc private func redoStroke() {
         interruptCoachAudioAndWork()
-        guard strokeView.redoLastStroke() else { return }
+        guard let next = strokeRedoHistory.last else { return }
+        switch next {
+        case .eraserBoth:
+            strokeRedoHistory.removeLast()
+            guard strokeView.redoLastStroke(), whiteStrokeOverlayView.redoLastStroke() else { return }
+            strokeUndoHistory.append(.eraserBoth)
+        default:
+            guard strokeView(for: next).redoLastStroke() else { return }
+            strokeRedoHistory.removeLast()
+            strokeUndoHistory.append(next)
+        }
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
     }
 
@@ -1675,7 +1814,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             guard !model.running else { return }
             guard feedbackGen == self.feedbackGeneration else { return }
             if requireStrokeHistory {
-                guard !self.strokeView.chronologicalStrokeColors.isEmpty else { return }
+                guard self.hasAnyStrokeHistory else { return }
             }
             self.view.layoutIfNeeded()
             let bounds = self.strokeView.bounds
@@ -1956,6 +2095,10 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
                     : drawRect
                 line.draw(in: lineRect)
             }
+
+            if let whiteStrokes = whiteStrokeOverlayView.strokesOnlyImage(displayScale: format.scale) {
+                whiteStrokes.draw(in: drawRect)
+            }
         }
     }
 
@@ -1982,7 +2125,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     private func captureCanvasForVLM() -> UIImage {
         let full = captureCanvasForVLMFullPage()
         guard !usesFullPageVLMInput,
-              let crop = strokeView.vlmCropRectAroundLastFinishedStroke(
+              let crop = lastCommittedStrokeView().vlmCropRectAroundLastFinishedStroke(
                 minCanvasFraction: vlmStrokeCropMinCanvasFraction
               ) else { return full }
         return vlmImageByCroppingFullCanvas(full, to: crop)
@@ -2189,11 +2332,12 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     }
 
     private func makeStrokeFeedbackPrompt() -> String {
-        let lastColor = strokeView.chronologicalStrokeColors.last
+        let source = lastCommittedStrokeView()
+        let lastColor = source.chronologicalStrokeColors.last
         let paintName = lastColor.map { simpleKidColorName(for: $0) }
         return Prompt.strokeFeedback(
             pageTitle: currentPageTitle(),
-            lastStrokePointCount: strokeView.lastFinishedStrokePointCount,
+            lastStrokePointCount: source.lastFinishedStrokePointCount,
             lastPaintColorName: paintName,
             isFreeDrawing: isFreeDrawingSession
         )
@@ -2217,7 +2361,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
 
     /// Saved underlay, pending resume, or live strokes when the page opens (not a blank sheet).
     private func canvasHasPriorPaintForPageWelcome() -> Bool {
-        if strokeView.hasUserPaint { return true }
+        if strokeView.hasUserPaint || whiteStrokeOverlayView.hasUserPaint { return true }
         if pendingResumeComposite != nil { return true }
         if !resumeSnapshotView.isHidden, resumeSnapshotView.image != nil { return true }
         return false
@@ -2380,7 +2524,10 @@ private enum MagicBrushyCrayonResources {
     /// `17-color.png` — rainbow glitter crayon (0-based index 16).
     static let rainbowPaletteIndex = 16
 
-    /// Top → bottom in the crayon rail: ROYGBIV, then earth tones, rainbow magic, black & white last.
+    /// `01-color.png` — opaque white wax (not paper-colored like the eraser).
+    static let whitePaletteIndex = 0
+
+    /// Top → bottom in the crayon rail: ROYGBIV, then earth tones, rainbow magic, white then black last.
     static let rainbowDisplayOrder: [Int] = [
         9,                          // red
         7,                          // orange
@@ -2416,9 +2563,10 @@ private enum MagicBrushyCrayonResources {
 
     /// Brand-aligned stroke colors (see `FigmaTheme.Brand`).
     private static let strokeColorOverrides: [Int: UIColor] = [
-        0: FigmaTheme.Brand.warmWhite,
-        1: FigmaTheme.Brand.softBlack,
-        2: FigmaTheme.Brand.skyBlue,
+        0: UIColor(red: 1, green: 1, blue: 1, alpha: 1),
+        1: UIColor(red: 0, green: 0, blue: 0, alpha: 1),
+        2: FigmaTheme.Brand.lightSkyBlue,
+        3: FigmaTheme.Brand.royalBlue,
         5: FigmaTheme.Brand.successGreen,
         6: FigmaTheme.Brand.rewardYellow,
         7: FigmaTheme.Brand.playOrange,
@@ -2662,6 +2810,10 @@ private final class MagicCrayonControl: UIControl {
         swatchView.clipsToBounds = false
         swatchView.backgroundColor = .clear
         swatchView.translatesAutoresizingMaskIntoConstraints = true
+        swatchView.layer.shadowColor = UIColor.black.cgColor
+        swatchView.layer.shadowOffset = CGSize(width: 0, height: 3)
+        swatchView.layer.shadowRadius = 5
+        swatchView.layer.shadowOpacity = 0
 
         shineOverlay.colors = [
             UIColor.white.withAlphaComponent(0.36).cgColor,
@@ -2701,6 +2853,15 @@ private final class MagicCrayonControl: UIControl {
             height: height
         )
         swatchView.frame = swatchFrame
+        updateSelectionShadowPath()
+    }
+
+    private func updateSelectionShadowPath() {
+        guard swatchFrame.width > 1 else {
+            swatchView.layer.shadowPath = nil
+            return
+        }
+        swatchView.layer.shadowPath = UIBezierPath(roundedRect: swatchView.bounds, cornerRadius: 4).cgPath
     }
 
     private func layoutGlassOnBody() {
@@ -2748,10 +2909,12 @@ private final class MagicCrayonControl: UIControl {
                 self.glassRingView.alpha = 1
                 self.shineOverlay.isHidden = false
                 self.transform = Self.selectedScale
+                self.swatchView.layer.shadowOpacity = 0.42
             } else {
                 self.glassRingView.isHidden = true
                 self.shineOverlay.isHidden = true
                 self.transform = .identity
+                self.swatchView.layer.shadowOpacity = 0
             }
         }
         if animated {
@@ -2850,6 +3013,58 @@ final class PaintBrushIconView: UIView {
     override func layoutSubviews() {
         super.layoutSubviews()
         setNeedsDisplay()
+    }
+}
+
+/// Forwards one eraser gesture to multiple `ColoringStrokeView` layers (below + above line art).
+private final class DualLayerEraserTouchView: UIView {
+    var targets: [ColoringStrokeView] = []
+    var onPaintingBegan: (() -> Void)?
+    var onCommittedStrokeEnded: (() -> Void)?
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        backgroundColor = .clear
+        isMultipleTouchEnabled = false
+        isOpaque = false
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        backgroundColor = .clear
+        isMultipleTouchEnabled = false
+        isOpaque = false
+    }
+
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let touch = touches.first else { return }
+        onPaintingBegan?()
+        let point = touch.location(in: self)
+        for target in targets {
+            target.applyEraserTouchBegan(at: convert(point, to: target), touch: touch)
+        }
+    }
+
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let touch = touches.first else { return }
+        let point = touch.location(in: self)
+        for target in targets {
+            target.applyEraserTouchMoved(at: convert(point, to: target), touch: touch, event: event)
+        }
+    }
+
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let touch = touches.first else { return }
+        for target in targets {
+            target.applyEraserTouchEnded(touch: touch)
+        }
+        onCommittedStrokeEnded?()
+    }
+
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        for target in targets {
+            target.applyEraserTouchCancelled()
+        }
     }
 }
 

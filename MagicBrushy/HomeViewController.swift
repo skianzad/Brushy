@@ -6,20 +6,22 @@ final class HomeViewController: UIViewController {
     private enum Category: Int, CaseIterable {
         case ocean = 0
         case dinosaurs = 1
-        case fall = 2
-        case food = 3
-        case magic = 4
-        case nature = 5
-        case music = 6
-        case school = 7
-        case sports = 8
-        case transportation = 9
-        case winter = 10
+        case animals = 2
+        case fall = 3
+        case food = 4
+        case magic = 5
+        case nature = 6
+        case music = 7
+        case school = 8
+        case sports = 9
+        case transportation = 10
+        case winter = 11
 
         var title: String {
             switch self {
             case .ocean: return "Ocean"
             case .dinosaurs: return "Dinosaurs"
+            case .animals: return "Animals"
             case .fall: return "Fall"
             case .food: return "Food"
             case .magic: return "Magic"
@@ -36,6 +38,7 @@ final class HomeViewController: UIViewController {
             switch self {
             case .ocean: return "ocean"
             case .dinosaurs: return "dinosaurs"
+            case .animals: return "animals"
             case .fall: return "fall"
             case .food: return "food"
             case .magic: return "magic"
@@ -52,6 +55,7 @@ final class HomeViewController: UIViewController {
             switch self {
             case .ocean: return FigmaTheme.oceanAccent
             case .dinosaurs: return FigmaTheme.dinosaursAccent
+            case .animals: return FigmaTheme.animalsAccent
             case .fall: return FigmaTheme.fallAccent
             case .food: return FigmaTheme.foodAccent
             case .magic: return FigmaTheme.magicAccent
@@ -880,13 +884,14 @@ final class HomeViewController: UIViewController {
 
         row0.addArrangedSubview(makeTile(for: .ocean))
         row0.addArrangedSubview(makeTile(for: .dinosaurs))
-        row0.addArrangedSubview(makeTile(for: .fall))
+        row0.addArrangedSubview(makeTile(for: .animals))
+        row1.addArrangedSubview(makeTile(for: .fall))
         row1.addArrangedSubview(makeTile(for: .food))
         row1.addArrangedSubview(makeTile(for: .magic))
-        row1.addArrangedSubview(makeTile(for: .nature))
+        row2.addArrangedSubview(makeTile(for: .nature))
         row2.addArrangedSubview(makeTile(for: .music))
         row2.addArrangedSubview(makeTile(for: .school))
-        row2.addArrangedSubview(makeTile(for: .sports))
+        row3.addArrangedSubview(makeTile(for: .sports))
         row3.addArrangedSubview(makeTile(for: .transportation))
         row3.addArrangedSubview(makeTile(for: .winter))
         gridStack.addArrangedSubview(row0)

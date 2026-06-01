@@ -8,6 +8,7 @@ final class ColoringStrokeView: UIView {
         var color: UIColor
         var width: CGFloat
         var isRainbowGlitter: Bool = false
+        var clearsLayer: Bool = false
     }
 
     private var strokes: [Stroke] = []
@@ -33,6 +34,8 @@ final class ColoringStrokeView: UIView {
     var strokeWidth: CGFloat = 22
     /// When true, strokes cycle rainbow hues (crayon `17-color.png`).
     var usesRainbowGlitterStroke = false
+    /// When true, strokes punch alpha out of this layer (white crayon overlay eraser).
+    var usesClearEraserStroke = false
 
     // MARK: - Live rainbow bitmap cache
     // Accumulates the in-progress rainbow stroke incrementally so draw() only blits one image
@@ -59,34 +62,13 @@ final class ColoringStrokeView: UIView {
     }
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let p = touches.first?.location(in: self) else { return }
-        onPaintingBegan?()
-        current = Stroke(
-            points: [p],
-            color: strokeColor,
-            width: scaledWidth(for: touches.first),
-            isRainbowGlitter: usesRainbowGlitterStroke
-        )
-        rainbowLiveBitmap = nil
-        rainbowBitmapPtCount = 0
-        rainbowBitmapLength = 0
-        setNeedsDisplay()
+        guard let touch = touches.first else { return }
+        beginStroke(at: touch.location(in: self), touch: touch)
     }
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let t = touches.first else { return }
-        var pts: [CGPoint] = []
-        if let coalesced = event?.coalescedTouches(for: t) {
-            for ct in coalesced {
-                pts.append(ct.location(in: self))
-            }
-        } else {
-            pts.append(t.location(in: self))
-        }
-        current?.points.append(contentsOf: pts)
-        current?.width = scaledWidth(for: t)
-        if current?.isRainbowGlitter == true { growRainbowBitmap() }
-        setNeedsDisplay()
+        appendStrokePoints(coalescedPoints(for: t, event: event), touch: t)
     }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -94,10 +76,60 @@ final class ColoringStrokeView: UIView {
     }
 
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
-        current = nil
+        cancelInProgressStroke()
+    }
+
+    /// Forwards one finger to this layer (dual-layer eraser bridge).
+    func applyEraserTouchBegan(at point: CGPoint, touch: UITouch) {
+        beginStroke(at: point, touch: touch, notifyBegan: false)
+    }
+
+    func applyEraserTouchMoved(at point: CGPoint, touch: UITouch, event: UIEvent?) {
+        appendStrokePoints(coalescedPoints(for: touch, event: event, fallback: point), touch: touch)
+    }
+
+    func applyEraserTouchEnded(touch: UITouch) {
+        finalizeCurrentStroke(with: touch)
+    }
+
+    func applyEraserTouchCancelled() {
+        cancelInProgressStroke()
+    }
+
+    private func coalescedPoints(for touch: UITouch, event: UIEvent?, fallback: CGPoint? = nil) -> [CGPoint] {
+        var pts: [CGPoint] = []
+        if let coalesced = event?.coalescedTouches(for: touch) {
+            for ct in coalesced {
+                pts.append(ct.location(in: self))
+            }
+        } else if let fallback {
+            pts.append(fallback)
+        } else {
+            pts.append(touch.location(in: self))
+        }
+        return pts
+    }
+
+    private func beginStroke(at point: CGPoint, touch: UITouch?, notifyBegan: Bool = true) {
+        if notifyBegan { onPaintingBegan?() }
+        current = Stroke(
+            points: [point],
+            color: strokeColor,
+            width: scaledWidth(for: touch),
+            isRainbowGlitter: usesRainbowGlitterStroke,
+            clearsLayer: usesClearEraserStroke
+        )
         rainbowLiveBitmap = nil
         rainbowBitmapPtCount = 0
         rainbowBitmapLength = 0
+        setNeedsDisplay()
+    }
+
+    private func appendStrokePoints(_ points: [CGPoint], touch: UITouch?) {
+        guard !points.isEmpty else { return }
+        current?.points.append(contentsOf: points)
+        current?.width = scaledWidth(for: touch)
+        if current?.isRainbowGlitter == true { growRainbowBitmap() }
         setNeedsDisplay()
     }
 
@@ -158,6 +190,17 @@ final class ColoringStrokeView: UIView {
             MagicBrushyRainbowGlitterStroke.paint(points: stroke.points, width: stroke.width, in: ctx)
             return
         }
+        if stroke.clearsLayer {
+            ctx.saveGState()
+            ctx.setBlendMode(.clear)
+            paintStrokeGeometry(stroke, in: ctx)
+            ctx.restoreGState()
+            return
+        }
+        paintStrokeGeometry(stroke, in: ctx)
+    }
+
+    private func paintStrokeGeometry(_ stroke: Stroke, in ctx: CGContext) {
         guard stroke.points.count >= 2 else {
             ctx.setFillColor(stroke.color.cgColor)
             let r = stroke.width * 0.55
@@ -574,6 +617,13 @@ private extension Comparable {
 
 private enum MagicBrushyLineArtCache {
     static let store = NSCache<AnyObject, UIImage>()
+    /// Bump when outline tuning changes so stale overlays are not reused across app runs.
+    static let version = 4
+
+    /// Pointer-identity key — unique per distinct CGImage object, never collides on same-size assets.
+    static func key(for cg: CGImage) -> AnyObject {
+        Unmanaged.passUnretained(cg).toOpaque() as AnyObject
+    }
 }
 
 /// Tuning for template outlines (see `magicBrushyLineArtOverlay`).
@@ -582,10 +632,10 @@ private enum MagicBrushyLineArtStyle {
     static let paperLum: Double = 220
     /// Pixels darker than this are full-strength ink; raising this thins the lines.
     static let inkLum: Double = 115
-    /// Gray stroke color (0 = black, 255 = white).
-    static let inkGray: Double = 130
-    /// Peak opacity for the darkest ink (~0.59 at 150/255).
-    static let inkAlphaMax: Double = 150
+    /// Ink color (0 = black, 255 = white).
+    static let inkGray: Double = 0
+    /// Peak opacity for the darkest ink (255 = fully opaque outlines).
+    static let inkAlphaMax: Double = 255
 }
 
 extension UIImage {
@@ -600,11 +650,25 @@ extension UIImage {
         return UIImage(cgImage: cg, scale: displayScale, orientation: imageOrientation)
     }
 
-    /// Soft gray line art on a transparent background so it can sit above user paint (including white eraser).
-    /// Light paper drops out; dark strokes become thin, faded gray outlines with soft anti-aliased edges.
+    /// Grid / home thumbnails: composite transparent line art onto warm paper so previews are not a black rectangle.
+    func magicBrushyCompositedOnPaper(fill: UIColor = FigmaTheme.canvasFill) -> UIImage {
+        let drawRect = CGRect(origin: .zero, size: size)
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = scale
+        format.opaque = true
+        return UIGraphicsImageRenderer(size: size, format: format).image { _ in
+            fill.setFill()
+            UIBezierPath(rect: drawRect).fill()
+            draw(in: drawRect)
+        }
+    }
+
+    /// Line art on a transparent background so it can sit above user paint (including white eraser).
+    /// Light paper drops out; dark strokes become crisp near-black outlines with soft anti-aliased edges.
+    /// Figma exports (`Mask group`, numbered PNGs) are already black ink on transparency — keep their alpha as-is.
     func magicBrushyLineArtOverlay() -> UIImage {
         guard let cgKey = cgImage else { return self }
-        if let cached = MagicBrushyLineArtCache.store.object(forKey: cgKey as AnyObject) {
+        if let cached = MagicBrushyLineArtCache.store.object(forKey: MagicBrushyLineArtCache.key(for: cgKey)) {
             return cached
         }
 
@@ -616,6 +680,97 @@ extension UIImage {
         }
         guard let cg = sampled.cgImage else { return self }
 
+        if magicBrushyLooksLikeTransparentLineArt(cg: cg) {
+            let out = magicBrushyTransparentInkOverlay(from: cg)
+            MagicBrushyLineArtCache.store.setObject(out, forKey: MagicBrushyLineArtCache.key(for: cgKey))
+            return out
+        }
+
+        let out = magicBrushyLuminanceLineArtOverlay(from: cg)
+        MagicBrushyLineArtCache.store.setObject(out, forKey: MagicBrushyLineArtCache.key(for: cgKey))
+        return out
+    }
+
+    /// True when most pixels are fully transparent — typical Figma line-art export.
+    private func magicBrushyLooksLikeTransparentLineArt(cg: CGImage) -> Bool {
+        let sampleW = min(96, cg.width)
+        let sampleH = min(96, cg.height)
+        guard sampleW > 0, sampleH > 0 else { return false }
+
+        let rowBytes = sampleW * 4
+        guard let data = NSMutableData(length: rowBytes * sampleH) else { return false }
+        let ptr = data.mutableBytes.assumingMemoryBound(to: UInt8.self)
+        let bitmapInfo = CGImageAlphaInfo.premultipliedFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue
+        guard let ctx = CGContext(
+            data: ptr,
+            width: sampleW,
+            height: sampleH,
+            bitsPerComponent: 8,
+            bytesPerRow: rowBytes,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: bitmapInfo
+        ) else { return false }
+
+        ctx.interpolationQuality = .medium
+        ctx.draw(cg, in: CGRect(x: 0, y: 0, width: sampleW, height: sampleH))
+
+        var transparentCount = 0
+        let total = sampleW * sampleH
+        for y in 0..<sampleH {
+            var o = y * rowBytes
+            for _ in 0..<sampleW {
+                if ptr[o + 3] < 12 { transparentCount += 1 }
+                o += 4
+            }
+        }
+        return Double(transparentCount) / Double(total) > 0.45
+    }
+
+    /// Preserve source alpha; force ink to near-black (already exported from Figma).
+    private func magicBrushyTransparentInkOverlay(from cg: CGImage) -> UIImage {
+        let w = cg.width
+        let h = cg.height
+        let rowBytes = w * 4
+        guard let data = NSMutableData(length: rowBytes * h) else { return self }
+        let ptr = data.mutableBytes.assumingMemoryBound(to: UInt8.self)
+        let bitmapInfo = CGImageAlphaInfo.premultipliedFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue
+        guard let ctx = CGContext(
+            data: ptr,
+            width: w,
+            height: h,
+            bitsPerComponent: 8,
+            bytesPerRow: rowBytes,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: bitmapInfo
+        ) else { return self }
+
+        ctx.draw(cg, in: CGRect(x: 0, y: 0, width: w, height: h))
+
+        for y in 0..<h {
+            var o = y * rowBytes
+            for _ in 0..<w {
+                let aIn = ptr[o + 3]
+                if aIn < 6 {
+                    ptr[o] = 0
+                    ptr[o + 1] = 0
+                    ptr[o + 2] = 0
+                    ptr[o + 3] = 0
+                } else {
+                    ptr[o] = 0
+                    ptr[o + 1] = 0
+                    ptr[o + 2] = 0
+                    ptr[o + 3] = aIn
+                }
+                o += 4
+            }
+        }
+
+        guard let outCg = ctx.makeImage() else { return self }
+        return UIImage(cgImage: outCg, scale: scale, orientation: imageOrientation)
+    }
+
+    /// Legacy white-paper templates: derive ink from luminance and drop bright paper.
+    private func magicBrushyLuminanceLineArtOverlay(from cg: CGImage) -> UIImage {
         let w = cg.width
         let h = cg.height
         let rowBytes = w * 4
@@ -690,8 +845,6 @@ extension UIImage {
         }
 
         guard let outCg = ctx.makeImage() else { return self }
-        let out = UIImage(cgImage: outCg, scale: scale, orientation: imageOrientation)
-        MagicBrushyLineArtCache.store.setObject(out, forKey: cgKey as AnyObject)
-        return out
+        return UIImage(cgImage: outCg, scale: scale, orientation: imageOrientation)
     }
 }
