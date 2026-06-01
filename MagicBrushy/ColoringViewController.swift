@@ -225,6 +225,18 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             name: MagicBrushyCoachAutoFeedback.didChangeNotification,
             object: nil
         )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(appDidEnterBackground),
+            name: UIApplication.didEnterBackgroundNotification,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(appWillEnterForeground),
+            name: UIApplication.willEnterForegroundNotification,
+            object: nil
+        )
         additionalSafeAreaInsets = TopChromeMetrics.additionalSafeAreaShrink
         let g = view.safeAreaLayoutGuide
         view.backgroundColor = .black
@@ -1145,6 +1157,22 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         eraserToolButton?.layer.borderColor = (isEraserMode ? activeBorder : idleBorder).cgColor
         brushToolButton?.alpha = isEraserMode ? 0.55 : 1.0
         eraserToolButton?.alpha = isEraserMode ? 1.0 : 0.55
+    }
+
+    @objc private func appDidEnterBackground() {
+        pollTimer?.invalidate()
+        pollTimer = nil
+        cancelFeedbackIdleTimer()
+        cancelPendingReactionWork()
+        vlm.cancel()
+        interruptCoachAudioAndWork()
+    }
+
+    @objc private func appWillEnterForeground() {
+        if pollTimer == nil {
+            startPollingVLMUi()
+        }
+        refreshModelStatusIndicator()
     }
 
     deinit {

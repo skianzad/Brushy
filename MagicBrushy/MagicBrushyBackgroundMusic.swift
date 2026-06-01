@@ -116,6 +116,27 @@ enum MagicBrushyBackgroundMusic {
         player?.pause()
     }
 
+    /// Pause music and fully deactivate the AVAudioSession so iOS can suspend the process.
+    @MainActor
+    static func suspendForBackground() {
+        player?.pause()
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+    }
+
+    /// Reactivate the AVAudioSession and resume playback when the app returns to foreground.
+    @MainActor
+    static func resumeForForeground() {
+        guard player != nil else {
+            startIfNeeded()
+            return
+        }
+        do {
+            try AVAudioSession.sharedInstance().setActive(true)
+        } catch {}
+        player?.play()
+        applyCurrentVolumeToPlayer()
+    }
+
     @MainActor
     static func resumeIfNeeded() {
         guard player != nil else {

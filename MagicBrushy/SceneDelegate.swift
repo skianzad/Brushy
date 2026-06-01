@@ -28,4 +28,16 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             MagicBrushyBackgroundMusic.pause()
         }
     }
+
+    func sceneDidEnterBackground(_ scene: UIScene) {
+        Task { @MainActor in
+            MagicBrushyBackgroundMusic.suspendForBackground()
+        }
+    }
+
+    func sceneWillEnterForeground(_ scene: UIScene) {
+        Task { @MainActor in
+            MagicBrushyBackgroundMusic.resumeForForeground()
+        }
+    }
 }
