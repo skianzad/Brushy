@@ -2,7 +2,7 @@
 
 ## App Store builds (current)
 
-**ODR is not bundled in App Store builds.** Apple rejects asset packs over **512 MB** per pack on iOS 17 (`ITMS-90557`). The LFM2.5-VL-1.6B Q4_0 weights (~664 MB) and mmproj Q8_0 (~556 MB) each exceed that limit, and together they form a ~1 GB pack.
+**ODR is not bundled in App Store builds** (optional later). On iOS 17, Apple rejects asset packs over **512 MB** per pack (`ITMS-90557`). With **iOS 18.6+** minimum, the per-pack ODR limit is **8 GB** — large coach weights can be reconsidered.
 
 Production downloads the coach model from **Liquid’s Leap registry** on first use (same as local development). Weights are cached under Application Support after download.
 
@@ -22,7 +22,7 @@ To re-enable ODR later, use one of:
 3. Add `vlm-coach-model` to the project’s **Known Asset Tags**.
 4. Bump `version` in `vlm-coach-model-version.json` when weights change.
 
-Do **not** ship the 1.6B pack to App Store Connect while the deployment target is iOS 17.
+Before shipping a 1.6B ODR pack, confirm each tagged pack is under the limit for your deployment target (512 MB on iOS 17; 8 GB on iOS 18+).
 
 ## Runtime order
 

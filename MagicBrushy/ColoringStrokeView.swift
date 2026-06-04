@@ -8,7 +8,8 @@ final class ColoringStrokeView: UIView {
         var color: UIColor
         var width: CGFloat
         var isRainbowGlitter: Bool = false
-        var clearsLayer: Bool = false
+        /// Eraser stroke (paper-colored paint); omitted from VLM color history.
+        var isEraserStroke: Bool = false
     }
 
     private var strokes: [Stroke] = []
@@ -32,10 +33,10 @@ final class ColoringStrokeView: UIView {
 
     var strokeColor: UIColor = .systemRed
     var strokeWidth: CGFloat = 22
-    /// When true, strokes cycle rainbow hues (crayon `17-color.png`).
+    /// When true, strokes cycle rainbow hues (crayon `20-default.png`).
     var usesRainbowGlitterStroke = false
-    /// When true, strokes punch alpha out of this layer (white crayon overlay eraser).
-    var usesClearEraserStroke = false
+    /// When true, strokes paint `strokeColor` (paper) to cover live and saved underlay art.
+    var usesEraserStroke = false
 
     // MARK: - Live rainbow bitmap cache
     // Accumulates the in-progress rainbow stroke incrementally so draw() only blits one image
@@ -79,23 +80,6 @@ final class ColoringStrokeView: UIView {
         cancelInProgressStroke()
     }
 
-    /// Forwards one finger to this layer (dual-layer eraser bridge).
-    func applyEraserTouchBegan(at point: CGPoint, touch: UITouch) {
-        beginStroke(at: point, touch: touch, notifyBegan: false)
-    }
-
-    func applyEraserTouchMoved(at point: CGPoint, touch: UITouch, event: UIEvent?) {
-        appendStrokePoints(coalescedPoints(for: touch, event: event, fallback: point), touch: touch)
-    }
-
-    func applyEraserTouchEnded(touch: UITouch) {
-        finalizeCurrentStroke(with: touch)
-    }
-
-    func applyEraserTouchCancelled() {
-        cancelInProgressStroke()
-    }
-
     private func coalescedPoints(for touch: UITouch, event: UIEvent?, fallback: CGPoint? = nil) -> [CGPoint] {
         var pts: [CGPoint] = []
         if let coalesced = event?.coalescedTouches(for: touch) {
@@ -110,14 +94,14 @@ final class ColoringStrokeView: UIView {
         return pts
     }
 
-    private func beginStroke(at point: CGPoint, touch: UITouch?, notifyBegan: Bool = true) {
-        if notifyBegan { onPaintingBegan?() }
+    private func beginStroke(at point: CGPoint, touch: UITouch?) {
+        onPaintingBegan?()
         current = Stroke(
             points: [point],
             color: strokeColor,
             width: scaledWidth(for: touch),
             isRainbowGlitter: usesRainbowGlitterStroke,
-            clearsLayer: usesClearEraserStroke
+            isEraserStroke: usesEraserStroke
         )
         rainbowLiveBitmap = nil
         rainbowBitmapPtCount = 0
@@ -152,9 +136,11 @@ final class ColoringStrokeView: UIView {
             s.width = scaledWidth(for: touch)
         }
         strokes.append(s)
-        finishedStrokeColors.append(
-            s.isRainbowGlitter ? MagicBrushyRainbowGlitterStroke.historyTagColor : s.color
-        )
+        if !s.isEraserStroke {
+            finishedStrokeColors.append(
+                s.isRainbowGlitter ? MagicBrushyRainbowGlitterStroke.historyTagColor : s.color
+            )
+        }
         rainbowLiveBitmap = nil
         rainbowBitmapPtCount = 0
         rainbowBitmapLength = 0
@@ -188,13 +174,6 @@ final class ColoringStrokeView: UIView {
     private func paintStroke(_ stroke: Stroke, in ctx: CGContext) {
         if stroke.isRainbowGlitter {
             MagicBrushyRainbowGlitterStroke.paint(points: stroke.points, width: stroke.width, in: ctx)
-            return
-        }
-        if stroke.clearsLayer {
-            ctx.saveGState()
-            ctx.setBlendMode(.clear)
-            paintStrokeGeometry(stroke, in: ctx)
-            ctx.restoreGState()
             return
         }
         paintStrokeGeometry(stroke, in: ctx)
@@ -291,9 +270,11 @@ final class ColoringStrokeView: UIView {
         if !redoStack.isEmpty {
             let restored = redoStack.removeLast()
             strokes.append(restored)
-            finishedStrokeColors.append(
-                restored.isRainbowGlitter ? MagicBrushyRainbowGlitterStroke.historyTagColor : restored.color
-            )
+            if !restored.isEraserStroke {
+                finishedStrokeColors.append(
+                    restored.isRainbowGlitter ? MagicBrushyRainbowGlitterStroke.historyTagColor : restored.color
+                )
+            }
             if finishedStrokeColors.count > 48 {
                 finishedStrokeColors.removeFirst(finishedStrokeColors.count - 48)
             }

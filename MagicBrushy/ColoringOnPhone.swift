@@ -83,7 +83,7 @@ enum ColoringOnPhoneMetrics {
     static let paintRowTopInset: CGFloat = 10
     static let paintRowTopInsetWhenInactive: CGFloat = 4
 
-    private static let swatchContentHeightPerWidth: CGFloat = 71.0 / 206.0
+    private static let swatchContentHeightPerWidth: CGFloat = 73.0 / 207.0
     private static let crayonRailMinimum: CGFloat = 76
     static let crayonHeightMultiplier: CGFloat = 1.10
 

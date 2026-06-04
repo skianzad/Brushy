@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "MobileLandscapeBackground.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

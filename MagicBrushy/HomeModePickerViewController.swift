@@ -89,7 +89,7 @@ final class HomeModePickerViewController: UIViewController {
         view.backgroundColor = .black
         navigationController?.setNavigationBarHidden(true, animated: false)
 
-        heroView.heroImage = UIImage(named: "HomeHero")
+        heroView.heroImage = MagicBrushyChromeMetrics.landscapeBackgroundImage(for: traitCollection)
         heroView.translatesAutoresizingMaskIntoConstraints = false
 
         mascotColumn.translatesAutoresizingMaskIntoConstraints = false
@@ -343,6 +343,7 @@ final class HomeModePickerViewController: UIViewController {
         super.traitCollectionDidChange(previousTraitCollection)
         let idiomChanged = previousTraitCollection?.userInterfaceIdiom != traitCollection.userInterfaceIdiom
         if idiomChanged {
+            heroView.heroImage = MagicBrushyChromeMetrics.landscapeBackgroundImage(for: traitCollection)
             applyTopChromeLayout(for: traitCollection)
             applyBodyLayout(for: traitCollection)
             applyMascotLayout(for: traitCollection)

@@ -26,8 +26,8 @@ final class SubscriptionManager {
     /// Must match the non-consumable Product ID in App Store Connect exactly.
     static let premiumProductID = "Senscilab.MagicBrushy.premium"
 
-    /// Pack IDs available without purchasing premium.
-    static let freeTierPackIds: Set<String> = [BuiltInColoringPages.savedDrawingsPackId, "ocean", "dinosaurs"]
+    /// Pack IDs available without purchasing premium (release builds).
+    static let freeTierPackIds: Set<String> = [BuiltInColoringPages.savedDrawingsPackId, "ocean", "animals"]
 
     /// Free tier: one saved blank-paper drawing; no delete until premium is owned.
     static let freeTierMaxSavedFreeDrawings = 1
@@ -45,7 +45,14 @@ final class SubscriptionManager {
         brushiPremiumLog.info("\(message, privacy: .public)")
     }
 
-    var hasFullLibraryAccess: Bool { ownsPremiumUnlock }
+    /// Debug builds unlock every category for development; release requires Brushi Premium.
+    var hasFullLibraryAccess: Bool {
+        #if DEBUG
+        return true
+        #else
+        return ownsPremiumUnlock
+        #endif
+    }
 
     func canOpenPack(id: String) -> Bool {
         Self.freeTierPackIds.contains(id) || hasFullLibraryAccess

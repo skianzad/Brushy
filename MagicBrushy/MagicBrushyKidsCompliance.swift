@@ -9,13 +9,13 @@ enum MagicBrushyLegal {
     /// Must match the Terms of Use (EULA) URL in App Store Connect.
     static let termsOfUseURL = URL(string: "https://senscilab.com/brushi/terms")!
 
-    static let freeTierSummary = "Ocean, Dinosaurs, and Free Draw stay free."
+    static let freeTierSummary = "Ocean, Animals, and Free Draw stay free."
 
     static var premiumPurchaseDisclosure: String {
         """
         Brushi Premium is a one-time purchase through your Apple ID. \
         It unlocks every category on this Apple ID and can be restored with Restore purchases. \
-        Ocean, Dinosaurs, and Free Draw stay free.
+        Ocean, Animals, and Free Draw stay free.
         """
     }
 }

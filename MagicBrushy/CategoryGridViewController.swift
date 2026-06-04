@@ -90,7 +90,7 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
 
         navigationController?.setNavigationBarHidden(true, animated: false)
 
-        backgroundImageView.heroImage = UIImage(named: "HomeHero")
+        backgroundImageView.heroImage = MagicBrushyChromeMetrics.landscapeBackgroundImage(for: traitCollection)
         backgroundImageView.translatesAutoresizingMaskIntoConstraints = false
 
         blurEffectView.translatesAutoresizingMaskIntoConstraints = false
@@ -550,6 +550,7 @@ final class CategoryGridViewController: UIViewController, UICollectionViewDataSo
             applyCategoryTitleAttributes()
         }
         if previousTraitCollection?.userInterfaceIdiom != traitCollection.userInterfaceIdiom {
+            backgroundImageView.heroImage = MagicBrushyChromeMetrics.landscapeBackgroundImage(for: traitCollection)
             applyChromeLayout(for: traitCollection)
         }
         applyGridColumns()

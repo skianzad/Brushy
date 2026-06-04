@@ -69,12 +69,7 @@ final class HomeViewController: UIViewController {
         }
 
         var isFreeTier: Bool {
-            switch self {
-            case .ocean, .dinosaurs:
-                return true
-            default:
-                return false
-            }
+            SubscriptionManager.freeTierPackIds.contains(packId)
         }
     }
 
@@ -165,7 +160,7 @@ final class HomeViewController: UIViewController {
         super.viewDidLoad()
         view.backgroundColor = .black
 
-        heroView.heroImage = UIImage(named: "HomeHero")
+        heroView.heroImage = MagicBrushyChromeMetrics.landscapeBackgroundImage(for: traitCollection)
         heroView.translatesAutoresizingMaskIntoConstraints = false
 
         mascotColumn.translatesAutoresizingMaskIntoConstraints = false
@@ -709,6 +704,7 @@ final class HomeViewController: UIViewController {
             applyLayoutMetricsForCurrentTraits()
         }
         if idiomChanged {
+            heroView.heroImage = MagicBrushyChromeMetrics.landscapeBackgroundImage(for: traitCollection)
             applyTopChromeLayout(for: traitCollection)
             applyMascotLayout(for: traitCollection)
             homeTitleBadge.applyStyle(for: traitCollection)

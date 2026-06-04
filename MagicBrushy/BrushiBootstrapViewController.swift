@@ -21,7 +21,7 @@ final class BrushiBootstrapViewController: UIViewController {
         super.viewDidLoad()
         view.backgroundColor = FigmaTheme.bootstrapSky
 
-        heroView.heroImage = UIImage(named: "HomeHero")
+        heroView.heroImage = MagicBrushyChromeMetrics.landscapeBackgroundImage(for: traitCollection)
         heroView.backgroundColor = FigmaTheme.bootstrapSky
         heroView.translatesAutoresizingMaskIntoConstraints = false
 

@@ -53,6 +53,8 @@ enum FigmaTheme {
         static let successGreen = UIColor(red: 60 / 255, green: 179 / 255, blue: 113 / 255, alpha: 1)    // #3CB371
         static let rewardYellow = UIColor(red: 1, green: 215 / 255, blue: 0, alpha: 1)                    // #FFD700
         static let warmWhite = UIColor(red: 1, green: 253 / 255, blue: 245 / 255, alpha: 1)              // #FFFDF5
+        /// White crayon wax — soft pearl on `#FFFFFF` canvas (distinct from eraser / paper).
+        static let pearlyOffWhite = UIColor(red: 252 / 255, green: 250 / 255, blue: 244 / 255, alpha: 1) // #FCFAF4
         static let softBlack = UIColor(red: 44 / 255, green: 44 / 255, blue: 42 / 255, alpha: 1)         // #2C2C2A
         static let playOrange = UIColor(red: 1, green: 140 / 255, blue: 0, alpha: 1)                     // #FF8C00
         static let imaginationPurple = UIColor(red: 218 / 255, green: 112 / 255, blue: 214 / 255, alpha: 1) // #DA70D6
@@ -65,7 +67,8 @@ enum FigmaTheme {
     static let bootstrapProgressBorder = UIColor(red: 0.002, green: 0.684, blue: 1, alpha: 1)
     static let bootstrapProgressTrack = UIColor(red: 0.4, green: 0.87, blue: 1, alpha: 1)
     static let canvasBorder = UIColor(red: 0, green: 98 / 255, blue: 1, alpha: 1)
-    static let canvasFill = Brand.warmWhite
+    /// Coloring page background and eraser strokes (`#FFFFFF`).
+    static let canvasFill = UIColor.white
 
     /// Home category grid panel (Figma wood fill behind tiles).
     static let categoryPanelWoodFallback = UIColor(red: 0.35, green: 0.72, blue: 0.95, alpha: 1)
@@ -124,6 +127,18 @@ enum MagicBrushyChromeMetrics {
 
     static func isPhone(_ traitCollection: UITraitCollection) -> Bool {
         traitCollection.userInterfaceIdiom == .phone
+    }
+
+    /// Figma `167:11` — iPhone frame landscape sky/hills (`MobileLandscapeBackground`).
+    static func landscapeBackgroundImage(for traitCollection: UITraitCollection) -> UIImage? {
+        let name = isPhone(traitCollection) ? "MobileLandscapeBackground" : "HomeHero"
+        return UIImage(named: name)
+    }
+
+    /// Coloring canvas backdrop — same Figma mobile art on phone, legacy export on iPad.
+    static func coloringBackgroundImage(for traitCollection: UITraitCollection) -> UIImage? {
+        let name = isPhone(traitCollection) ? "MobileLandscapeBackground" : "ColoringDrawingBackground"
+        return UIImage(named: name)
     }
 
     static func chromeButtonSide(_ traitCollection: UITraitCollection) -> CGFloat {
