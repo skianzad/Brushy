@@ -27,7 +27,8 @@ enum MagicBrushyParentalGate {
         from viewController: UIViewController,
         title: String = "Grown-ups only",
         messagePrefix: String = "Please ask a parent or guardian.",
-        onPassed: @escaping () -> Void
+        onPassed: @escaping () -> Void,
+        onCancelled: (() -> Void)? = nil
     ) {
         let a = Int.random(in: 11...24)
         let b = Int.random(in: 11...24)
@@ -41,7 +42,9 @@ enum MagicBrushyParentalGate {
             field.keyboardType = .numberPad
             field.accessibilityLabel = "Answer"
         }
-        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel) { _ in
+            onCancelled?()
+        })
         alert.addAction(UIAlertAction(title: "Continue", style: .default) { _ in
             guard let raw = alert.textFields?.first?.text?.trimmingCharacters(in: .whitespacesAndNewlines),
                   let answer = Int(raw),

@@ -26,6 +26,7 @@ final class LeapVLMModel {
         case loadingIntoMemory
         case ready
         case failed(message: String)
+        case downloadDeclined
         case simulatorPreview
     }
 
@@ -62,6 +63,8 @@ final class LeapVLMModel {
     /// Matches device coach image cap (stub never encodes, but keeps the API identical).
     static let coachMaxImageEdge: CGFloat = 384
     static let coachPageLoadMaxImageEdge: CGFloat = 288
+
+    static var isModelBundleAvailableOnDevice: Bool { false }
 
     public init() {}
 
@@ -142,6 +145,7 @@ final class LeapVLMModel {
         case loadingIntoMemory
         case ready
         case failed(message: String)
+        case downloadDeclined
         case simulatorPreview
     }
 
@@ -180,6 +184,11 @@ final class LeapVLMModel {
 
     private static func markModelBundleOnDisk() {
         UserDefaults.standard.set(true, forKey: modelBundleOnDiskKey)
+    }
+
+    /// True when coach weight files are already on disk (ODR, Leap cache, or prior download).
+    static var isModelBundleAvailableOnDevice: Bool {
+        modelBundleIsAvailableLocally()
     }
 
     /// True when the GGUF bundle is already present (ODR copy, Leap cache, or persisted flag).
@@ -224,6 +233,9 @@ final class LeapVLMModel {
             case .idle:
                 break
             }
+        }
+        if MagicBrushyVLMConsent.userDeclinedDownload {
+            return .downloadDeclined
         }
         return .idleNotLoaded
     }
@@ -344,6 +356,14 @@ final class LeapVLMModel {
         if modelRunner != nil {
             hideLoadPanelLoaded()
             return
+        }
+
+        if MagicBrushyVLMConsent.userDeclinedDownload {
+            throw NSError(
+                domain: "LeapVLMModel",
+                code: -2,
+                userInfo: [NSLocalizedDescriptionKey: "Download Brushi Intelligence in Settings to enable spoken tips."]
+            )
         }
 
         if let existing = pendingLoadTask {

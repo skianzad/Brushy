@@ -1527,6 +1527,10 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             modelStatusDot.backgroundColor = UIColor.tertiaryLabel.withAlphaComponent(0.85)
             modelStatusLabel.text = "AI: Idle"
             modelStatusStack.accessibilityLabel = "Art coach model not loaded yet"
+        case .downloadDeclined:
+            modelStatusDot.backgroundColor = UIColor.tertiaryLabel.withAlphaComponent(0.85)
+            modelStatusLabel.text = "AI: Off"
+            modelStatusStack.accessibilityLabel = "Download Brushi Intelligence in Settings for spoken tips"
         case .downloading(let p):
             let pct = Int((p * 100).rounded(.down))
             modelStatusDot.backgroundColor = .systemBlue

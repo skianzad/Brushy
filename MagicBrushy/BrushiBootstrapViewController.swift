@@ -16,6 +16,7 @@ final class BrushiBootstrapViewController: UIViewController {
     private var memoryLoadFillTimer: Timer?
     private var preHomeProgressTask: Task<Void, Never>?
     private var bootstrapLoadTask: Task<Void, Never>?
+    private var didPresentDownloadConsent = false
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -95,7 +96,73 @@ final class BrushiBootstrapViewController: UIViewController {
         view.layoutIfNeeded()
         progressView.setProgress(displayedDownloadProgress, animated: false)
         refreshFromModelState()
+        beginBootstrapAfterConsentCheck()
+    }
+
+    private func beginBootstrapAfterConsentCheck() {
+        if MagicBrushyVLMConsent.shouldShowDownloadPrompt() {
+            presentDownloadConsentIfNeeded()
+            return
+        }
+        if MagicBrushyVLMConsent.userDeclinedDownload {
+            proceedToHomeSkippingModel()
+            return
+        }
         startBootstrapLoadIfNeeded()
+    }
+
+    private func presentDownloadConsentIfNeeded() {
+        guard !didPresentDownloadConsent else { return }
+        didPresentDownloadConsent = true
+        progressView.isHidden = true
+        setCaptionText("Welcome to Brushi!")
+
+        let alert = UIAlertController(
+            title: MagicBrushyVLMConsent.downloadPromptTitle,
+            message: MagicBrushyVLMConsent.downloadPromptMessage,
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "Not Now", style: .cancel) { [weak self] _ in
+            MagicBrushyVLMConsent.markDeclined()
+            self?.proceedToHomeSkippingModel()
+        })
+        alert.addAction(UIAlertAction(title: "Download", style: .default) { [weak self] _ in
+            guard let self else { return }
+            MagicBrushyParentalGate.perform(
+                from: self,
+                title: "Grown-ups only",
+                messagePrefix: MagicBrushyVLMConsent.parentalGateDownloadPrefix,
+                onPassed: {
+                    MagicBrushyVLMConsent.markAccepted()
+                    self.progressView.isHidden = false
+                    self.setCaptionText("Downloading Intelligence… 0%")
+                    self.startBootstrapLoadIfNeeded()
+                },
+                onCancelled: { [weak self] in
+                    self?.didPresentDownloadConsent = false
+                    self?.presentDownloadConsentIfNeeded()
+                }
+            )
+        })
+        present(alert, animated: true)
+    }
+
+    private func proceedToHomeSkippingModel() {
+        guard !didTransitionToHome else { return }
+        bootstrapLoadTask?.cancel()
+        bootstrapLoadTask = nil
+        preHomeProgressTask?.cancel()
+        stopMemoryLoadFillAnimation()
+        progressView.isHidden = true
+        retryButton.isHidden = true
+        setCaptionText("Welcome to Brushi!")
+        preHomeProgressTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            try? await Task.sleep(nanoseconds: 500_000_000)
+            guard !Task.isCancelled else { return }
+            self.preHomeProgressTask = nil
+            self.transitionToHomeIfNeeded(allowWithoutModel: true)
+        }
     }
 
     deinit {
@@ -316,13 +383,15 @@ final class BrushiBootstrapViewController: UIViewController {
         try? await Task.sleep(nanoseconds: 450_000_000)
     }
 
-    private func transitionToHomeIfNeeded() {
+    private func transitionToHomeIfNeeded(allowWithoutModel: Bool = false) {
         guard !didTransitionToHome else { return }
         let vlm = LeapVLMModel.shared
         #if targetEnvironment(simulator)
         // Simulator never downloads; proceed after brief branded screen.
         #else
-        guard case .ready = vlm.modelBadgeState else { return }
+        if !allowWithoutModel {
+            guard case .ready = vlm.modelBadgeState else { return }
+        }
         #endif
 
         guard let window = view.window ?? UIApplication.shared.connectedScenes

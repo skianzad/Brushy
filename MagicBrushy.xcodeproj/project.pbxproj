@@ -41,6 +41,7 @@
 		B1ODR000000000000000001 /* VLMCoachOnDemandResources.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1ODR000000000000000101 /* VLMCoachOnDemandResources.swift */; };
 		B1PRM000000000000000001 /* Prompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1PRM000000000000000101 /* Prompt.swift */; };
 		B1SET000000000000000001 /* MagicBrushySettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1SET000000000000000101 /* MagicBrushySettingsViewController.swift */; };
+		B1VLM000000000000000001 /* MagicBrushyVLMConsent.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1VLM000000000000000101 /* MagicBrushyVLMConsent.swift */; };
 		C1CLR000000000000000001 /* Colors in Resources */ = {isa = PBXBuildFile; fileRef = C1CLR000000000000000101 /* Colors */; };
 		C1F700000000000000000001 /* FigmaTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F700000000000000000101 /* FigmaTheme.swift */; };
 		C1F700000000000000000002 /* HomeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F700000000000000000102 /* HomeViewController.swift */; };
@@ -110,6 +111,7 @@
 		B1ODR000000000000000202 /* mmproj-LFM2.5-VL-1.6b-Q8_0.gguf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "mmproj-LFM2.5-VL-1.6b-Q8_0.gguf"; sourceTree = "<group>"; };
 		B1PRM000000000000000101 /* Prompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Prompt.swift; sourceTree = "<group>"; };
 		B1SET000000000000000101 /* MagicBrushySettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagicBrushySettingsViewController.swift; sourceTree = "<group>"; };
+		B1VLM000000000000000101 /* MagicBrushyVLMConsent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagicBrushyVLMConsent.swift; sourceTree = "<group>"; };
 		C1CLR000000000000000101 /* Colors */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Colors; sourceTree = "<group>"; };
 		C1F700000000000000000101 /* FigmaTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FigmaTheme.swift; sourceTree = "<group>"; };
 		C1F700000000000000000102 /* HomeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewController.swift; sourceTree = "<group>"; };
@@ -177,6 +179,7 @@
 				B1SET000000000000000101 /* MagicBrushySettingsViewController.swift */,
 				B1LNG000000000000000101 /* MagicBrushyLanguage.swift */,
 				B1CAF000000000000000101 /* MagicBrushyCoachAutoFeedback.swift */,
+				B1VLM000000000000000101 /* MagicBrushyVLMConsent.swift */,
 				B1COA000000000000000101 /* MagicBrushyCoachVoice.swift */,
 				B1BST000000000000000101 /* BrushiBootstrapViewController.swift */,
 				B1BST000000000000000102 /* BrushiFigmaDownloadProgressView.swift */,
@@ -406,6 +409,7 @@
 				B1LNG000000000000000001 /* MagicBrushyLanguage.swift in Sources */,
 				B1PRM000000000000000001 /* Prompt.swift in Sources */,
 				B1CAF000000000000000001 /* MagicBrushyCoachAutoFeedback.swift in Sources */,
+				B1VLM000000000000000001 /* MagicBrushyVLMConsent.swift in Sources */,
 				B1COA000000000000000001 /* MagicBrushyCoachVoice.swift in Sources */,
 				B1BST000000000000000001 /* BrushiBootstrapViewController.swift in Sources */,
 				B1BST000000000000000002 /* BrushiFigmaDownloadProgressView.swift in Sources */,
@@ -573,7 +577,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 16;
+				CURRENT_PROJECT_VERSION = 17;
 				DEVELOPMENT_TEAM = RDP29X8YF2;
 				ENABLE_ON_DEMAND_RESOURCES = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
@@ -598,7 +602,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/Frameworks/LeapSDK.framework/Frameworks",
 				);
-				MARKETING_VERSION = 0.1.12;
+				MARKETING_VERSION = 0.1.14;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-lc++",
@@ -628,7 +632,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 16;
+				CURRENT_PROJECT_VERSION = 17;
 				DEVELOPMENT_TEAM = RDP29X8YF2;
 				ENABLE_ON_DEMAND_RESOURCES = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
@@ -652,7 +656,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.1.12;
+				MARKETING_VERSION = 0.1.14;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-lc++",

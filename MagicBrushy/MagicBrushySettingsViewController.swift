@@ -14,8 +14,10 @@ final class MagicBrushySettingsViewController: UIViewController {
     private let coachFeedbackCheckmark = UIImageView()
     private let coachFeedbackToggleButton = UIButton(type: .system)
     private let languageButton = UIButton(type: .system)
+    private let intelligenceButton = UIButton(type: .system)
     private let privacyButton = UIButton(type: .system)
     private let termsButton = UIButton(type: .system)
+    private var intelligenceLoadObserver: NSObjectProtocol?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -157,6 +159,37 @@ final class MagicBrushySettingsViewController: UIViewController {
             coachFeedbackRow.bottomAnchor.constraint(equalTo: coachFeedbackToggleButton.bottomAnchor),
         ])
 
+        // MARK: Intelligence download row
+
+        let intelligenceCaption = makeCaption("Brushi Intelligence")
+        let intelligenceIconView = UIImageView(image: UIImage(systemName: "sparkles"))
+        intelligenceIconView.translatesAutoresizingMaskIntoConstraints = false
+        intelligenceIconView.tintColor = FigmaTheme.primaryOrange
+        intelligenceIconView.contentMode = .scaleAspectFit
+        intelligenceIconView.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 20, weight: .semibold)
+        intelligenceIconView.setContentHuggingPriority(.required, for: .horizontal)
+
+        intelligenceButton.translatesAutoresizingMaskIntoConstraints = false
+        intelligenceButton.titleLabel?.font = FigmaTheme.bodyFont(size: 16, weight: .semibold)
+        intelligenceButton.titleLabel?.numberOfLines = 2
+        intelligenceButton.titleLabel?.adjustsFontSizeToFitWidth = true
+        intelligenceButton.titleLabel?.minimumScaleFactor = 0.85
+        intelligenceButton.setTitleColor(FigmaTheme.creamText, for: .normal)
+        intelligenceButton.backgroundColor = UIColor.white.withAlphaComponent(0.12)
+        intelligenceButton.layer.cornerRadius = 10
+        if #available(iOS 13.0, *) { intelligenceButton.layer.cornerCurve = .continuous }
+        intelligenceButton.contentHorizontalAlignment = .left
+        intelligenceButton.titleEdgeInsets = UIEdgeInsets(top: 0, left: 10, bottom: 0, right: 10)
+        intelligenceButton.accessibilityLabel = "Brushi Intelligence"
+        intelligenceButton.accessibilityHint = "Download on-device spoken tips. No chat costs; drawings stay on this device."
+        intelligenceButton.addTarget(self, action: #selector(intelligenceButtonTapped), for: .touchUpInside)
+
+        let intelligenceRow = UIStackView(arrangedSubviews: [intelligenceIconView, intelligenceButton])
+        intelligenceRow.axis = .horizontal
+        intelligenceRow.alignment = .center
+        intelligenceRow.spacing = 10
+        intelligenceRow.translatesAutoresizingMaskIntoConstraints = false
+
         // MARK: Language row
 
         let langCaption = makeCaption("Response language")
@@ -215,6 +248,8 @@ final class MagicBrushySettingsViewController: UIViewController {
         cardView.addSubview(voiceRow)
         cardView.addSubview(feedbackCaption)
         cardView.addSubview(coachFeedbackToggleButton)
+        cardView.addSubview(intelligenceCaption)
+        cardView.addSubview(intelligenceRow)
         cardView.addSubview(divider)
         cardView.addSubview(langCaption)
         cardView.addSubview(langRow)
@@ -282,7 +317,19 @@ final class MagicBrushySettingsViewController: UIViewController {
             coachFeedbackCheckmark.widthAnchor.constraint(equalToConstant: 26),
             coachFeedbackCheckmark.heightAnchor.constraint(equalToConstant: 26),
 
-            divider.topAnchor.constraint(equalTo: coachFeedbackToggleButton.bottomAnchor, constant: 18),
+            intelligenceCaption.topAnchor.constraint(equalTo: coachFeedbackToggleButton.bottomAnchor, constant: 16),
+            intelligenceCaption.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 20),
+            intelligenceCaption.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -20),
+
+            intelligenceRow.topAnchor.constraint(equalTo: intelligenceCaption.bottomAnchor, constant: 10),
+            intelligenceRow.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 20),
+            intelligenceRow.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -20),
+
+            intelligenceIconView.widthAnchor.constraint(equalToConstant: 28),
+            intelligenceIconView.heightAnchor.constraint(equalToConstant: 28),
+            intelligenceButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 44),
+
+            divider.topAnchor.constraint(equalTo: intelligenceRow.bottomAnchor, constant: 18),
             divider.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 20),
             divider.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -20),
             divider.heightAnchor.constraint(equalToConstant: 1),
@@ -313,6 +360,15 @@ final class MagicBrushySettingsViewController: UIViewController {
 
         syncMusicControlsFromStorage()
         syncCoachFeedbackControls()
+        syncIntelligenceRow()
+
+        intelligenceLoadObserver = NotificationCenter.default.addObserver(
+            forName: .leapVLMLoadPanelStateDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.syncIntelligenceRow()
+        }
 
         let dismissTap = UITapGestureRecognizer(target: self, action: #selector(dismissFromBackgroundTap(_:)))
         dismissTap.delegate = self
@@ -326,14 +382,21 @@ final class MagicBrushySettingsViewController: UIViewController {
         dismiss(animated: true)
     }
 
+    deinit {
+        if let intelligenceLoadObserver {
+            NotificationCenter.default.removeObserver(intelligenceLoadObserver)
+        }
+    }
+
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         if traitCollection.userInterfaceIdiom == .pad {
-            preferredContentSize = CGSize(width: 320, height: 500)
+            preferredContentSize = CGSize(width: 320, height: 560)
         }
         syncMusicControlsFromStorage()
         syncCoachFeedbackControls()
         syncCoachVoiceForCurrentLanguage()
+        syncIntelligenceRow()
     }
 
     // MARK: - Music
@@ -365,6 +428,67 @@ final class MagicBrushySettingsViewController: UIViewController {
         let next = !MagicBrushyCoachAutoFeedback.isEnabled
         MagicBrushyCoachAutoFeedback.isEnabled = next
         syncCoachFeedbackControls()
+    }
+
+    // MARK: - Brushi Intelligence
+
+    private func syncIntelligenceRow() {
+        let vlm = LeapVLMModel.shared
+        switch vlm.modelBadgeState {
+        case .ready:
+            intelligenceButton.setTitle("  On this device", for: .normal)
+            intelligenceButton.isEnabled = false
+            intelligenceButton.alpha = 0.72
+            intelligenceButton.accessibilityValue = "Downloaded"
+        case .downloading(let progress):
+            let pct = Int((progress * 100).rounded(.down))
+            intelligenceButton.setTitle(
+                pct > 0 ? "  Downloading… \(pct)%" : "  Downloading…",
+                for: .normal
+            )
+            intelligenceButton.isEnabled = false
+            intelligenceButton.alpha = 0.72
+            intelligenceButton.accessibilityValue = pct > 0 ? "Downloading, \(pct) percent" : "Downloading"
+        case .loadingIntoMemory:
+            intelligenceButton.setTitle("  Loading Intelligence…", for: .normal)
+            intelligenceButton.isEnabled = false
+            intelligenceButton.alpha = 0.72
+            intelligenceButton.accessibilityValue = "Loading"
+        case .failed:
+            intelligenceButton.setTitle("  Try again (\(MagicBrushyVLMConsent.downloadSizeString))", for: .normal)
+            intelligenceButton.isEnabled = true
+            intelligenceButton.alpha = 1
+            intelligenceButton.accessibilityValue = "Download failed"
+        case .simulatorPreview:
+            intelligenceButton.setTitle("  Available on device only", for: .normal)
+            intelligenceButton.isEnabled = false
+            intelligenceButton.alpha = 0.72
+            intelligenceButton.accessibilityValue = "Simulator"
+        case .downloadDeclined, .idleNotLoaded:
+            intelligenceButton.setTitle("  Download (\(MagicBrushyVLMConsent.downloadSizeString))", for: .normal)
+            intelligenceButton.isEnabled = true
+            intelligenceButton.alpha = 1
+            intelligenceButton.accessibilityValue = "Not downloaded — \(MagicBrushyVLMConsent.downloadSizeString)"
+        }
+    }
+
+    @objc private func intelligenceButtonTapped() {
+        let vlm = LeapVLMModel.shared
+        if case .ready = vlm.modelBadgeState { return }
+        if vlm.isModelLoadPanelVisible, !vlm.modelLoadDidFail { return }
+
+        MagicBrushyParentalGate.perform(
+            from: self,
+            title: "Grown-ups only",
+            messagePrefix: MagicBrushyVLMConsent.parentalGateDownloadPrefix
+        ) {
+            MagicBrushyVLMConsent.markAccepted()
+            self.syncIntelligenceRow()
+            Task { @MainActor in
+                await LeapVLMModel.shared.load()
+                self.syncIntelligenceRow()
+            }
+        }
     }
 
     // MARK: - Coach voice
