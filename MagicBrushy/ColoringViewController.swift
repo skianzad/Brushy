@@ -1530,7 +1530,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         case .downloadDeclined:
             modelStatusDot.backgroundColor = UIColor.tertiaryLabel.withAlphaComponent(0.85)
             modelStatusLabel.text = "AI: Off"
-            modelStatusStack.accessibilityLabel = "Download Brushi Intelligence in Settings for spoken tips"
+            modelStatusStack.accessibilityLabel = "Download Brushi in Settings for on-device reactions"
         case .downloading(let p):
             let pct = Int((p * 100).rounded(.down))
             modelStatusDot.backgroundColor = .systemBlue
@@ -2446,7 +2446,7 @@ private enum MagicBrushyCrayonResources {
         4,                             // yellow
         2, 3,                          // lime, forest green
         0, 1,                          // sky blue, blue
-        11, 10, 9,                     // purple → pink
+        11, 10, 9,                     // purple → magenta → pink
         12, 13, 14,                    // browns
         15, 16,                        // gray, light gray
         5,                             // peach
@@ -2477,6 +2477,10 @@ private enum MagicBrushyCrayonResources {
     static let strokeColors: [UIColor] = {
         var colors = swatchImages.map { strokeColorFromSwatchTip($0) }
         applyStrokeColorOverrides(&colors)
+        // Dark-tip vs light-body purple crayons (11-default / 12-default) had inverted inks.
+        if colors.indices.contains(11) {
+            colors.swapAt(10, 11)
+        }
         return colors
     }()
 

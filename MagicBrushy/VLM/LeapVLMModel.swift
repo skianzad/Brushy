@@ -362,7 +362,7 @@ final class LeapVLMModel {
             throw NSError(
                 domain: "LeapVLMModel",
                 code: -2,
-                userInfo: [NSLocalizedDescriptionKey: "Download Brushi Intelligence in Settings to enable spoken tips."]
+                userInfo: [NSLocalizedDescriptionKey: "Download Brushi in Settings to enable on-device reactions."]
             )
         }
 

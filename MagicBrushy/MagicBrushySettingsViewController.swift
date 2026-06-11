@@ -161,7 +161,7 @@ final class MagicBrushySettingsViewController: UIViewController {
 
         // MARK: Intelligence download row
 
-        let intelligenceCaption = makeCaption("Brushi Intelligence")
+        let intelligenceCaption = makeCaption("Brushi")
         let intelligenceIconView = UIImageView(image: UIImage(systemName: "sparkles"))
         intelligenceIconView.translatesAutoresizingMaskIntoConstraints = false
         intelligenceIconView.tintColor = FigmaTheme.primaryOrange
@@ -180,8 +180,8 @@ final class MagicBrushySettingsViewController: UIViewController {
         if #available(iOS 13.0, *) { intelligenceButton.layer.cornerCurve = .continuous }
         intelligenceButton.contentHorizontalAlignment = .left
         intelligenceButton.titleEdgeInsets = UIEdgeInsets(top: 0, left: 10, bottom: 0, right: 10)
-        intelligenceButton.accessibilityLabel = "Brushi Intelligence"
-        intelligenceButton.accessibilityHint = "Download on-device spoken tips. No chat costs; drawings stay on this device."
+        intelligenceButton.accessibilityLabel = "Brushi"
+        intelligenceButton.accessibilityHint = "Download Brushi for on-device reactions to colors and drawings."
         intelligenceButton.addTarget(self, action: #selector(intelligenceButtonTapped), for: .touchUpInside)
 
         let intelligenceRow = UIStackView(arrangedSubviews: [intelligenceIconView, intelligenceButton])
@@ -450,7 +450,7 @@ final class MagicBrushySettingsViewController: UIViewController {
             intelligenceButton.alpha = 0.72
             intelligenceButton.accessibilityValue = pct > 0 ? "Downloading, \(pct) percent" : "Downloading"
         case .loadingIntoMemory:
-            intelligenceButton.setTitle("  Loading Intelligence…", for: .normal)
+            intelligenceButton.setTitle("  Loading Brushi…", for: .normal)
             intelligenceButton.isEnabled = false
             intelligenceButton.alpha = 0.72
             intelligenceButton.accessibilityValue = "Loading"

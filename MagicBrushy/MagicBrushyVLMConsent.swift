@@ -1,6 +1,6 @@
 import Foundation
 
-/// Parent/guardian opt-in before the one-time on-device Intelligence (VLM coach) download.
+/// Parent/guardian opt-in before the one-time on-device Brushi (VLM coach) download.
 enum MagicBrushyVLMConsent {
 
     private static let declinedKey = "magicBrushy.vlmDownloadDeclined"
@@ -38,13 +38,19 @@ enum MagicBrushyVLMConsent {
     /// Approximate combined download size of LFM2.5-VL-1.6B-Q4_0 + mmproj-Q8_0 (≈664 MB + 556 MB).
     static let downloadSizeString = "approx. 1.2 GB"
 
-    static let downloadPromptTitle = "Download Brushi Intelligence?"
+    static let downloadPromptTitle = "Download Brushi?"
 
     static let downloadPromptMessage = """
-    Get spoken tips while your child colors. Intelligence runs fully on this device—no chat costs, no cloud, and drawings stay private.
+    Every creation inspires a different response. Brushi reacts to colors, drawings, and creative details right on your device - completely offline.
 
     One-time download: \(downloadSizeString). Wi-Fi recommended.
     """
 
-    static let parentalGateDownloadPrefix = "This downloads Brushi Intelligence (\(downloadSizeString)) onto this device. Ask a parent or guardian."
+    static let parentalGateDownloadPrefix = "This downloads Brushi (\(downloadSizeString)) onto this device. Ask a parent or guardian."
+
+    static let skipDownloadConfirmTitle = "Continue without Brushi?"
+
+    static let skipDownloadConfirmMessage = """
+    Without Brushi, coloring and drawing will still work, but Brushi won't be able to respond to creations. You can download Brushi later in Settings.
+    """
 }

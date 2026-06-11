@@ -123,8 +123,7 @@ final class BrushiBootstrapViewController: UIViewController {
             preferredStyle: .alert
         )
         alert.addAction(UIAlertAction(title: "Not Now", style: .cancel) { [weak self] _ in
-            MagicBrushyVLMConsent.markDeclined()
-            self?.proceedToHomeSkippingModel()
+            self?.presentSkipDownloadConfirmation()
         })
         alert.addAction(UIAlertAction(title: "Download", style: .default) { [weak self] _ in
             guard let self else { return }
@@ -135,7 +134,7 @@ final class BrushiBootstrapViewController: UIViewController {
                 onPassed: {
                     MagicBrushyVLMConsent.markAccepted()
                     self.progressView.isHidden = false
-                    self.setCaptionText("Downloading Intelligence… 0%")
+                    self.setCaptionText("Downloading Brushi… 0%")
                     self.startBootstrapLoadIfNeeded()
                 },
                 onCancelled: { [weak self] in
@@ -143,6 +142,23 @@ final class BrushiBootstrapViewController: UIViewController {
                     self?.presentDownloadConsentIfNeeded()
                 }
             )
+        })
+        present(alert, animated: true)
+    }
+
+    private func presentSkipDownloadConfirmation() {
+        let alert = UIAlertController(
+            title: MagicBrushyVLMConsent.skipDownloadConfirmTitle,
+            message: MagicBrushyVLMConsent.skipDownloadConfirmMessage,
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "Go Back", style: .cancel) { [weak self] _ in
+            self?.didPresentDownloadConsent = false
+            self?.presentDownloadConsentIfNeeded()
+        })
+        alert.addAction(UIAlertAction(title: "Continue", style: .default) { [weak self] _ in
+            MagicBrushyVLMConsent.markDeclined()
+            self?.proceedToHomeSkippingModel()
         })
         present(alert, animated: true)
     }
@@ -245,7 +261,7 @@ final class BrushiBootstrapViewController: UIViewController {
         bootstrapLoadTask = nil
         retryButton.isHidden = true
         displayedDownloadProgress = 0
-        setCaptionText("Downloading content… 0%")
+        setCaptionText("Downloading Brushi… 0%")
         progressView.isHidden = false
         progressView.setProgress(0, animated: false)
         startBootstrapLoadIfNeeded()
@@ -276,7 +292,7 @@ final class BrushiBootstrapViewController: UIViewController {
                 min(Self.bootstrapProgressCap, Self.sanitizeProgress(CGFloat(p)))
             )
             let pct = Int((displayedDownloadProgress * 100).rounded(.down))
-            setCaptionText("Downloading content… \(pct)%")
+            setCaptionText("Downloading Brushi… \(pct)%")
             refreshProgressBarFromDisplayedFraction(animated: true)
             progressView.accessibilityLabel = "Download progress, \(pct) percent"
         case .loadingIntoMemory:
