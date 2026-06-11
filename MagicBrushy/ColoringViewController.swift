@@ -1370,8 +1370,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         FeedbackAlbaSpeech.stopSpeaking()
     }
 
-    /// New stroke started — stop deferred **speech** and cancel in-flight VLM, but keep the debounced **reaction** work item
-    /// so a lift → short pause → new stroke does not lose `feedbackGeneration` before the reaction task runs.
+    /// New stroke started — cancel in-flight VLM and pending idle feedback; keep mascot speech playing.
     private func invalidatePaintingFeedbackOnly() {
         feedbackGeneration &+= 1
         cancelFeedbackIdleTimer()
@@ -1382,7 +1381,6 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
     private func onColoringStrokeBegan() {
         wakeMascotFromInactivitySleepy()
         invalidatePaintingFeedbackOnly()
-        FeedbackAlbaSpeech.stopSpeaking()
         scheduleMascotInactivityTimer()
     }
 
@@ -1406,6 +1404,8 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         guard hasAnyStrokeHistory else { return }
         // Eraser pen-lift: do not schedule idle coach VLM.
         guard !isEraserMode else { return }
+        // Brushi is still talking from the last tip — skip a new inference for this lift.
+        guard !FeedbackAlbaSpeech.isSpeaking else { return }
         // Settings coach-feedback off: skip auto-feedback.
         if !MagicBrushyCoachAutoFeedback.isEnabled { return }
 
@@ -1416,6 +1416,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             if !MagicBrushyCoachAutoFeedback.isEnabled { return }
             // User may have switched to eraser before the idle delay elapsed.
             guard !self.isEraserMode else { return }
+            guard !FeedbackAlbaSpeech.isSpeaking else { return }
             self.runSpeechFeedbackPipeline()
         }
         pendingAutoFeedbackWork = work
@@ -1707,6 +1708,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
 
     /// After idle: original coach-only VLM; mascot pose from that same reply.
     private func runSpeechFeedbackPipeline() {
+        guard !FeedbackAlbaSpeech.isSpeaking else { return }
         let gen = feedbackGeneration
         runCoachFeedbackVLM(feedbackGen: gen, requireStrokeHistory: true)
     }
@@ -1766,6 +1768,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
             #endif
             guard !spoken.isEmpty, spoken != "…",
                   !spoken.hasPrefix("Failed:") else { return }
+            guard feedbackGen == self.feedbackGeneration else { return }
             await FeedbackAlbaSpeech.speakFeedback(spoken)
         }
     }

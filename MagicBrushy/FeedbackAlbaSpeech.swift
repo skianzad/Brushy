@@ -9,6 +9,11 @@ enum FeedbackAlbaSpeech {
     /// Bumped by `stopSpeaking()` so in-flight `speakFeedback` tasks do not start playback after leave.
     @MainActor private static var speechGeneration: UInt64 = 0
 
+    /// Set while mascot TTS is playing (Sherpa or Apple); cleared when speech finishes or is interrupted.
+    @MainActor private static var activeSpeechSession: UInt64?
+
+    @MainActor static var isSpeaking: Bool { activeSpeechSession != nil }
+
     nonisolated static func stripEmojis(_ s: String) -> String {
         s.unicodeScalars
             .filter { scalar in
@@ -37,9 +42,13 @@ enum FeedbackAlbaSpeech {
 
         stopSpeaking()
         let session = speechGeneration
+        activeSpeechSession = session
 
         MagicBrushyBackgroundMusic.duckForMascotSpeech()
         defer {
+            if activeSpeechSession == session {
+                activeSpeechSession = nil
+            }
             if session == speechGeneration {
                 MagicBrushyBackgroundMusic.restoreVolumeAfterMascotSpeech()
             }
@@ -83,6 +92,7 @@ enum FeedbackAlbaSpeech {
     @MainActor
     static func stopSpeaking() {
         speechGeneration &+= 1
+        activeSpeechSession = nil
         Self.mascotLipSync?.sessionEnded()
         SherpaVLMPlayback.stopPlayback()
         AppleFeedbackSynth.shared.stop()
