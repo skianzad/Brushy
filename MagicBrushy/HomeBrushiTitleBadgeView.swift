@@ -1,20 +1,15 @@
 import UIKit
 
-/// “Color with Brushi” lockup — iPad uses Figma `122:1001`; iPhone uses `167:474`.
+/// “Brushi Coloring Games for Kids” lockup on the home hub (phone + iPad).
 final class HomeBrushiTitleBadgeView: UIView {
 
     enum Metrics {
-        /// iPad / regular width (`122:1001` export).
-        static let regularDesignWidth: CGFloat = 402
-        static let regularDesignHeight: CGFloat = 328
-        /// iPhone (`167:474` export).
-        static let phoneDesignWidth: CGFloat = 1163
-        static let phoneDesignHeight: CGFloat = 443
+        /// Shared export (`IMG_4220` — crayon/pencil + wordmark).
+        static let designWidth: CGFloat = 1612
+        static let designHeight: CGFloat = 692
 
         static func heightPerWidth(isPhone: Bool) -> CGFloat {
-            isPhone
-                ? phoneDesignHeight / phoneDesignWidth
-                : regularDesignHeight / regularDesignWidth
+            designHeight / designWidth
         }
 
         static func assetName(isPhone: Bool) -> String {
