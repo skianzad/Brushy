@@ -879,8 +879,8 @@ final class HomeViewController: UIViewController {
         row3.distribution = .fillEqually
 
         row0.addArrangedSubview(makeTile(for: .ocean))
-        row0.addArrangedSubview(makeTile(for: .dinosaurs))
         row0.addArrangedSubview(makeTile(for: .animals))
+        row0.addArrangedSubview(makeTile(for: .dinosaurs))
         row1.addArrangedSubview(makeTile(for: .fall))
         row1.addArrangedSubview(makeTile(for: .food))
         row1.addArrangedSubview(makeTile(for: .magic))

@@ -234,7 +234,7 @@ final class ColoringViewController: UIViewController, UIGestureRecognizerDelegat
         drawingBackgroundView.image = MagicBrushyChromeMetrics.coloringBackgroundImage(for: traitCollection)
         drawingBackgroundView.contentMode = .scaleAspectFill
         drawingBackgroundView.clipsToBounds = true
-        drawingBackgroundView.backgroundColor = FigmaTheme.skyBlue
+        drawingBackgroundView.backgroundColor = FigmaTheme.drawingBackgroundSky
 
         templateView.contentMode = .scaleAspectFit
         templateView.layer.minificationFilter = .linear

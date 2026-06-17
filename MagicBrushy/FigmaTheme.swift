@@ -42,6 +42,9 @@ enum FigmaTheme {
     static let coloringModeFill = UIColor(red: 102 / 255, green: 222 / 255, blue: 1, alpha: 1)
     static let coloringModeBorder = UIColor(red: 1 / 255, green: 174 / 255, blue: 1, alpha: 1)
 
+    /// Coloring / free-draw backdrop fill when the image is still loading (`Figma` `92:101`).
+    static let drawingBackgroundSky = UIColor(red: 174 / 255, green: 229 / 255, blue: 255 / 255, alpha: 1)
+
     static let skyBlue = UIColor(red: 160 / 255, green: 232 / 255, blue: 251 / 255, alpha: 1)
 
     /// Product palette (Tier 1–3) — crayons, canvas, chrome.
@@ -135,10 +138,9 @@ enum MagicBrushyChromeMetrics {
         return UIImage(named: name)
     }
 
-    /// Coloring canvas backdrop — same Figma mobile art on phone, legacy export on iPad.
-    static func coloringBackgroundImage(for traitCollection: UITraitCollection) -> UIImage? {
-        let name = isPhone(traitCollection) ? "MobileLandscapeBackground" : "ColoringDrawingBackground"
-        return UIImage(named: name)
+    /// Figma `92:101` `drawing-background` — sky + clouds behind the coloring canvas (phone and iPad).
+    static func coloringBackgroundImage(for _: UITraitCollection) -> UIImage? {
+        UIImage(named: "ColoringDrawingBackground")
     }
 
     static func chromeButtonSide(_ traitCollection: UITraitCollection) -> CGFloat {

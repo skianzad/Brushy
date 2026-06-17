@@ -1,6 +1,6 @@
 import Foundation
 
-/// Whether the painting coach speaks automatic tips while coloring.
+/// Whether Brushi responses are enabled (spoken coach feedback while coloring).
 enum MagicBrushyCoachAutoFeedback {
     static let didChangeNotification = Notification.Name("MagicBrushyCoachAutoFeedbackDidChange")
 
